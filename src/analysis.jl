@@ -63,7 +63,7 @@ function velocity(lx::Float64,ly::Float64,nx::Int,ny::Int,u::Array{Array{Complex
     ux
 end
 
-function zonalvelocity(lx::Float64,ly::Float64,nx::Int,ny::Int,u::Array{Array{ComplexF64,2},1})
+function zonalvelocity(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,u::Array{Array{ComplexF64,2},1})
     uk = zeros(ComplexF64,2*ny-1,2*nx-1,length(u))
     ux = zeros(Float64,2*ny-1,2*nx-1,length(u))
     for i in eachindex(u)
