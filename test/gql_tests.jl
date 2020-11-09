@@ -4,8 +4,8 @@ using Test
 @testset "GQL(Λ)/GCE2(Λ) tests" begin
     lx = 4.0*Float64(pi);
     ly = 2.0*Float64(pi);
-    for nx=3:3
-        for ny=nx:3
+    for nx=4:12
+        for ny=nx:20
             for θ in [0.0,1.0/6.0,1.0/3.0]
                 for τ in [2.0,5.0,10.0,20.0]
                     for Ξ in [0.1,0.2,0.3]
