@@ -8,9 +8,9 @@ using Test
     ny = 2;
     Ω = 2.0*Float64(pi)
 
-    for θ in [0.0,1.0/6.0,1.0/3.0]
-        for τ in [5.0,10.0,20.0]
-            for Ξ in [0.1,0.2,0.3]
+    for θ in [0.0]
+        for τ in [10.0,20.0]
+            for Ξ in [0.2]
 
                 @info "Parameters: θ = $θ, τ = $τ, Ξ = $Ξ"
 

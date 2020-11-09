@@ -1,6 +1,6 @@
-function ic_eqm(lx::Float64,ly::Float64,nx::Int,ny::Int,Ξ::Float64)
+function ic_eqm(lx::Float64,ly::Float64,nx::Int,ny::Int,Ξ::Float64;jw::Float64=0.05)
     ζ0 = zeros(ComplexF64,2*ny-1,nx)
-    ζjet = acoeffs(ly,ny,Ξ,1.0)
+    ζjet = acoeffs(ly,ny,Ξ,1.0,jw=jw)
     for y in 1:2*ny-1
         ζ0[y,1] = ζjet[y]
     end
@@ -14,8 +14,8 @@ function ic_rand(lx::Float64,ly::Float64,nx::Int,ny::Int)
     umn[:,nx:2*nx-1]
 end
 
-function ic_pert_eqm(lx::Float64,ly::Float64,nx::Int,ny::Int,Ξ::Float64)
-    @. ic_eqm(lx,ly,nx,ny,Ξ) + ic_rand(lx,ly,nx,ny)*1e-4
+function ic_pert_eqm(lx::Float64,ly::Float64,nx::Int,ny::Int,Ξ::Float64;jw::Float64=0.05)
+    @. ic_eqm(lx,ly,nx,ny,Ξ,jw=jw) + ic_rand(lx,ly,nx,ny)*1e-4
 end
 
 function ic_cumulants(nx::Int,ny::Int,Λ::Int,u0::Array{ComplexF64,2})

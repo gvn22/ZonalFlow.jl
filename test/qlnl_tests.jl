@@ -10,9 +10,9 @@ using Test
     Λ = 0
     for nx=4:4
         for ny=nx:4
-            for θ in [0.0,1.0/6.0,1.0/3.0]
-                for τ in [5.0,10.0,20.0]
-                    for Ξ in [0.1,0.2,0.3]
+            for θ in [0.0]
+                for τ in [20.0]
+                    for Ξ in [0.2]
 
                         @info "Parameters: θ = $θ, τ = $τ, Ξ = $Ξ"
 
@@ -45,9 +45,9 @@ end
 
     for nx=4:4
         for ny=nx:4
-            for θ in [0.0,1.0/6.0,1.0/3.0]
-                for τ in [5.0,10.0,20.0]
-                    for Ξ in [0.1,0.2,0.3]
+            for θ in [0.0]
+                for τ in [20.0]
+                    for Ξ in [0.2]
 
                         @info "Parameters: θ = $θ, τ = $τ, Ξ = $Ξ"
 
