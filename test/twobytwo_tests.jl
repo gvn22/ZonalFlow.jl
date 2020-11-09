@@ -17,7 +17,7 @@ using Test
     sol1 = nl(lx,ly,nx,ny,Ξ,β,τ,ic=ζ0,dt=0.001,t_end=500.0,savefreq=10);
     P1,O1 = zonalenergy(lx,ly,nx,ny,sol1.u)
     A1 = meanvorticity(lx,ly,nx,ny,sol1.u)
-    # E1,Z1 = energy(lx,ly,nx,ny,sol1.u)
+    E1,Z1 = energy(lx,ly,nx,ny,sol1.u)
 
     @info "Do NL, QL and CE2 match?"
     Λ = 0
@@ -37,12 +37,12 @@ using Test
     @test A1[end,:] ≈ A2[end,:] atol=1e-6
     @test A1[end,:] ≈ A2[end,:] atol=1e-6
     @test A3[end,:] ≈ A4[end,:] atol=1e-6
-    # E2,Z2 = energy(lx,ly,nx,ny,sol2.u)
-    # E3,Z3 = energy(lx,ly,nx,ny,Λ,sol3.u)
-    # E4,Z4 = energy(lx,ly,nx,ny,Λ,sol4.u)
-    # @test E1[end] ≈ E2[end,:] atol=1e-6
-    # @test E1[end,:] ≈ E2[end,:] atol=1e-6
-    # @test E3[end,:] ≈ E4[end,:] atol=1e-6
+    E2,Z2 = energy(lx,ly,nx,ny,sol2.u)
+    E3,Z3 = energy(lx,ly,nx,ny,Λ,sol3.u)
+    E4,Z4 = energy(lx,ly,nx,ny,Λ,sol4.u)
+    @test E1[end] ≈ E2[end] atol=1e-6
+    @test E1[end] ≈ E2[end] atol=1e-6
+    @test E3[end] ≈ E4[end] atol=1e-6
 
     @info "Do NL, GQl(M) and GCE2(M) match?"
     Λ = 1
@@ -62,12 +62,12 @@ using Test
     @test A1[end,:] ≈ A2[end,:] atol=1e-6
     @test A1[end,:] ≈ A2[end,:] atol=1e-6
     @test A3[end,:] ≈ A4[end,:] atol=1e-6
-    # E2,Z2 = energy(lx,ly,nx,ny,sol2.u)
-    # E3,Z3 = energy(lx,ly,nx,ny,Λ,sol3.u)
-    # E4,Z4 = energy(lx,ly,nx,ny,Λ,sol4.u)
-    # @test E1[end] ≈ E2[end,:] atol=1e-6
-    # @test E1[end,:] ≈ E2[end,:] atol=1e-6
-    # @test E3[end,:] ≈ E4[end,:] atol=1e-6
+    E2,Z2 = energy(lx,ly,nx,ny,sol2.u)
+    E3,Z3 = energy(lx,ly,nx,ny,Λ,sol3.u)
+    E4,Z4 = energy(lx,ly,nx,ny,Λ,sol4.u)
+    @test E1[end] ≈ E2[end] atol=1e-6
+    @test E1[end] ≈ E2[end] atol=1e-6
+    @test E3[end] ≈ E4[end] atol=1e-6
 
     @info "Do default parameters work?"
     sol1 = nl(lx,ly,nx,ny,Ξ,β,τ,ic=ζ0);
@@ -88,12 +88,12 @@ using Test
     @test A1[end,:] ≈ A2[end,:] atol=1e-6
     @test A1[end,:] ≈ A2[end,:] atol=1e-6
     @test A3[end,:] ≈ A4[end,:] atol=1e-6
-    # E2,Z2 = energy(lx,ly,nx,ny,sol2.u)
-    # E3,Z3 = energy(lx,ly,nx,ny,Λ,sol3.u)
-    # E4,Z4 = energy(lx,ly,nx,ny,Λ,sol4.u)
-    # @test E1[end] ≈ E2[end,:] atol=1e-6
-    # @test E1[end,:] ≈ E2[end,:] atol=1e-6
-    # @test E3[end,:] ≈ E4[end,:] atol=1e-6
+    E2,Z2 = energy(lx,ly,nx,ny,sol2.u)
+    E3,Z3 = energy(lx,ly,nx,ny,Λ,sol3.u)
+    E4,Z4 = energy(lx,ly,nx,ny,Λ,sol4.u)
+    @test E1[end] ≈ E2[end] atol=1e-6
+    @test E1[end] ≈ E2[end] atol=1e-6
+    @test E3[end] ≈ E4[end] atol=1e-6
 
     Λ = 1
     sol2 = gql(lx,ly,nx,ny,Λ,Ξ,β,τ,ic=ζ0);
@@ -112,11 +112,11 @@ using Test
     @test A1[end,:] ≈ A2[end,:] atol=1e-6
     @test A1[end,:] ≈ A2[end,:] atol=1e-6
     @test A3[end,:] ≈ A4[end,:] atol=1e-6
-    # E2,Z2 = energy(lx,ly,nx,ny,sol2.u)
-    # E3,Z3 = energy(lx,ly,nx,ny,Λ,sol3.u)
-    # E4,Z4 = energy(lx,ly,nx,ny,Λ,sol4.u)
-    # @test E1[end] ≈ E2[end,:] atol=1e-6
-    # @test E1[end,:] ≈ E2[end,:] atol=1e-6
-    # @test E3[end,:] ≈ E4[end,:] atol=1e-6
+    E2,Z2 = energy(lx,ly,nx,ny,sol2.u)
+    E3,Z3 = energy(lx,ly,nx,ny,Λ,sol3.u)
+    E4,Z4 = energy(lx,ly,nx,ny,Λ,sol4.u)
+    @test E1[end] ≈ E2[end] atol=1e-6
+    @test E1[end] ≈ E2[end] atol=1e-6
+    @test E3[end] ≈ E4[end] atol=1e-6
 
 end
