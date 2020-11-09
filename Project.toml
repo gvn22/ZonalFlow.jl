@@ -9,17 +9,17 @@ FFTW = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
-RecursiveArrayTools = "2.7"
 DiffEqCallbacks = "2.14"
-OrdinaryDiffEq = "5.43"
 FFTW = "1.2"
+OrdinaryDiffEq = "5.43"
+RecursiveArrayTools = "2.7"
 julia = "1"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 
 [targets]
-test = ["Test"]
+test = ["Test","SafeTestsets"]
