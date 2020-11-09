@@ -6,25 +6,29 @@ using Test
     lx = 4.0*Float64(pi);
     ly = 2.0*Float64(pi);
     Λ = 0
-    # nx = 3;
-    # ny = 3;
-    for nx=3:4
-        for ny=nx:4
+    for nx=3:6
+        for ny=nx:6
+            for θ in [0.0,1.0/6.0,1.0/3.0]
+                for τ in [2.0,5.0,10.0,20.0]
+                    for Ξ in [0.1,0.2,0.3]
 
-            Ω = 2.0*Float64(pi)
-            θ = 0.0
-            β = 2.0*Ω*cos(θ)
-            Ξ = 0.25*Ω
-            τ = 20.0/Ω
+                        @info "Parameters: θ = $θ, τ = $τ, Ξ = $Ξ"
 
-            ζ0 = ic_pert_eqm(lx,ly,nx,ny,Ξ); # one ic for all
+                        Ω = 2.0*Float64(pi)
+                        θ = θ*Float64(pi)
+                        β = 2.0*Ω*cos(θ)
+                        τ = τ/Ω
+                        Ξ = Ξ*Ω
+                        ζ0 = ic_pert_eqm(lx,ly,nx,ny,Ξ); # one ic for all
 
-            @time sol1 = nl(lx,ly,nx,ny,Ξ,β,τ,ic=ζ0,dt=0.001);
-            @time sol2 = gql(lx,ly,nx,ny,Λ,Ξ,β,τ,dt=0.001,ic=ζ0);
-            @time sol3 = gce2(lx,ly,nx,ny,Λ,Ξ,β,τ,ic=ζ0,dt=0.001);
-            @time sol4 = gce2(lx,ly,nx,ny,Λ,Ξ,β,τ,ic=ζ0,dt=0.001,poscheck=true);
+                        sol2 = gql(lx,ly,nx,ny,Λ,Ξ,β,τ,dt=0.001,ic=ζ0);
+                        sol3 = gce2(lx,ly,nx,ny,Λ,Ξ,β,τ,ic=ζ0,dt=0.001);
+                        sol4 = gce2(lx,ly,nx,ny,Λ,Ξ,β,τ,ic=ζ0,dt=0.001,poscheck=true);
+                        @test sol2.u[end][:,1:Λ+1] ≈ sol3.u[end].x[1] ≈ sol4.u[end].x[1]
 
-            @test sol2.u[end][:,1:Λ+1] ≈ sol3.u[end].x[1] ≈ sol4.u[end].x[1]
+                    end
+                end
+            end
         end
     end
 end
@@ -32,27 +36,30 @@ end
 @testset "NL/GQL(M)/GCE2(M) tests" begin
     lx = 4.0*Float64(pi);
     ly = 2.0*Float64(pi);
-    # nx = 3;
-    # ny = 3;
-    for nx=3:4
-        for ny=nx:4
+    for nx=3:6
+        for ny=nx:6
+            for θ in [0.0,1.0/6.0,1.0/3.0]
+                for τ in [2.0,5.0,10.0,20.0]
+                    for Ξ in [0.1,0.2,0.3]
 
-            Ω = 2.0*Float64(pi)
-            θ = 0.0
-            β = 2.0*Ω*cos(θ)
-            Ξ = 0.25*Ω
-            τ = 20.0/Ω
+                        @info "Parameters: θ = $θ, τ = $τ, Ξ = $Ξ"
 
-            Λ = nx-1
+                        Ω = 2.0*Float64(pi)
+                        θ = θ*Float64(pi)
+                        β = 2.0*Ω*cos(θ)
+                        τ = τ/Ω
+                        Ξ = Ξ*Ω
+                        ζ0 = ic_pert_eqm(lx,ly,nx,ny,Ξ); # one ic for all
 
-            ζ0 = ic_pert_eqm(lx,ly,nx,ny,Ξ); # one ic for all
+                        Λ = nx-1
+                        sol2 = gql(lx,ly,nx,ny,Λ,Ξ,β,τ,dt=0.001,ic=ζ0);
+                        sol3 = gce2(lx,ly,nx,ny,Λ,Ξ,β,τ,ic=ζ0,dt=0.001);
+                        sol4 = gce2(lx,ly,nx,ny,Λ,Ξ,β,τ,ic=ζ0,dt=0.001,poscheck=true);
+                        @test sol2.u[end] ≈ sol3.u[end].x[1] ≈ sol4.u[end].x[1]
 
-            @time sol1 = nl(lx,ly,nx,ny,Ξ,β,τ,ic=ζ0,dt=0.001);
-            @time sol2 = gql(lx,ly,nx,ny,Λ,Ξ,β,τ,dt=0.001,ic=ζ0);
-            @time sol3 = gce2(lx,ly,nx,ny,Λ,Ξ,β,τ,ic=ζ0,dt=0.001);
-            @time sol4 = gce2(lx,ly,nx,ny,Λ,Ξ,β,τ,ic=ζ0,dt=0.001,poscheck=true);
-
-            @test sol1.u[end] == sol2.u[end] ≈ sol3.u[end].x[1] ≈ sol4.u[end].x[1]
+                    end
+                end
+            end
         end
     end
 end
