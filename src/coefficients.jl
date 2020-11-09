@@ -1,11 +1,8 @@
-function acoeffs(ly::Float64,ny::Int,Ξ::Float64,τ::Float64=0.0)
+function acoeffs(ly::Float64,ny::Int,Ξ::Float64,τ::Float64=0.0;jw::Float64=0.05)
     ζjet = zeros(Float64,2*ny-1)
-    Δθ::Float64 = 0.1
+    Δθ::Float64 = jw
     κ::Float64 = τ == 0.0 ? 0.0 : 1.0/τ
     ζjet = [-κ*Ξ*tanh(-y/Δθ) for y in LinRange(-ly/2.0,ly/2.0,2*ny-1)]
-    # for y in 1:1:2*ny-1
-        # ζjet[y] = -κ*Ξ*tanh((ly/2.0 - 0.5*(2*y-1)/(2*ny-1)*ly)/Δθ)
-    # end
     fftshift(fft(ζjet))
 end
 
