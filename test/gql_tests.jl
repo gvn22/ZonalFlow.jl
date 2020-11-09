@@ -2,6 +2,7 @@ using ZonalFlow
 using Test
 
 @testset "GQL(Λ)/GCE2(Λ) tests" begin
+    @info "Testing GQL(Λ)/GCE2(Λ) conformity..."
     lx = 4.0*Float64(pi);
     ly = 2.0*Float64(pi);
     for nx=4:12

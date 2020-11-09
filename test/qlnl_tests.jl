@@ -2,6 +2,7 @@ using ZonalFlow
 using Test
 
 @testset "QL/CE2 tests" begin
+    @info "Testing QL/CE2 conformity..."
     lx = 4.0*Float64(pi);
     ly = 2.0*Float64(pi);
     Λ = 0
@@ -34,6 +35,7 @@ using Test
 end
 
 @testset "NL/GQL(M)/GCE2(M) tests" begin
+    @info "Testing NL/GQL(M)/GCE2(M) conformity..."
     lx = 4.0*Float64(pi);
     ly = 2.0*Float64(pi);
     for nx=4:12
