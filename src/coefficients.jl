@@ -1,6 +1,6 @@
 function acoeffs(ly::Float64,ny::Int,Ξ::Float64,τ::Float64=0.0)
     ζjet = zeros(Float64,2*ny-1)
-    Δθ::Float64 = 0.1*ly/Float64(pi)
+    Δθ::Float64 = 0.1
     κ::Float64 = τ == 0.0 ? 0.0 : 1.0/τ
     ζjet = [-κ*Ξ*tanh(-y/Δθ) for y in LinRange(-ly/2.0,ly/2.0,2*ny-1)]
     # for y in 1:1:2*ny-1
