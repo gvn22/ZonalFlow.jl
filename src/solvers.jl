@@ -6,7 +6,7 @@ function nl(lx::Float64,ly::Float64,nx::Int,ny::Int,Ξ::Float64,β::Float64,τ::
     Cp,Cm = ccoeffs(lx,ly,nx,ny)
     p = [nx,ny,A,B,Cp,Cm]
     tspan = (0.0,t_end)
-    prob = ODEProblem(nl_eqs4!,ic,tspan,p)
+    prob = ODEProblem(nl_eqs!,ic,tspan,p)
     @info "Solving NL equations on $(nx-1)x$(ny-1) grid"
     @info "Parameters: Ξ = $Ξ, Δθ = $jw, β = $β, τ = $τ"
     solve(prob,RK4(),dt=dt,adaptive=false,progress=true,progress_steps=10000,save_start=true,saveat=savefreq,save_everystep=savefreq==1 ? true : false)
@@ -20,7 +20,7 @@ function gql(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,Ξ::Float64,β::Flo
     Cp,Cm = ccoeffs(lx,ly,nx,ny,Λ)
     p = [nx,ny,Λ,A,B,Cp,Cm]
     tspan = (0.0,t_end)
-    prob = ODEProblem(gql_eqs4!,ic,tspan,p)
+    prob = ODEProblem(gql_eqs!,ic,tspan,p)
     @info "Solving GQL equations on $(nx-1)x$(ny-1) grid with Λ = $Λ"
     @info "Parameters: Ξ = $Ξ, Δθ = $jw, β = $β, τ = $τ"
     solve(prob,RK4(),dt=dt,adaptive=false,progress=true,progress_steps=10000,save_start=true,save_everystep=false,dense=false,saveat=savefreq)
@@ -37,7 +37,7 @@ function gce2(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,Ξ::Float64,β::Fl
     tspan = (0.0,t_end)
     u0 = ic_cumulants(nx,ny,Λ,ic)
     p = [nx,ny,Λ,A,B,Cp,Cm,fill!(similar(u0.x[1]),0),fill!(similar(u0.x[2]),0),fill!(similar(u0.x[2]),0)]
-    prob = ODEProblem(gce2_eqs5!,u0,tspan,p)
+    prob = ODEProblem(gce2_eqs!,u0,tspan,p)
     if poscheck && Λ < nx - 1
         poschecktimes = [tt for tt in range(1.0,t_end,step=poscheckfreq)]
         condition(u,t,integrator) = t ∈ poschecktimes && !ispositive(u.x[2],nx,ny,Λ)
