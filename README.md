@@ -35,6 +35,7 @@ Problem:
 - τ: relaxation time
 
 Timestepping and solution save:
+- jw: Jet width; defaults to 0.2
 - ic: Initial Condition; defaults to point jet with random seed.
 - dt: Timestep size; defaults to 0.001.
 - t_end: Final solution time
