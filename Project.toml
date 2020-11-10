@@ -16,6 +16,7 @@ DiffEqCallbacks = "2.14"
 FFTW = "1.2"
 OrdinaryDiffEq = "5.43"
 RecursiveArrayTools = "2.7"
+Revise = "3.1"
 julia = "1"
 
 [extras]
