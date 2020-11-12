@@ -35,7 +35,7 @@ function gce2(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,Ξ::Float64,β::Fl
     @info "Solving GCE2 equations on $(nx-1)x$(ny-1) grid with Λ = $Λ"
     @info "Parameters: Ξ = $Ξ, Δθ = $jw, β = $β, τ = $τ"
     tspan = (0.0,t_end)
-    u0 = icnl == true ? ic_cumulants(nx,ny,Λ,1e-6,ic) : ic_cumulants(nx,ny,Λ,ic)
+    u0 = icnl == true ? ic_cumulants(nx,ny,Λ,ic) : ic_cumulants(nx,ny,Λ,1e-6,ic)
     p = [nx,ny,Λ,A,B,Cp,Cm,fill!(similar(u0.x[1]),0),fill!(similar(u0.x[2]),0),fill!(similar(u0.x[2]),0)]
     prob = ODEProblem(gce2_eqs!,u0,tspan,p)
     if poscheck && Λ < nx - 1
@@ -46,7 +46,7 @@ function gce2(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,Ξ::Float64,β::Fl
         # return solve(prob,RK4(),callback=cbp,tstops=poschecktimes,dt=dt,adaptive=false,progress=true,progress_steps=10000,save_start=true,save_everystep=false,dense=false,saveat=savefreq)
     end
     if saveinfo && Λ < nx - 1
-        saved_values = SavedValues(Float64, Float64)
+        saved_values = SavedValues(Float64, Tuple{Float64,Array{Float64,1}})
         save_func(u,t,integrator) = rankis(integrator.u.x[2],nx,ny,Λ)
         saveat_array = [i for i=0.0:saveinfofreq:t_end]
         cbs = SavingCallback(save_func,saved_values,save_start=true,save_everystep=false,saveat=saveat_array)

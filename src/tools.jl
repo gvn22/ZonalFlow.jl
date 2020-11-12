@@ -18,5 +18,5 @@ end
 function rankis(cumulant::Array{ComplexF64,4},nx::Int,ny::Int,Λ::Int)
     twopoint = reshape(cumulant,(2*ny-1)*(nx-Λ),(2*ny-1)*(nx-Λ))
     D = eigvals(twopoint)
-    (2*ny-1)*(nx-Λ) - length(D[D .< 1e-6])
+    return ((2*ny-1)*(nx-Λ) - length(D[D .< 1e-6]),D)
 end
