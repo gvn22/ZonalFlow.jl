@@ -28,7 +28,7 @@ end
 
 ## GCE2
 function gce2(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,Ξ::Float64,β::Float64,τ::Float64=0.0,
-    νn::Float64=0.0;jw::Float64=0.1,icnl::Bool=false,ic::Array{ComplexF64,2},dt::Float64=0.01,t_end::Float64=1000.0,saveinfo::Bool=false,poscheck::Bool=false,savefreq::Int=20,poscheckfreq::Float64=50.0,kwargs...)
+    νn::Float64=0.0;jw::Float64=0.1,icnl::Bool=false,ic::Array{ComplexF64,2},dt::Float64=0.01,t_end::Float64=1000.0,saveinfo::Bool=false,saveinfofreq::Int=50,poscheck::Bool=false,savefreq::Int=20,poscheckfreq::Int=50,kwargs...)
     A = acoeffs(ly,ny,Ξ,τ)
     B = bcoeffs(lx,ly,nx,ny,β,τ,νn)
     Cp,Cm = ccoeffs(lx,ly,nx,ny,Λ)
@@ -38,19 +38,27 @@ function gce2(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,Ξ::Float64,β::Fl
     u0 = icnl == true ? ic_cumulants(nx,ny,Λ,1e-6,ic) : ic_cumulants(nx,ny,Λ,ic)
     p = [nx,ny,Λ,A,B,Cp,Cm,fill!(similar(u0.x[1]),0),fill!(similar(u0.x[2]),0),fill!(similar(u0.x[2]),0)]
     prob = ODEProblem(gce2_eqs!,u0,tspan,p)
-
     if poscheck && Λ < nx - 1
-        poschecktimes = [tt for tt in range(1.0,t_end,step=poscheckfreq)]
+        poschecktimes = [tt for tt=1.0:poscheckfreq:t_end]
         condition(u,t,integrator) = t ∈ poschecktimes && !ispositive(u.x[2],nx,ny,Λ)
         affect!(integrator) = positivity!(integrator.u.x[2],nx,ny,Λ)
         cbp = DiscreteCallback(condition,affect!,save_positions=(false,false))
-        return solve(prob,RK4(),callback=cbp,tstops=poschecktimes,dt=dt,adaptive=false,progress=true,progress_steps=10000,save_start=true,save_everystep=false,dense=false,saveat=savefreq)
-    elseif saveinfo && Λ < nx - 1
+        # return solve(prob,RK4(),callback=cbp,tstops=poschecktimes,dt=dt,adaptive=false,progress=true,progress_steps=10000,save_start=true,save_everystep=false,dense=false,saveat=savefreq)
+    end
+    if saveinfo && Λ < nx - 1
         saved_values = SavedValues(Float64, Float64)
         save_func(u,t,integrator) = rankis(integrator.u.x[2],nx,ny,Λ)
-        saveat_array = [i for i=0.0:10:t_end]
+        saveat_array = [i for i=0.0:saveinfofreq:t_end]
         cbs = SavingCallback(save_func,saved_values,save_start=true,save_everystep=false,saveat=saveat_array)
+    end
+    if saveinfo && !poscheck
+        @info "Saving twopoint correlation rank info"
         sol = solve(prob,RK4(),dt=dt,callback=cbs,adaptive=false,progress=true,progress_steps=10000,save_start=true,save_everystep=false,saveat=savefreq)
+        return sol,saved_values
+    elseif saveinfo && poscheck
+        @info "Running with positivity condition and saving twopoint correlation rank info"
+        cb = CallbackSet(cbp,cbs)
+        sol = solve(prob,RK4(),dt=dt,callback=cb,tstops=poschecktimes,adaptive=false,progress=true,progress_steps=10000,save_start=true,save_everystep=false,saveat=savefreq)
         return sol,saved_values
     else
         return solve(prob,RK4(),dt=dt,adaptive=false,progress=true,progress_steps=10000,save_start=true,save_everystep=false,saveat=savefreq)
