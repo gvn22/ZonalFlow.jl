@@ -15,6 +15,7 @@ DiffEqCallbacks = "2.14"
 FFTW = "1.2"
 OrdinaryDiffEq = "5.43"
 RecursiveArrayTools = "2.7"
+Revise = "3.1"
 julia = "1"
 
 [extras]
@@ -23,4 +24,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
 
 [targets]
-test = ["Test", "SafeTestsets","Revise"]
+test = ["Test", "SafeTestsets"]
