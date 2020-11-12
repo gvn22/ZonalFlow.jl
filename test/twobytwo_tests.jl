@@ -37,8 +37,8 @@ using Test
                 @test P1[end,:] ≈ P3[end,:] atol=1e-6
                 @test P1[end,:] ≈ P4[end,:] atol=1e-6
                 A2 = meanvorticity(lx,ly,nx,ny,sol2.u)
-                A3 = meanvorticity(lx,ly,nx,ny,Λ,sol3.u)
-                A4 = meanvorticity(lx,ly,nx,ny,Λ,sol4.u)
+                A3 = meanvorticity(lx,ly,nx,ny,sol3.u)
+                A4 = meanvorticity(lx,ly,nx,ny,sol4.u)
                 @test A1[end,:] ≈ A2[end,:] atol=1e-6
                 @test A1[end,:] ≈ A3[end,:] atol=1e-6
                 @test A1[end,:] ≈ A4[end,:] atol=1e-6
@@ -64,8 +64,8 @@ using Test
                 @test P1[end,:] ≈ P3[end,:] atol=1e-6
                 @test P1[end,:] ≈ P4[end,:] atol=1e-6
                 A2 = meanvorticity(lx,ly,nx,ny,sol2.u)
-                A3 = meanvorticity(lx,ly,nx,ny,Λ,sol3.u)
-                A4 = meanvorticity(lx,ly,nx,ny,Λ,sol4.u)
+                A3 = meanvorticity(lx,ly,nx,ny,sol3.u)
+                A4 = meanvorticity(lx,ly,nx,ny,sol4.u)
                 @test A1[end,:] ≈ A2[end,:] atol=1e-6
                 @test A1[end,:] ≈ A3[end,:] atol=1e-6
                 @test A1[end,:] ≈ A4[end,:] atol=1e-6
@@ -91,8 +91,8 @@ using Test
                 @test P1[end,:] ≈ P3[end,:] atol=1e-6
                 @test P1[end,:] ≈ P4[end,:] atol=1e-6
                 A2 = meanvorticity(lx,ly,nx,ny,sol2.u)
-                A3 = meanvorticity(lx,ly,nx,ny,Λ,sol3.u)
-                A4 = meanvorticity(lx,ly,nx,ny,Λ,sol4.u)
+                A3 = meanvorticity(lx,ly,nx,ny,sol3.u)
+                A4 = meanvorticity(lx,ly,nx,ny,sol4.u)
                 @test A1[end,:] ≈ A2[end,:] atol=1e-6
                 @test A1[end,:] ≈ A3[end,:] atol=1e-6
                 @test A1[end,:] ≈ A4[end,:] atol=1e-6
@@ -117,8 +117,8 @@ using Test
                 @test P1[end,:] ≈ P3[end,:] atol=1e-6
                 @test P1[end,:] ≈ P4[end,:] atol=1e-6
                 A2 = meanvorticity(lx,ly,nx,ny,sol2.u)
-                A3 = meanvorticity(lx,ly,nx,ny,Λ,sol3.u)
-                A4 = meanvorticity(lx,ly,nx,ny,Λ,sol4.u)
+                A3 = meanvorticity(lx,ly,nx,ny,sol3.u)
+                A4 = meanvorticity(lx,ly,nx,ny,sol4.u)
                 @test A1[end,:] ≈ A2[end,:] atol=1e-6
                 @test A1[end,:] ≈ A3[end,:] atol=1e-6
                 @test A1[end,:] ≈ A4[end,:] atol=1e-6
