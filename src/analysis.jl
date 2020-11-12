@@ -412,3 +412,65 @@ function meanvorticity(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,u::Array{
     return ζy
 
 end
+
+## time averaged meanvorticity
+# function meanvorticity(lx::Float64,ly::Float64,nx::Int,ny::Int,t::Array{Float64,1},u::Array{Array{ComplexF64,2},1};t_begin::Float64=100.0)
+#
+#     ζf = zeros(ComplexF64,length(u),2*ny-1)
+#     ζy = zeros(Float64,length(u),2*ny-1)
+#
+#     i_begin = findall(x->x>t_begin,t)[1]
+#
+#     for i in eachindex(u)
+#
+#         for n1 = 1:1:ny-1
+#
+#             ζf[i,n1+ny] = u[i][n1+ny,1]
+#             ζf[i,-n1+ny] = conj(u[i][n1+ny,1])
+#
+#         end
+#
+#         ζf[i,ny] = 0.0 + 0.0im
+#         ζy[i,:] .= real(ifft(ifftshift(ζf[i,:])))
+#
+#     end
+#
+#     return ζy
+#
+# end
+
+function meanvorticity(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,t::Array{Float64,1},u::Array{ArrayPartition{Complex{Float64},Tuple{Array{Complex{Float64},2},Array{Complex{Float64},4}}},1};t_begin::Float64=100.0)
+
+    ζf = zeros(ComplexF64,length(u),2*ny-1)
+    ζy = zeros(Float64,length(u),2*ny-1)
+
+    i_begin = findall(x->x>t_begin,t)[1]
+
+    for i in eachindex(u)
+        for n1 = 1:1:ny-1
+            if i > i_begin
+                T = 0.0
+                temp1 = 0.0
+                temp2 = 0.0
+                for j = i_begin+1:i
+                    dt = t[j] - t[j-1]
+                    T += dt
+                    temp1 += u[j].x[1][n1+ny,1]*dt
+                    temp2 += conj(u[j].x[1][n1+ny,1])*dt
+                end
+                ζf[i,n1+ny] = temp1/T
+                ζf[i,-n1+ny] = temp2/T
+            else
+                ζf[i,n1+ny] = u[i].x[1][n1+ny,1]
+                ζf[i,-n1+ny] = conj(u[i].x[1][n1+ny,1])
+            end
+        end
+
+        ζf[i,ny] = 0.0 + 0.0im
+        ζy[i,:] .= real(ifft(ifftshift(ζf[i,:])))
+
+    end
+
+    return ζy
+
+end
