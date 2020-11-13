@@ -194,14 +194,11 @@ function gce2_eqs!(du,u,p,t)
         end
     end
 
-    # L + L = L
     @inbounds for m1=1:Λ
-
         n1min = m1 == 0 ? 1 : -(ny-1)
         @inbounds for n1=n1min:ny-1
-
+            # L + L = L
             @inbounds for m2=0:1:min(m1,Λ-m1)
-
                 n2min = m2 == 0 ? 1 : -(ny-1)
                 @inbounds for n2=max(n2min,-(ny-1)-n1):min(ny-1,ny-1-n1)
 
@@ -211,15 +208,8 @@ function gce2_eqs!(du,u,p,t)
 
                 end
             end
-        end
-    end
-
-    # L - L = L
-    @inbounds for m1=1:Λ
-        n1min = m1 == 0 ? 1 : -(ny-1)
-        @inbounds for n1=n1min:ny-1
+            # L - L = L
             @inbounds for m2=0:m1
-
                 n2min = m2 == 0 ? 1 : -(ny-1)
                 n2max = m2 == m1 ? n1 - 1 : ny-1
                 @inbounds for n2=max(n2min,n1-(ny-1)):min(n2max,n1+ny-1)
@@ -233,11 +223,25 @@ function gce2_eqs!(du,u,p,t)
         end
     end
 
-    # H - H = L
+    # @inbounds for m1=1:Λ
+    #     n1min = m1 == 0 ? 1 : -(ny-1)
+    #     @inbounds for n1=n1min:ny-1
+    #     end
+    # end
+
+    # @inbounds for m1=Λ+1:nx-1
+    #     @inbounds for n1=-(ny-1):ny-1
+    #     end
+    # end
+
+    # field bilinear equations
+    dy .= 0.0 + 0.0im
+    temp .= 0.0 + 0.0im
+
     @inbounds for m1=Λ+1:nx-1
         @inbounds for n1=-(ny-1):ny-1
+            # H - H = L
             @inbounds for m2=max(Λ+1,m1-Λ):m1
-
                 n2max = m2 == m1 ? n1 - 1 : ny-1
                 @inbounds for n2=max(-(ny-1),n1-(ny-1)):min(n2max,n1+ny-1)
 
@@ -248,21 +252,8 @@ function gce2_eqs!(du,u,p,t)
 
                 end
             end
-        end
-    end
-
-    du.x[1] .= dx
-
-    # field bilinear equations
-    dy .= 0.0 + 0.0im
-    # temp = fill!(similar(du.x[2]),0)
-    temp .= 0.0 + 0.0im
-
-    # H + L = H
-    @inbounds for m1=Λ+1:nx-1
-        @inbounds for n1=-(ny-1):ny-1
+            # H + L = H
             @inbounds for m2=0:1:min(nx-1-m1,Λ)
-
                 n2min = m2 == 0 ? 1 : -(ny-1)
                 @inbounds for n2=max(n2min,-(ny-1)-n1):min(ny-1,ny-1-n1)
 
@@ -272,14 +263,8 @@ function gce2_eqs!(du,u,p,t)
 
                 end
             end
-        end
-    end
-
-    # H - L = H
-    @inbounds for m1=Λ+1:nx-1
-        @inbounds for n1=-(ny-1):ny-1
+            # H - L = H
             @inbounds for m2=0:1:min(Λ,m1 - Λ - 1)
-
                 n2min = m2 == 0 ? 1 : -(ny-1)
                 @inbounds for n2=max(n2min,n1-(ny-1)):min(ny-1,n1+ny-1)
 
@@ -291,6 +276,13 @@ function gce2_eqs!(du,u,p,t)
             end
         end
     end
+
+    du.x[1] .= dx
+
+    # @inbounds for m1=Λ+1:nx-1
+    #     @inbounds for n1=-(ny-1):ny-1
+    #     end
+    # end
 
     # H'*H
     @inbounds for m3=Λ+1:nx-1
