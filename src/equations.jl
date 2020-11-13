@@ -274,7 +274,7 @@ function gce2_eqs!(du,u,p,t)
             @inbounds for m=Λ+1:nx-1
                 @inbounds for n=-(ny-1):ny-1
 
-                    dy[n+ny,m-Λ,n3+ny,m3-Λ] += B[n+ny,m+1]*u.x[2][n+ny,m-Λ,n3+ny,m3-Λ]
+                    dy[n+ny,m-Λ,n3+ny,m3-Λ] = B[n+ny,m+1]*u.x[2][n+ny,m-Λ,n3+ny,m3-Λ]
 
                     accumulator::ComplexF64 = 0.0 + 0.0im
                     # from H+L
