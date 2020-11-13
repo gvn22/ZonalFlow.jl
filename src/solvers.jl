@@ -28,7 +28,7 @@ end
 
 ## GCE2
 function gce2(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,Ξ::Float64,β::Float64,τ::Float64=0.0,
-    νn::Float64=0.0;jw::Float64=0.1,icnl::Bool=false,ic::Array{ComplexF64,2},dt::Float64=0.01,t_end::Float64=1000.0,saveinfo::Bool=false,saveinfofreq::Int=50,poscheck::Bool=false,savefreq::Int=20,poscheckfreq::Int=50,kwargs...)
+    νn::Float64=0.0;jw::Float64=0.1,icnl::Bool=true,ic::Array{ComplexF64,2},dt::Float64=0.01,t_end::Float64=1000.0,savefreq::Int=20,saveinfo::Bool=false,saveinfofreq::Int=50,poscheck::Bool=false,poscheckfreq::Int=20,kwargs...)
     A = acoeffs(ly,ny,Ξ,τ)
     B = bcoeffs(lx,ly,nx,ny,β,τ,νn)
     Cp,Cm = ccoeffs(lx,ly,nx,ny,Λ)
