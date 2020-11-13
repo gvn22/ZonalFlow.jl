@@ -223,17 +223,6 @@ function gce2_eqs!(du,u,p,t)
         end
     end
 
-    # @inbounds for m1=1:Λ
-    #     n1min = m1 == 0 ? 1 : -(ny-1)
-    #     @inbounds for n1=n1min:ny-1
-    #     end
-    # end
-
-    # @inbounds for m1=Λ+1:nx-1
-    #     @inbounds for n1=-(ny-1):ny-1
-    #     end
-    # end
-
     # field bilinear equations
     dy .= 0.0 + 0.0im
     temp .= 0.0 + 0.0im
@@ -278,11 +267,6 @@ function gce2_eqs!(du,u,p,t)
     end
 
     du.x[1] .= dx
-
-    # @inbounds for m1=Λ+1:nx-1
-    #     @inbounds for n1=-(ny-1):ny-1
-    #     end
-    # end
 
     # H'*H
     @inbounds for m3=Λ+1:nx-1
