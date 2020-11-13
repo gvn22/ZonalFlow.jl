@@ -40,3 +40,16 @@ function ic_cumulants(nx::Int,ny::Int,Λ::Int,u0::Array{ComplexF64,2})
     end
     ArrayPartition(u0_low,u0_high)
 end
+
+function ic_cumulants(nx::Int,ny::Int,Λ::Int,σ::Float64,u0::Array{ComplexF64,2})
+    u0_low::Array{ComplexF64,2} = u0[:,1:Λ+1]
+    for n = 1:ny-1
+        u0_low[n,1] = conj(u0_low[2*ny - n,1])
+    end
+    u0_low[ny,1] = 0.0 + im*0.0
+
+    twopoint = σ*Matrix{ComplexF64}(I,(2*ny-1)*(nx-Λ),(2*ny-1)*(nx-Λ))
+    u0_high = reshape(twopoint,2*ny-1,nx-Λ,2*ny-1,nx-Λ)
+
+    ArrayPartition(u0_low,u0_high)
+end

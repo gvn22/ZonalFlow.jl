@@ -1,7 +1,7 @@
 module ZonalFlow
 
 using OrdinaryDiffEq
-using DiffEqCallbacks: DiscreteCallback
+using DiffEqCallbacks
 using RecursiveArrayTools
 using FFTW
 using LinearAlgebra
