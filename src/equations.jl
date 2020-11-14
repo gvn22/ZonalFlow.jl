@@ -318,3 +318,95 @@ function gce2_eqs!(du,u,p,t)
     end
     nothing
 end
+
+function ce2_eqs!(du,u,p,t)
+
+    nx::Int,ny::Int,A::Array{ComplexF64,1},B::Array{ComplexF64,2},Cp::Array{Float64,4},Cm::Array{Float64,4},dx::Array{ComplexF64,1},dy::Array{ComplexF64,3},temp::Array{ComplexF64,3} = p
+
+    # first cumulant equations
+    dx .= 0.0 + 0.0im
+    @inbounds for n1=1:ny-1
+        dx[n1+ny] += A[n1+ny]
+        dx[n1+ny] += B[n1+ny,1]*u.x[1][n1+ny]
+        # M + M = M
+        @inbounds for n2=max(1,-(ny-1)-n1):min(ny-1,ny-1-n1)
+
+            dx[n1+n2+ny] += Cp[n2+ny,1,n1+ny,1]*(u.x[1][n1+ny]*u.x[1][n2+ny] + u.x[2][n2+ny,n1+ny,1])
+
+        end
+        # M - M = M
+        @inbounds for n2=max(1,n1-(ny-1)):min(n1-1,n1+ny-1)
+
+            dx[n1-n2+ny] += Cm[n2+ny,1,n1+ny,1]*(u.x[1][n1+ny]*conj(u.x[1][n2+ny]) + conj(u.x[2][n2+ny,n1+ny,1]))
+
+        end
+    end
+
+    temp .= 0.0 + 0.0im
+
+    @inbounds for m=1:nx-1
+        @inbounds for n1=-(ny-1):ny-1
+            # E - E = M
+            @inbounds for n2=max(-(ny-1),n1-(ny-1)):min(n1-1,n1+ny-1)
+
+                # note: u.x[2] contains H2*conj(H1) so H-H is conj(H2)*H1
+                dx[n1-n2+ny] += Cm[n2+ny,m+1,n1+ny,m+1]*conj(u.x[2][n2+ny,n1+ny,m+1])
+
+            end
+            # E + M = E
+            @inbounds for n2=max(1,-(ny-1)-n1):min(ny-1,ny-1-n1)
+
+                temp[n1+ny,n1+n2+ny,m+1] += Cp[n2+ny,1,n1+ny,m+1]*u.x[1][n2+ny]
+
+            end
+            # E - M = E
+            @inbounds for n2=max(1,n1-(ny-1)):min(ny-1,n1+ny-1)
+
+                temp[n1+ny,n1-n2+ny,m+1] += Cm[n2+ny,1,n1+ny,m+1]*conj(u.x[1][n2+ny])
+
+            end
+        end
+    end
+
+    du.x[1] .= dx
+
+    # second cumulant equations
+    dy .= 0.0 + 0.0im
+
+    # H'*H
+    @inbounds for m3=0:nx-1
+        @inbounds for n3=-(ny-1):ny-1
+            @inbounds for n=-(ny-1):ny-1
+
+                dy[n+ny,n3+ny,m3+1] = B[n+ny,m3+1]*u.x[2][n+ny,n3+ny,m3+1]
+
+                accumulator::ComplexF64 = 0.0 + 0.0im
+                @inbounds for n1=max(-(ny-1),n-(ny-1)):min(n-1,ny-1)
+
+                    accumulator += temp[n1+ny,n+ny,m3+1]*u.x[2][n1+ny,n3+ny,m3+1]
+
+                end
+                @inbounds for n1=max(-(ny-1),n-(-1)):min(n+ny-1,ny-1)
+
+                    accumulator += temp[n1+ny,n+ny,m3+1]*u.x[2][n1+ny,n3+ny,m3+1]
+
+                end
+
+                dy[n+ny,n3+ny,m3+1] += accumulator
+
+            end
+        end
+    end
+
+    @inbounds for m3=0:nx-1
+        @inbounds for n3=-(ny-1):ny-1
+            @inbounds for n=-(ny-1):ny-1
+
+                du.x[2][n+ny,n3+ny,m3+1] = dy[n+ny,n3+ny,m3+1] + conj(dy[n3+ny,n+ny,m3+1])
+
+            end
+        end
+    end
+
+    nothing
+end
