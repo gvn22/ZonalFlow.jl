@@ -20,3 +20,19 @@ function rankis(cumulant::Array{ComplexF64,4},nx::Int,ny::Int,Λ::Int)
     D = eigvals(twopoint)
     return ((2*ny-1)*(nx-Λ) - length(D[D .< 1e-6]),D)
 end
+
+function rankis(cumulant::Array{ComplexF64,3},nx::Int,ny::Int)
+    temp::Array{ComplexF64,4} = zeros(ComplexF64,2*ny-1,nx-1,2*ny-1,nx-1)
+    for m1=1:nx-1
+        for n1=-(ny-1):ny-1
+            for n2=-(ny-1):ny-1
+
+                 temp[n2+ny,m1,n1+ny,m1] = cumulant[n2+ny,n1+ny,m1]
+
+            end
+        end
+    end
+    twopoint = reshape(temp,(2*ny-1)*(nx-1),(2*ny-1)*(nx-1))
+    D = eigvals(twopoint)
+    return ((2*ny-1)*(nx-1) - length(D[D .< 1e-6]),D)
+end
