@@ -328,6 +328,38 @@ function zonalenergy(lx::Float64,ly::Float64,nx::Int,ny::Int,u::Array{Array{Comp
     P,O
 end
 
+function zonalenergy(lx::Float64,ly::Float64,nx::Int,ny::Int,u::Array{ArrayPartition{Complex{Float64},Tuple{Array{Complex{Float64},1},Array{Complex{Float64},3}}},1})
+
+    P = zeros(Float64,length(u),nx)
+    O = fill!(similar(P),0)
+
+    for i in eachindex(u)
+
+        for n1 = 1:ny-1
+
+            ky = 2.0*Float64(pi)/ly*n1
+
+            P[i,1] += abs(u[i].x[1][n1 + ny])^2/(ky^2)
+            O[i,1] += abs(u[i].x[1][n1 + ny])^2
+
+        end
+
+        for m1 = 1:nx-1
+            for n1 = -(ny-1):ny-1
+
+                kx = 2.0*Float64(pi)/lx*m1
+                ky = 2.0*Float64(pi)/ly*n1
+
+                P[i,m1+1] += abs(u[i].x[2][n1 + ny,n1 + ny,m1])/(kx^2 + ky^2)
+                O[i,m1+1] += abs(u[i].x[2][n1 + ny,n1 + ny,m1])
+
+            end
+        end
+
+    end
+    P,O
+end
+
 function zonalenergy(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,u::Array{ArrayPartition{Complex{Float64},Tuple{Array{Complex{Float64},2},Array{Complex{Float64},4}}},1})
 
     P = zeros(Float64,length(u),nx)
