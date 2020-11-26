@@ -13,7 +13,8 @@ include("tools.jl")
 include("solvers.jl")
 include("analysis.jl")
 
-export nl,gql,gce2,ic_pert_eqm,ic_eqm
-export energy,zonalenergy,inversefourier,meanvorticity,zonalvelocity,fourierenergy
+export nl,gql,gce2,ce2 # solvers
+export ic_pert_eqm,ic_eqm # ics
+export energy,zonalenergy,inversefourier,meanvorticity,zonalvelocity,fourierenergy # analysis
 
 end

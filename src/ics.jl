@@ -18,6 +18,41 @@ function ic_pert_eqm(lx::Float64,ly::Float64,nx::Int,ny::Int,Ξ::Float64;jw::Flo
     @. ic_eqm(lx,ly,nx,ny,Ξ,jw=jw) + ic_rand(lx,ly,nx,ny)*1e-4
 end
 
+function ic_cumulants(nx::Int,ny::Int,u0::Array{ComplexF64,2})
+    u0_c1::Array{ComplexF64,1} = u0[:,1]
+
+    u0_c2::Array{ComplexF64,3} = zeros(ComplexF64,2*ny-1,2*ny-1,nx-1)
+    for m1=1:nx-1
+        for n1=-(ny-1):ny-1
+            for n2=-(ny-1):ny-1
+
+                u0_c2[n2+ny,n1+ny,m1] = u0[n2+ny,m1+1]*conj(u0[n1+ny,m1+1])
+
+            end
+        end
+    end
+    ArrayPartition(u0_c1,u0_c2)
+end
+
+function ic_cumulants(nx::Int,ny::Int,σ::Float64,u0::Array{ComplexF64,2})
+    u0_c1::Array{ComplexF64,1} = u0[:,1]
+
+    twopoint = σ*Matrix{ComplexF64}(I,(2*ny-1)*(nx-1),(2*ny-1)*(nx-1))
+    u0_high = reshape(twopoint,2*ny-1,nx-1,2*ny-1,nx-1)
+
+    u0_c2::Array{ComplexF64,3} = zeros(ComplexF64,2*ny-1,2*ny-1,nx-1)
+    for m1=1:nx-1
+        for n1=-(ny-1):ny-1
+            for n2=-(ny-1):ny-1
+
+                u0_c2[n2+ny,n1+ny,m1] = u0_high[n2+ny,m1,n1+ny,m1]
+
+            end
+        end
+    end
+    ArrayPartition(u0_c1,u0_c2)
+end
+
 function ic_cumulants(nx::Int,ny::Int,Λ::Int,u0::Array{ComplexF64,2})
     u0_low::Array{ComplexF64,2} = u0[:,1:Λ+1]
     for n = 1:ny-1

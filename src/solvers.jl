@@ -64,3 +64,25 @@ function gce2(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,Ξ::Float64,β::Fl
         return solve(prob,RK4(),dt=dt,adaptive=false,progress=true,progress_steps=10000,save_start=true,save_everystep=false,saveat=savefreq)
     end
 end
+
+function ce2(lx::Float64,ly::Float64,nx::Int,ny::Int,Ξ::Float64,β::Float64,τ::Float64=0.0,
+    νn::Float64=0.0;jw::Float64=0.1,icnl::Bool=true,ic::Array{ComplexF64,2},dt::Float64=0.01,t_end::Float64=1000.0,savefreq::Int=20,saveinfo::Bool=false,saveinfofreq::Int=50,poscheck::Bool=false,poscheckfreq::Int=20,kwargs...)
+    A = acoeffs(ly,ny,Ξ,τ)
+    B = bcoeffs(lx,ly,nx,ny,β,τ,νn)
+    Cp,Cm = ccoeffs(lx,ly,nx,ny,0)
+    @info "Solving CE2 equations on $(nx-1)x$(ny-1) grid"
+    @info "Parameters: Ξ = $Ξ, Δθ = $jw, β = $β, τ = $τ"
+    tspan = (0.0,t_end)
+    u0 = icnl == true ? ic_cumulants(nx,ny,ic) : ic_cumulants(nx,ny,1e-6,ic)
+    p = [nx,ny,A,B,Cp,Cm,fill!(similar(u0.x[1]),0),fill!(similar(u0.x[2]),0),fill!(similar(u0.x[2]),0)]
+    prob = ODEProblem(ce2_eqs!,u0,tspan,p)
+    if saveinfo
+        saved_values = SavedValues(Float64, Tuple{Int64,Array{Float64,1},Array{Int64,1},Array{Float64,2}})
+        save_func(u,t,integrator) = rankis(integrator.u.x[2],nx,ny)
+        saveat_array = [i for i=0.0:saveinfofreq:t_end]
+        cbs = SavingCallback(save_func,saved_values,save_start=true,save_everystep=false,saveat=saveat_array)
+        sol = solve(prob,RK4(),dt=dt,callback=cbs,adaptive=false,progress=true,progress_steps=10000,save_start=true,save_everystep=false,saveat=savefreq)
+        return sol,saved_values
+    end
+    solve(prob,RK4(),dt=dt,adaptive=false,progress=true,progress_steps=10000,save_start=true,save_everystep=false,saveat=savefreq)
+end
