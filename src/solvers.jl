@@ -77,7 +77,7 @@ function ce2(lx::Float64,ly::Float64,nx::Int,ny::Int,Ξ::Float64,β::Float64,τ:
     p = [nx,ny,A,B,Cp,Cm,fill!(similar(u0.x[1]),0),fill!(similar(u0.x[2]),0),fill!(similar(u0.x[2]),0)]
     prob = ODEProblem(ce2_eqs!,u0,tspan,p)
     if saveinfo
-        saved_values = SavedValues(Float64, Tuple{Float64,Array{Float64,1}})
+        saved_values = SavedValues(Float64, Tuple{Int64,Array{Float64,1},Array{Int64,1},Array{Float64,2}})
         save_func(u,t,integrator) = rankis(integrator.u.x[2],nx,ny)
         saveat_array = [i for i=0.0:saveinfofreq:t_end]
         cbs = SavingCallback(save_func,saved_values,save_start=true,save_everystep=false,saveat=saveat_array)
