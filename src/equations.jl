@@ -61,11 +61,17 @@ end
 
 function gql_eqs!(du,u,p,t)
 
-    nx::Int,ny::Int,Λ::Int,A::Array{ComplexF64,1},B::Array{ComplexF64,2},Cp::Array{Float64,4},Cm::Array{Float64,4} = p
+    nx::Int,ny::Int,Λ::Int,A::Array{ComplexF64,1},B::Array{ComplexF64,2},Cp::Array{Float64,4},Cm::Array{Float64,4},F::Tuple{Float64,Float64,Array{Complex{Float64},2},Array{Complex{Float64},2}} = p
 
     du .= 0.0 + 0.0im
 
-    # constant terms
+    tprev,trenew,η,η̂ = F
+    Δt = t - tprev
+    onebytr = trenew > 0.0 ? 1.0/trenew : 0.0
+    R = (1.0 - Δt*onebytr)/(1.0 + Δt*onebytr)
+    η .= R*η .+ sqrt((1.0 - R*R)*onebytr)*η̂
+
+    # zonal constant terms
     @inbounds for n=1:ny-1
 
         du[n+ny,1] += A[n+ny]
@@ -77,6 +83,7 @@ function gql_eqs!(du,u,p,t)
         nmin = m == 0 ? 1 : -(ny-1)
         @inbounds for n=nmin:ny-1
 
+            du[n+ny,m+1] += η[n+ny,m+1]
             du[n+ny,m+1] += B[n+ny,m+1]*u[n+ny,m+1]
 
         end

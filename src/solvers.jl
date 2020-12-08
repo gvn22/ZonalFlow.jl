@@ -13,17 +13,52 @@ function nl(lx::Float64,ly::Float64,nx::Int,ny::Int,Ξ::Float64,β::Float64,τ::
 end
 
 ## GQL
-function gql(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,Ξ::Float64,β::Float64,τ::Float64=0.0,
-    νn::Float64=0.0;jw::Float64=0.1,ic::Array{ComplexF64,2},dt::Float64=0.01,t_end::Float64=1000.0,savefreq::Int=20,kwargs...)
+function gql(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,Ξ::Float64,β::Float64,τ::Float64=0.0,νn::Float64=0.0;
+    sfparams,jw::Float64=0.1,ic::Array{ComplexF64,2},dt::Float64=0.01,t_end::Float64=1000.0,savefreq::Int=20,kwargs...)
+
     A = acoeffs(ly,ny,Ξ,τ)
     B = bcoeffs(lx,ly,nx,ny,β,τ,νn)
+    # Cp,Cm = ccoeffs(nx,ny)
     Cp,Cm = ccoeffs(lx,ly,nx,ny,Λ)
-    p = [nx,ny,Λ,A,B,Cp,Cm]
+
+    tprev = 0.0
+    trenew,mmin,mmax,amp = sfparams
+    η = fill!(similar(ic),0.0 + 0.0im)
+    η̂ = fill!(similar(ic),0.0 + 0.0im)
+    fcoeffs!(nx,ny,mmin,mmax,amp,η̂)
+    # η̂ = fcoeffs(nx,ny,mmin,mmax,amp)
+    F = (tprev,trenew,η,η̂)
+
+    p = [nx,ny,Λ,A,B,Cp,Cm,F]
     tspan = (0.0,t_end)
     prob = ODEProblem(gql_eqs!,ic,tspan,p)
     @info "Solving GQL equations on $(nx-1)x$(ny-1) grid with Λ = $Λ"
     @info "Parameters: Ξ = $Ξ, Δθ = $jw, β = $β, τ = $τ"
-    solve(prob,RK4(),dt=dt,adaptive=false,progress=true,progress_steps=10000,save_start=true,save_everystep=false,dense=false,saveat=savefreq)
+
+    if trenew > 0.0
+
+        integrator = init(prob,RK4(),dt=dt,adaptive=false,progress=true,progress_steps=10000,save_start=true,save_everystep=false,dense=false,saveat=savefreq)
+        for i in integrator
+
+            step!(integrator)
+
+            tprev,trenew,η,η̂ = integrator.p[8]
+            Δt = integrator.t - tprev
+            onebytr = trenew > 0.0 ? 1.0/trenew : 0.0
+            R = (1.0 - Δt*onebytr)/(1.0 + Δt*onebytr)
+            η .= R*η .+ sqrt((1.0 - R*R)*onebytr)*η̂
+
+            tprev = integrator.t
+            # η̂ = fcoeffs(nx,ny,mmin,mmax,amp)
+            fcoeffs!(nx,ny,mmin,mmax,amp,η̂)
+            F = (tprev,trenew,η,η̂)
+            integrator.p = [nx,ny,Λ,A,B,Cp,Cm,F]
+
+        end
+        return integrator.sol
+    else
+        solve(prob,RK4(),dt=dt,adaptive=false,progress=true,progress_steps=10000,save_start=true,save_everystep=false,dense=false,saveat=savefreq)
+    end
 end
 
 ## GCE2

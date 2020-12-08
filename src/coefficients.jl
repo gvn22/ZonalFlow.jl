@@ -1,3 +1,24 @@
+function fcoeffs(nx::Int,ny::Int,mmin::Int,mmax::Int,var::Float64)
+    η̂ = zeros(ComplexF64,2*ny-1,nx)
+    for m = mmin:mmax
+        nmin = m == 0 ? 1 : -(ny-1)
+        for n = nmin:ny-1
+            η̂[n+ny,m+1] = var*randn(ComplexF64)
+        end
+    end
+    η̂
+end
+
+function fcoeffs!(nx::Int,ny::Int,mmin::Int,mmax::Int,var::Float64,η̂::Array{ComplexF64,2})
+    η̂ .= 0.0 + 0.0im
+    for m = mmin:mmax
+        nmin = m == 0 ? 1 : -(ny-1)
+        for n = nmin:ny-1
+            η̂[n+ny,m+1] = var*randn(ComplexF64)
+        end
+    end
+end
+
 function acoeffs(ly::Float64,ny::Int,Ξ::Float64,τ::Float64=0.0;jw::Float64=0.05)
     ζjet = zeros(Float64,2*ny-1)
     Δθ::Float64 = jw
@@ -21,6 +42,15 @@ function bcoeffs(lx::Float64,ly::Float64,nx::Int,ny::Int,β::Float64,τ::Float64
         end
     end
     B
+end
+
+function ccoeffs(nx::Int,ny::Int)
+
+    # stub
+    Cp = zeros(Float64,2*ny-1,nx,2*ny-1,nx)
+    Cm = zeros(Float64,2*ny-1,nx,2*ny-1,nx)
+    Cp,Cm
+
 end
 
 function ccoeffs(lx::Float64,ly::Float64,nx::Int,ny::Int)
