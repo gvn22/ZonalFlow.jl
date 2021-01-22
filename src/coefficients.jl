@@ -19,6 +19,10 @@ function fcoeffs!(nx::Int,ny::Int,mmin::Int,mmax::Int,var::Float64,η̂::Array{C
     end
 end
 
+function acoeffs(ly::Float64,ny::Int,g::Array{Float64,1})
+    fftshift(fft(g))*(2.0/length(g)) # 2/L normalization for FFT
+end
+
 function acoeffs(ly::Float64,ny::Int,Ξ::Float64,τ::Float64=0.0;jw::Float64=0.05)
     ζjet = zeros(Float64,2*ny-1)
     Δθ::Float64 = jw
@@ -39,6 +43,22 @@ function bcoeffs(lx::Float64,ly::Float64,nx::Int,ny::Int,β::Float64,τ::Float64
             kx::Float64 = 2.0*Float64(pi)*Float64(m)/lx
             ky::Float64 = 2.0*Float64(pi)*Float64(n)/ly
             B[n+ny,m+1] = -γ + im*β*kx/(kx^2 + ky^2) - νn*((kx^2 + ky^2)/(kxmax^2 + kymax^2))^(2*α)
+        end
+    end
+    B
+end
+
+function bcoeffs(lx::Float64,ly::Float64,nx::Int,ny::Int,β::Float64,κ::Float64,ν::Float64,ν3::Float64)
+    B = zeros(ComplexF64,2*ny-1,nx)
+    α::Int = 2
+    kxmax::Float64 = 2.0*Float64(pi)/lx*Float64(nx-1)
+    kymax::Float64 = 2.0*Float64(pi)/ly*Float64(ny-1)
+    for m = 0:nx-1
+        nmin = m == 0 ? 1 : -(ny-1)
+        for n=nmin:ny-1
+            kx::Float64 = 2.0*Float64(pi)*Float64(m)/lx
+            ky::Float64 = 2.0*Float64(pi)*Float64(n)/ly
+            B[n+ny,m+1] = im*β*kx/(kx^2 + ky^2) - κ - ν*(kx^2 + ky^2) - ν3*((kx^2 + ky^2)/(kxmax^2 + kymax^2))^(2*α)
         end
     end
     B

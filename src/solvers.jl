@@ -1,3 +1,26 @@
+# NL -> Kolmogorov
+function nl(lx::Float64,ly::Float64,nx::Int,ny::Int,                    # domain
+            β::Float64,κ::Float64,ν::Float64,ν3::Float64,               # linear parameters
+            g::Array{Float64,1};                                        # forcing parameters
+            # Ξ::Float64,Δθ::Float64,τ::Float64;                        # forcing parameters
+            dt::Float64=0.01,t_end::Float64=1000.0,savefreq::Int=20)    # integration parameters
+
+            A = acoeffs(ly,ny,g)
+            B = bcoeffs(lx,ly,nx,ny,β,κ,ν,ν3)
+            Cp,Cm = ccoeffs(lx,ly,nx,ny)
+
+            p = [nx,ny,A,B,Cp,Cm]
+            tspan = (0.0,t_end)
+            u0 = ic_rand(lx,ly,nx,ny)*1e-3
+            prob = ODEProblem(nl_eqs!,u0,tspan,p)
+
+            @info "Solving NL for Kolmogorov flow"
+            @info "Linear terms: β = $β, κ = $κ, ν = $ν, ν3 = $ν3"
+
+            solve(prob,RK4(),dt=dt,adaptive=false,progress=true,progress_steps=10000,
+            save_start=true,saveat=savefreq,save_everystep=savefreq==1 ? true : false)
+end
+
 ## NL
 function nl(lx::Float64,ly::Float64,nx::Int,ny::Int,Ξ::Float64,β::Float64,τ::Float64=0.0,
     νn::Float64=0.0;jw::Float64=0.1,ic::Array{ComplexF64,2},dt::Float64=0.01,t_end::Float64=1000.0,savefreq::Int=20,kwargs...)
