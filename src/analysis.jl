@@ -45,7 +45,7 @@ function inversefourier(nx::Int,ny::Int,Λ::Int,u::Array{ArrayPartition{Complex{
 end
 
 ## Velocity
-function velocity(lx::Float64,ly::Float64,nx::Int,ny::Int,u::Array{Array{ComplexF64,2},1})
+function zonalvelocity(lx::Float64,ly::Float64,nx::Int,ny::Int,u::Array{Array{ComplexF64,2},1})
     uk = zeros(ComplexF64,2*ny-1,2*nx-1,length(u))
     ux = zeros(Float64,2*ny-1,2*nx-1,length(u))
     for i in eachindex(u)
@@ -58,7 +58,7 @@ function velocity(lx::Float64,ly::Float64,nx::Int,ny::Int,u::Array{Array{Complex
                 uk[-n1 + ny,-m1 + nx,i] = conj(uk[n1 + ny,m1 + nx,i])
             end
         end
-        ux[:,:,i] = real(ifft(ifftshift(uk[:,:,i])))
+        ux[:,:,i] = real(ifft(ifftshift(uk[:,:,i])))*(2*ny-1)*(2*nx-1)/4.0
     end
     ux
 end
@@ -76,7 +76,7 @@ function zonalvelocity(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,u::Array{
                 uk[-n1 + ny,-m1 + nx,i] = conj(uk[n1 + ny,m1 + nx,i])
             end
         end
-        ux[:,:,i] = real(ifft(ifftshift(uk[:,:,i])))
+        ux[:,:,i] = real(ifft(ifftshift(uk[:,:,i])))*(2*ny-1)*(2*nx-1)/4.0
     end
     ux
 end
@@ -94,7 +94,7 @@ function zonalvelocity(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,u::Array{
                 uk[-n1 + ny,-m1 + nx,i] = conj(uk[n1 + ny,m1 + nx,i])
             end
         end
-        ux[:,:,i] = real(ifft(ifftshift(uk[:,:,i])))
+        ux[:,:,i] = real(ifft(ifftshift(uk[:,:,i])))*(2*ny-1)*(2*nx-1)/4.0
     end
     ux
 end
