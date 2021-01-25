@@ -11,7 +11,7 @@ function nl(lx::Float64,ly::Float64,nx::Int,ny::Int,                    # domain
 
             p = [nx,ny,A,B,Cp,Cm]
             tspan = (0.0,t_end)
-            u0 = ic_rand(lx,ly,nx,ny)*1e-3
+            u0 = ic_rand(lx,ly,nx,ny)*1e-6
             prob = ODEProblem(nl_eqs!,u0,tspan,p)
 
             @info "Solving NL for Kolmogorov flow"

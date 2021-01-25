@@ -9,7 +9,7 @@ function inversefourier(nx::Int,ny::Int,u::Array{ComplexF64,2})
             umn[-n1 + ny,-m1+nx] = conj(u[n1+ny,m1+1])
         end
     end
-    real(ifft(ifftshift(umn)))
+    real(ifft(ifftshift(umn)))*(2*ny-1)*(2*nx-1)/4.0
 end
 
 function inversefourier(nx::Int,ny::Int,u::Array{Array{ComplexF64,2},1})
@@ -23,7 +23,7 @@ function inversefourier(nx::Int,ny::Int,u::Array{Array{ComplexF64,2},1})
                 umn[-n1 + ny,-m1+nx,i] = conj(u[i][n1+ny,m1+1])
             end
         end
-        uxy[:,:,i] = real(ifft(ifftshift(umn[:,:,i])))
+        uxy[:,:,i] = real(ifft(ifftshift(umn[:,:,i])))*(2*ny-1)*(2*nx-1)/4.0 # scaling from IFFT
     end
     uxy
 end
@@ -39,7 +39,7 @@ function inversefourier(nx::Int,ny::Int,Λ::Int,u::Array{ArrayPartition{Complex{
                 umn[-n1 + ny,-m1+nx,i] = conj(u[i].x[1][n1+ny,m1+1])
             end
         end
-        uxy[:,:,i] = real(ifft(ifftshift(umn[:,:,i])))
+        uxy[:,:,i] = real(ifft(ifftshift(umn[:,:,i])))*(2*ny-1)*(2*nx-1)/4.0
     end
     uxy
 end
@@ -413,7 +413,7 @@ function meanvorticity(lx::Float64,ly::Float64,nx::Int,ny::Int,u::Array{Array{Co
         end
 
         ζf[i,ny] = 0.0 + 0.0im
-        ζy[i,:] .= real(ifft(ifftshift(ζf[i,:])))
+        ζy[i,:] .= real(ifft(ifftshift(ζf[i,:])))*(2*ny-1)/2.0
 
     end
 
@@ -437,7 +437,7 @@ function meanvorticity(lx::Float64,ly::Float64,nx::Int,ny::Int,u::Array{ArrayPar
         end
 
         ζf[i,ny] = 0.0 + 0.0im
-        ζy[i,:] .= real(ifft(ifftshift(ζf[i,:])))
+        ζy[i,:] .= real(ifft(ifftshift(ζf[i,:])))*(2*ny-1)/2.0
 
     end
 
@@ -475,7 +475,7 @@ function meanvorticity(lx::Float64,ly::Float64,nx::Int,ny::Int,t::Array{Float64,
         end
 
         ζf[i,ny] = 0.0 + 0.0im
-        ζy[i,:] .= real(ifft(ifftshift(ζf[i,:])))
+        ζy[i,:] .= real(ifft(ifftshift(ζf[i,:])))*(2*ny-1)/2.0
 
     end
 
@@ -511,7 +511,7 @@ function meanvorticity(lx::Float64,ly::Float64,nx::Int,ny::Int,t::Array{Float64,
         end
 
         ζf[i,ny] = 0.0 + 0.0im
-        ζy[i,:] .= real(ifft(ifftshift(ζf[i,:])))
+        ζy[i,:] .= real(ifft(ifftshift(ζf[i,:])))*(2*ny-1)/2.0
 
     end
 
