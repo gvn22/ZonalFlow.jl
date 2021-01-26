@@ -54,7 +54,7 @@ function zonalvelocity(lx::Float64,ly::Float64,nx::Int,ny::Int,u::Array{Array{Co
             for n1 = n1min:ny-1
                 kx = 2.0*Float64(pi)/lx*m1
                 ky = 2.0*Float64(pi)/ly*n1
-                uk[n1 + ny,m1 + nx,i] = -ky*u[i][n1 + ny,m1 + 1]/(kx^2+ky^2)
+                uk[n1 + ny,m1 + nx,i] = -1.0im*ky*u[i][n1 + ny,m1 + 1]/(kx^2+ky^2)
                 uk[-n1 + ny,-m1 + nx,i] = conj(uk[n1 + ny,m1 + nx,i])
             end
         end
@@ -72,7 +72,7 @@ function zonalvelocity(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,u::Array{
             for n1 = n1min:ny-1
                 kx = 2.0*Float64(pi)/lx*m1
                 ky = 2.0*Float64(pi)/ly*n1
-                uk[n1 + ny,m1 + nx,i] = -ky*u[i][n1 + ny,m1 + 1]/(kx^2+ky^2)
+                uk[n1 + ny,m1 + nx,i] = -1.0im*ky*u[i][n1 + ny,m1 + 1]/(kx^2+ky^2)
                 uk[-n1 + ny,-m1 + nx,i] = conj(uk[n1 + ny,m1 + nx,i])
             end
         end
@@ -90,7 +90,7 @@ function zonalvelocity(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,u::Array{
             for n1 = n1min:ny-1
                 kx = 2.0*Float64(pi)/lx*m1
                 ky = 2.0*Float64(pi)/ly*n1
-                uk[n1 + ny,m1 + nx,i] = -ky*u[i].x[1][n1 + ny,m1 + 1]/(kx^2+ky^2)
+                uk[n1 + ny,m1 + nx,i] = -1.0im*ky*u[i].x[1][n1 + ny,m1 + 1]/(kx^2+ky^2)
                 uk[-n1 + ny,-m1 + nx,i] = conj(uk[n1 + ny,m1 + nx,i])
             end
         end
