@@ -6,7 +6,7 @@ function nl_eqs!(du,u,p,t)
     # @views du[ny:end,1] = A[ny:end]
 
     # constant terms
-    @inbounds for n=1:1:ny-1
+    @inbounds for n=1:ny-1
 
         du[n+ny,1] += A[n+ny]
 
