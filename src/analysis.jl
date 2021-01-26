@@ -99,6 +99,20 @@ function zonalvelocity(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,u::Array{
     ux
 end
 
+function meanzonalvelocity(lx::Float64,ly::Float64,nx::Int,ny::Int,u::Array{Array{ComplexF64,2},1})
+    uk = zeros(ComplexF64,length(u),2*ny-1)
+    ux = zeros(Float64,length(u),2*ny-1)
+    for i in eachindex(u)
+        for n1 = 1:ny-1
+            ky = 2.0*Float64(pi)/ly*n1
+            uk[i,n1 + ny] = -1.0im*ky*u[i][n1 + ny,1]/ky^2
+            uk[i,-n1 + ny] = conj(uk[i,n1 + ny])
+        end
+        ux[i,:] = real(ifft(ifftshift(uk[i,:])))*(2*ny-1)/2.0
+    end
+    ux
+end
+
 ## Energy for NL/GQL
 function e_lohi(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,u::Array{Array{ComplexF64,2},1})
     e_lo = zeros(Float64,length(u))
