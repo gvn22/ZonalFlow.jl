@@ -1,7 +1,7 @@
 # NL -> Kolmogorov
 function nl(lx::Float64,ly::Float64,nx::Int,ny::Int,                    # domain
-            β::Float64,κ::Float64,ν::Float64,ν3::Float64,               # linear parameters
-            g::Array{Float64,1};                                        # forcing parameters
+            β::Float64,κ::Float64,ν::Float64,ν3::Float64,               # linear coefficients
+            g::Array{ComplexF64,1};                                     # forcing parameters
             # Ξ::Float64,Δθ::Float64,τ::Float64;                        # forcing parameters
             dt::Float64=0.01,t_end::Float64=1000.0,savefreq::Int=20)    # integration parameters
 

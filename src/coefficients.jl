@@ -23,6 +23,10 @@ function acoeffs(ly::Float64,ny::Int,g::Array{Float64,1})
     fftshift(fft(g))*(2.0/length(g)) # 2/L normalization for FFT
 end
 
+function acoeffs(ly::Float64,ny::Int,g::Array{ComplexF64,1})
+    g # This is the FFT
+end
+
 function acoeffs(ly::Float64,ny::Int,Ξ::Float64,τ::Float64=0.0;jw::Float64=0.05)
     ζjet = zeros(Float64,2*ny-1)
     Δθ::Float64 = jw
