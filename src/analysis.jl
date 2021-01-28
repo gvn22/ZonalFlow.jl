@@ -99,15 +99,31 @@ function zonalvelocity(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,u::Array{
     ux
 end
 
-function meanzonalvelocity(lx::Float64,ly::Float64,nx::Int,ny::Int,u::Array{Array{ComplexF64,2},1})
+function meanzonalvelocity(lx::Float64,ly::Float64,nx::Int,ny::Int,t::Array{Float64,1},u::Array{Array{ComplexF64,2},1};t_begin::Float64=100.0)
     uk = zeros(ComplexF64,length(u),2*ny-1)
     ux = zeros(Float64,length(u),2*ny-1)
+
+    i_begin = findall(x->x>t_begin,t)[1]
+
     for i in eachindex(u)
+
         for n1 = 1:ny-1
             ky = 2.0*Float64(pi)/ly*n1
-            uk[i,n1 + ny] = -1.0im*ky*u[i][n1 + ny,1]/ky^2
+            if i > i_begin
+                T = 0.0
+                temp = 0.0
+                for j = i_begin:i
+                    dt = t[j] - t[j-1]
+                    temp += -1.0im*ky*u[i][n1 + ny,1]/ky^(2)*dt
+                    T += dt
+                end
+                uk[i,n1 + ny] = temp/T
+            else
+                uk[i,n1 + ny] = -1.0im*ky*u[i][n1 + ny,1]/ky^2
+            end
             uk[i,-n1 + ny] = conj(uk[i,n1 + ny])
         end
+
         ux[i,:] = real(ifft(ifftshift(uk[i,:])))*(2*ny-1)/2.0
     end
     ux
