@@ -27,6 +27,17 @@ function acoeffs(ly::Float64,ny::Int,g::Array{ComplexF64,1})
     g # This is the FFT
 end
 
+function acoeffs(ly::Float64,ny::Int,Ξ::Float64,Δθ::Float64,τ::Float64)
+    # ζjet = zeros(Float64,2*ny-1)
+    # κ::Float64 = τ == 0.0 ? 0.0 : 1.0/τ
+    # ζjet = [-κ*Ξ*tanh(-y/Δθ) for y in LinRange(-ly/2.0,ly/2.0,2*ny-1)]
+    # cleaned up a lot of junk!
+    # assert(τ≠0)
+    Y = LinRange(0,ly,2*ny-1)
+    ζ₀ = -Ξ/τ*tanh.((Y.-ly/2.0)/Δθ)
+    fftshift(fft(ζ₀))*2.0/(2*ny-1) # scaling bug fix
+end
+
 function acoeffs(ly::Float64,ny::Int,Ξ::Float64,τ::Float64=0.0;jw::Float64=0.05)
     # this is getting quite complicated, but just fix the bug for now:
     # ζjet = zeros(Float64,2*ny-1)
