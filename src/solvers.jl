@@ -4,12 +4,20 @@ function nl(lx::Float64,ly::Float64,nx::Int,ny::Int,                    # domain
             Ξ::Float64,Δθ::Float64,τ::Float64;                          # forcing parameters
             dt::Float64=0.01,t_end::Float64=1000.0,savefreq::Int=20)    # integration parameters
 
-            Ω = 2.0*Float64(π)
-            τ̂ = Ω/τ
-            β̂ = 2.0*Ω*cos(θ*Float64(π)/180.0)
+            # nb: theta is \theta
+            Ω = 2.0*π
+            β̂ = 2.0*cos(deg2rad(θ))*Ω
             κ̂ = κ*Ω
+            τ̂ = τ/Ω
+            Ξ̂ = Ξ*Ω
 
-            A = acoeffs(ly,ny,τ̂)
+            @info   """ Solving NL equations for point jet
+                    Domain extents: lx = $lx, ly = $ly, nx = $nx, ny = $ny
+                    Linear coefficients: θ = $θ, κ = $κ, ν = $ν, ν3 = $ν3
+                    Forcing parameters: Ξ = $Ξ, Δθ = $Δθ, τ = $τ
+                    """
+
+            A = acoeffs(ly,ny,Ξ̂,Δθ,τ̂)
             B = bcoeffs(lx,ly,nx,ny,β̂,κ̂,ν,ν3)
             Cp,Cm = ccoeffs(lx,ly,nx,ny)
 
@@ -18,20 +26,24 @@ function nl(lx::Float64,ly::Float64,nx::Int,ny::Int,                    # domain
             u0 = ic_rand(lx,ly,nx,ny)*1e-6
             prob = ODEProblem(nl_eqs!,u0,tspan,p)
 
-            @info "Solving NL for point jet"
-            @info "Linear coefficients: β = $β, κ = $κ, ν = $ν, ν3 = $ν3"
-            @info "Forcing parameters: Ξ = $Ξ, ΔΘ = $ΔΘ, τ = $τ"
-
             solve(prob,RK4(),dt=dt,adaptive=false,progress=true,progress_steps=10000,
             save_start=true,saveat=savefreq,save_everystep=savefreq==1 ? true : false)
 end
-
 
 # NL -> Kolmogorov
 function nl(lx::Float64,ly::Float64,nx::Int,ny::Int,                    # domain
             β::Float64,κ::Float64,ν::Float64,ν3::Float64,               # linear coefficients
             g::Array{ComplexF64,1};                                     # forcing parameters
             dt::Float64=0.01,t_end::Float64=1000.0,savefreq::Int=20)    # integration parameters
+
+            # note change β to θ and scale variables first!
+            # right now mimics Tobias and Marston 2017 PoF
+
+            @info   """ Solving NL equations for Kolmogorov flow
+                    Domain extents: lx = $lx, ly = $ly, nx = $nx, ny = $ny
+                    Linear coefficients: β = $β, κ = $κ, ν = $ν, ν3 = $ν3
+                    Forcing parameters: Ξ = $Ξ, Δθ = $Δθ, τ = $τ
+                    """
 
             A = acoeffs(ly,ny,g)
             B = bcoeffs(lx,ly,nx,ny,β,κ,ν,ν3)
@@ -41,9 +53,6 @@ function nl(lx::Float64,ly::Float64,nx::Int,ny::Int,                    # domain
             tspan = (0.0,t_end)
             u0 = ic_rand(lx,ly,nx,ny)*1e-6
             prob = ODEProblem(nl_eqs!,u0,tspan,p)
-
-            @info "Solving NL for Kolmogorov flow"
-            @info "Linear terms: β = $β, κ = $κ, ν = $ν, ν3 = $ν3"
 
             solve(prob,RK4(),dt=dt,adaptive=false,progress=true,progress_steps=10000,
             save_start=true,saveat=savefreq,save_everystep=savefreq==1 ? true : false)
