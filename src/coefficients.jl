@@ -74,7 +74,7 @@ function bcoeffs(lx::Float64,ly::Float64,nx::Int,ny::Int,β::Float64,κ::Float64
         for n=nmin:ny-1
             kx::Float64 = 2.0*Float64(pi)*Float64(m)/lx
             ky::Float64 = 2.0*Float64(pi)*Float64(n)/ly
-            B[n+ny,m+1] = im*β*kx/(kx^2 + ky^2) - κ - ν*(kx^2 + ky^2) - ν3*((kx^2 + ky^2)/(kxmax^2 + kymax^2))^(2*α)
+            B[n+ny,m+1] = 1.0im*β*kx/(kx^2 + ky^2) - κ - ν*(kx^2 + ky^2) - ν3*((kx^2 + ky^2)/(kxmax^2 + kymax^2))^(2*α)
         end
     end
     B
