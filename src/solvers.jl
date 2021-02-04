@@ -7,8 +7,8 @@ function nl(lx::Float64,ly::Float64,nx::Int,ny::Int,                    # domain
             # nb: theta is \theta
             Ω = 2.0*π
             β̂ = 2.0*cos(deg2rad(θ))*Ω
-            κ̂ = κ*Ω
-            τ̂ = τ/Ω
+            κ̂ = κ
+            τ̂ = τ
             Ξ̂ = Ξ*Ω
 
             @info   """ Solving NL equations for point jet
@@ -59,6 +59,64 @@ function nl(lx::Float64,ly::Float64,nx::Int,ny::Int,                    # domain
 end
 
 # NL -> stochastic forcing
+
+# GQL -> point jet
+function gql(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,            # domain
+            θ::Float64,κ::Float64,ν::Float64,ν3::Float64,               # linear coefficients
+            Ξ::Float64,Δθ::Float64,τ::Float64;                          # forcing parameters
+            dt::Float64=0.01,t_end::Float64=1000.0,savefreq::Int=20)    # integration parameters
+
+            # nb: theta is \theta
+            Ω = 2.0*π
+            β̂ = 2.0*cos(deg2rad(θ))*Ω
+            κ̂ = κ
+            τ̂ = τ
+            Ξ̂ = Ξ*Ω
+
+            @info   """ Solving GQL($Λ) equations for point jet
+                    Domain extents: lx = $lx, ly = $ly, nx = $nx, ny = $ny
+                    Linear coefficients: θ = $θ, κ = $κ, ν = $ν, ν3 = $ν3
+                    Forcing parameters: Ξ = $Ξ, Δθ = $Δθ, τ = $τ
+                    """
+
+            A = acoeffs(ly,ny,Ξ̂,Δθ,τ̂)
+            B = bcoeffs(lx,ly,nx,ny,β̂,κ̂,ν,ν3)
+            Cp,Cm = ccoeffs(lx,ly,nx,ny,Λ)
+
+            p = [nx,ny,Λ,A,B,Cp,Cm]
+            tspan = (0.0,t_end)
+            u0 = ic_rand(lx,ly,nx,ny)*1e-6
+            prob = ODEProblem(gql_eqs!,u0,tspan,p)
+
+            solve(prob,RK4(),dt=dt,adaptive=false,progress=true,progress_steps=10000,
+            save_start=true,saveat=savefreq,save_everystep=savefreq==1 ? true : false)
+end
+
+# GQL -> Kolmogorov
+function gql(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,            # domain
+            β::Float64,κ::Float64,ν::Float64,ν3::Float64,               # linear coefficients
+            g::Array{ComplexF64,1};                                     # forcing parameters
+            dt::Float64=0.01,t_end::Float64=1000.0,savefreq::Int=20)    # integration parameters
+
+            @info   """ Solving GQL($Λ) equations for Kolmogorov flow
+                    Domain extents: lx = $lx, ly = $ly, nx = $nx, ny = $ny
+                    Linear coefficients: β = $β, κ = $κ, ν = $ν, ν3 = $ν3
+                    Forcing parameters: Ξ = $Ξ, Δθ = $Δθ, τ = $τ
+                    """
+
+            A = acoeffs(ly,ny,g)
+            B = bcoeffs(lx,ly,nx,ny,β,κ,ν,ν3)
+            Cp,Cm = ccoeffs(lx,ly,nx,ny,Λ)
+
+            p = [nx,ny,Λ,A,B,Cp,Cm]
+            tspan = (0.0,t_end)
+            u0 = ic_rand(lx,ly,nx,ny)*1e-6
+            prob = ODEProblem(gql_eqs!,u0,tspan,p)
+
+            solve(prob,RK4(),dt=dt,adaptive=false,progress=true,progress_steps=10000,
+            save_start=true,saveat=savefreq,save_everystep=savefreq==1 ? true : false)
+end
+
 
 ## NL
 function nl(lx::Float64,ly::Float64,nx::Int,ny::Int,Ξ::Float64,β::Float64,τ::Float64=0.0,
