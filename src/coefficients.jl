@@ -19,6 +19,10 @@ function fcoeffs!(nx::Int,ny::Int,mmin::Int,mmax::Int,var::Float64,η̂::Array{C
     end
 end
 
+function acoeffs(ly::Float64,ny::Int)
+    zeros(ComplexF64,2*ny-1)
+end
+
 function acoeffs(ly::Float64,ny::Int,g::Array{Float64,1})
     fftshift(fft(g))*(2.0/length(g)) # 2/L normalization for FFT
 end
