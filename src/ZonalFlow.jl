@@ -1,10 +1,13 @@
 module ZonalFlow
 
 using OrdinaryDiffEq
+using StochasticDiffEq
+using DiffEqNoiseProcess
 using DiffEqCallbacks
 using RecursiveArrayTools
 using FFTW
 using LinearAlgebra
+using Random
 
 include("coefficients.jl")
 include("equations.jl")

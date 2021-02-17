@@ -59,7 +59,64 @@ function nl(lx::Float64,ly::Float64,nx::Int,ny::Int,                    # domain
 end
 
 # NL -> stochastic forcing
+function nl(lx::Float64,ly::Float64,nx::Int,ny::Int,                    # domain
+            θ::Float64,κ::Float64,ν::Float64,ν3::Float64,               # linear coefficients
+            m₁::Int,m₂::Int,τ::Float64;                                 # forcing parameters
+            dt::Float64=0.01,t_end::Float64=1000.0,savefreq::Int=20)    # integration parameters
 
+            Ω = 2.0*π
+            β̂ = 2.0*cos(deg2rad(θ))*Ω
+            κ̂ = κ
+
+            @info   """ Solving NL equations for stochastic forcing
+                    Domain extents: lx = $lx, ly = $ly, nx = $nx, ny = $ny
+                    Linear coefficients: θ = $θ, κ = $κ, ν = $ν, ν3 = $ν3
+                    Forcing parameters: m₁ = $m₁, m₂ = $m₂, τ = $τ
+                    """
+
+            Δt = dt
+            R = (1-Δt/τ)/(1+Δt/τ)
+            tη = 0.0:Δt:t_end
+            sf = 0.001
+
+            η = []
+            rng = MersenneTwister(1234);
+            for i in 1:length(tη)
+                η̂ = zeros(ComplexF64,2*ny-1,nx)
+                for m=m₁:m₂
+                    nmin = m == 0 ? 1 : -ny+1
+                    for n=nmin:ny-1
+                    # for n=m₁:m₂
+                        η̂[n+ny,m+1] = sf^0.5*(randn(rng,Float64) + im*randn(rng,Float64))
+                    end
+                end
+                push!(η,η̂)
+            end
+            for i in 2:length(tη)
+                η[i] .= η[i-1] .+ ((1-R^2)/τ)^0.5*η[i]
+            end
+            W = NoiseGrid(tη,η)
+
+            A = acoeffs(ly,ny)
+            B = bcoeffs(lx,ly,nx,ny,β̂,κ̂,ν,ν3)
+            Cp,Cm = ccoeffs(lx,ly,nx,ny)
+
+            p = [nx,ny,A,B,Cp,Cm]
+            tspan = (0.0,t_end)
+            u0 = ic_rand(lx,ly,nx,ny)*0.0
+            # prob = SDEProblem(nl_eqs!,u0,tspan,p,noise=W)
+            function g!(du,u,p,t)
+                du .= 1.0 + 0.0im
+            end
+            prob = SDEProblem(nl_eqs!,g!,u0,tspan,p,noise=W)
+
+            solve(prob,EM(),dt=dt,adaptive=false,progress=true,progress_steps=10000,
+            save_start=true,saveat=savefreq,save_everystep=savefreq==1 ? true : false)
+end
+
+""" Generalized Quasilinear Equations
+    specialized dispatch for different forcing types
+"""
 # GQL -> point jet
 function gql(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,            # domain
             θ::Float64,κ::Float64,ν::Float64,ν3::Float64,               # linear coefficients
