@@ -144,6 +144,31 @@ function gql(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,            # domai
             save_start=true,saveat=savefreq,save_everystep=savefreq==1 ? true : false)
 end
 
+# GQL -> stochastic forcing
+function gql(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,                    # domain
+            β::Float64,κ::Float64,ν::Float64,ν3::Float64,               # linear coefficients
+            k₁::Int,k₂::Int,aη::Float64,τ::Float64;                     # forcing parameters
+            dt::Float64=0.01,t_end::Float64=1000.0,savefreq::Int=20)    # integration parameters
+
+            @info   """ Solving NL equations for stochastic forcing
+                    Domain extents: lx = $lx, ly = $ly, nx = $nx, ny = $ny
+                    Linear coefficients: β = $β, κ = $κ, ν = $ν, ν3 = $ν3
+                    Forcing parameters: k₁ = $k₁, k₂ = $k₂, aη = $aη, τ = $τ
+                    """
+
+            A = acoeffs(ly,ny)
+            B = bcoeffs(lx,ly,nx,ny,β,κ,ν,ν3)
+            Cp,Cm = ccoeffs(lx,ly,nx,ny,Λ)
+            W = fcoeffs_2(nx,ny,dt,t_end,k₁,k₂,aη,τ)
+
+            p = [nx,ny,Λ,A,B,Cp,Cm]
+            tspan = (0.0,t_end)
+            u0 = ic_rand(lx,ly,nx,ny)*0.0
+            prob = SDEProblem(gql_eqs!,unit_eqs!,u0,tspan,p,noise=W)
+
+            solve(prob,EM(),dt=dt,adaptive=false,progress=true,progress_steps=10000,
+            save_start=true,saveat=savefreq,save_everystep=savefreq==1 ? true : false,save_noise=true)
+end
 
 ## NL
 function nl(lx::Float64,ly::Float64,nx::Int,ny::Int,Ξ::Float64,β::Float64,τ::Float64=0.0,
