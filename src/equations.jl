@@ -1,5 +1,6 @@
 function unit_eqs!(du,u,p,t)
-    du .= 1.0 + 0.0im
+    du .= 1.0
+    nothing
 end
 
 function nl_eqs!(du,u,p,t)

@@ -36,28 +36,21 @@ function fcoeffs_1(nx::Int,ny::Int,Δt::Float64,t_end::Float64,k₁::Int,k₂::I
 
 end
 
-function fcoeffs_2(nx::Int,ny::Int,Δt::Float64,t_end::Float64,k₁::Int,k₂::Int,aη::Float64,τ::Float64)
+function fcoeffs_2!(nx::Int,ny::Int,k₁::Int,k₂::Int,aη::Float64,η::Vector{Array{ComplexF64,2}})
 
-    R = (1-Δt/τ)/(1+Δt/τ)
-    tη = 0.0:Δt:t_end
-
-    η = []
     rng = MersenneTwister(1234);
-    for i in 1:length(tη)
-        η̂ = zeros(ComplexF64,2*ny-1,nx)
+    for i=1:length(η)
         for m=k₁:k₂
             for n=k₁:k₂
-                η̂[n+ny,m+1] = aη^0.5*(randn(rng,Float64) + im*randn(rng,Float64))
-                η̂[-n+ny,m+1] = aη^0.5*(randn(rng,Float64) + im*randn(rng,Float64))
+                η[i][n+ny,m+1] = aη^0.5*(randn(rng,Float64) + im*randn(rng,Float64))
+                η[i][-n+ny,m+1] = aη^0.5*(randn(rng,Float64) + im*randn(rng,Float64))
             end
         end
-        push!(η,η̂)
     end
     # for i in 2:length(tη)
     #     η[i] .= η[i-1] .+ ((1-R^2)/τ)^0.5*η[i]
     # end
-    NoiseGrid(tη,η)
-
+    # nothing
 end
 
 function fcoeffs_3(nx::Int,ny::Int,Δt::Float64,t_end::Float64,k₁::Int,k₂::Int,aη::Float64,τ::Float64)

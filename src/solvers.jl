@@ -73,7 +73,11 @@ function nl(lx::Float64,ly::Float64,nx::Int,ny::Int,                    # domain
             A = acoeffs(ly,ny)
             B = bcoeffs(lx,ly,nx,ny,β,κ,ν,ν3)
             Cp,Cm = ccoeffs(lx,ly,nx,ny)
-            W = fcoeffs_2(nx,ny,dt,t_end,k₁,k₂,aη,τ)
+
+            tη = 0.0:dt:t_end
+            η = [zeros(ComplexF64,2*ny-1,nx) for i=1:length(tη)]
+            fcoeffs_2!(nx,ny,k₁,k₂,aη,η)
+            W = NoiseGrid(tη,η)
 
             p = [nx,ny,A,B,Cp,Cm]
             tspan = (0.0,t_end)
