@@ -73,20 +73,92 @@ function nl(lx::Float64,ly::Float64,nx::Int,ny::Int,                    # domain
             A = acoeffs(ly,ny)
             B = bcoeffs(lx,ly,nx,ny,β,κ,ν,ν3)
             Cp,Cm = ccoeffs(lx,ly,nx,ny)
-
-            tη = 0.0:dt:t_end
-            η = [zeros(ComplexF64,2*ny-1,nx) for i=1:length(tη)]
-            fcoeffs_2!(nx,ny,k₁,k₂,aη,η)
-            W = NoiseGrid(tη,η)
-
             p = [nx,ny,A,B,Cp,Cm]
+
+            function nif_dist!(η,W,dt,u,p,t,rng)
+                # rand_vec .= 0.0
+                R = (1-dt/τ)/(1+dt/τ)
+                for m=k₁:k₂
+                    for n=-ny+1:ny-1
+                        η̂ = aη^0.5*(randn(rng,Float64) + im*randn(rng,Float64))
+                        η[n+ny,m+1] = ((1-R^2)/τ)^0.5*η̂ + R*η[n+ny,m+1]
+                    end
+                end
+            end
+
+            function ibn_dist!(rand_vec,W,dt,u,p,t,rng)
+                rand_vec .= 0.0
+                for m=k₁:k₂
+                    for n=k₁:k₂
+                        rand_vec[n+ny,m+1] = aη^0.5*(randn(rng,Float64) + im*randn(rng,Float64))
+                        rand_vec[-n+ny,m+1] = aη^0.5*(randn(rng,Float64) + im*randn(rng,Float64))
+                    end
+                end
+            end
+
+            function irf_dist!(rand_vec,W,dt,u,p,t,rng)
+                # rand_vec .= 0.0
+                # R = (1-dt)/(1+dt)
+                for m=1:nx-1
+                    for n=-ny+1:ny-1
+                        k = (m^2 + n^2)^0.5
+                        if(abs(k) <= k₂ && abs(k) >= k₁)
+                            rand_vec[n+ny,m+1] = aη^0.5*(randn(rng,Float64) + im*randn(rng,Float64))
+                        end
+                    end
+                end
+            end
+
+            t0 = 0.0
+            W0 = zeros(ComplexF64,2*ny-1,nx)
+            irf_noise!(t0,W0,Z0=nothing;kwargs...) = NoiseProcess(t0,W0,Z0,irf_dist!,nothing;kwargs...)
+            nif_noise!(t0,W0,Z0=nothing;kwargs...) = NoiseProcess(t0,W0,Z0,nif_dist!,nothing;kwargs...)
+            ibn_noise!(t0,W0,Z0=nothing;kwargs...) = NoiseProcess(t0,W0,Z0,ibn_dist!,nothing;kwargs...)
+
+            # η₀ = zeros(ComplexF64,2*ny-1,nx)
+            # W = NoiseFunction(0.0,fcoeffs!,noise_prototype=η₀,reset=true)
+
             tspan = (0.0,t_end)
             u0 = ic_rand(lx,ly,nx,ny)*0.0
-            prob = SDEProblem(nl_eqs!,unit_eqs!,u0,tspan,p,noise=W)
+            prob = SDEProblem(nl_eqs!,unit_eqs!,u0,tspan,p,noise=irf_noise!(t0,W0))
 
-            solve(prob,EM(),dt=dt,adaptive=false,progress=true,progress_steps=10000,
+            solve(prob,RKMil(),dt=dt,adaptive=false,progress=true,progress_steps=10000,
             save_start=true,saveat=savefreq,save_everystep=savefreq==1 ? true : false,save_noise=true)
 end
+
+# NL -> stochastic forcing
+# function nl(lx::Float64,ly::Float64,nx::Int,ny::Int,                    # domain
+#             β::Float64,κ::Float64,ν::Float64,ν3::Float64,               # linear coefficients
+#             k₁::Int,k₂::Int,aη::Float64,τ::Float64;                     # forcing parameters
+#             dt::Float64=0.01,t_end::Float64=1000.0,savefreq::Int=20)    # integration parameters
+#
+#             @info   """ Solving NL equations for stochastic forcing
+#                     Domain extents: lx = $lx, ly = $ly, nx = $nx, ny = $ny
+#                     Linear coefficients: β = $β, κ = $κ, ν = $ν, ν3 = $ν3
+#                     Forcing parameters: k₁ = $k₁, k₂ = $k₂, aη = $aη, τ = $τ
+#                     """
+#
+#             A = acoeffs(ly,ny)
+#             B = bcoeffs(lx,ly,nx,ny,β,κ,ν,ν3)
+#             Cp,Cm = ccoeffs(lx,ly,nx,ny)
+#             D = [k₁,k₂]
+#             tη = 0.0:dt:t_end
+#             η = [zeros(ComplexF64,2*ny-1,nx) for i=1:length(tη)]
+#             fcoeffs_2!(nx,ny,k₁,k₂,aη,η)
+#             W = NoiseGrid(tη,η)
+#
+#             p = [nx,ny,A,B,Cp,Cm,D]
+#
+#             # η₀ = zeros(ComplexF64,2*ny-1,nx)
+#             # W = NoiseFunction(0.0,fcoeffs!,noise_prototype=η₀,reset=true)
+#
+#             tspan = (0.0,t_end)
+#             u0 = ic_rand(lx,ly,nx,ny)*0.0
+#             prob = SDEProblem(nl_eqs!,unit_eqs!,u0,tspan,p,noise=W)
+#
+#             solve(prob,EM(),dt=dt,adaptive=false,progress=true,progress_steps=10000,
+#             save_start=true,saveat=savefreq,save_everystep=savefreq==1 ? true : false,save_noise=true)
+# end
 
 """ Generalized Quasilinear Equations
     specialized dispatch for different forcing types

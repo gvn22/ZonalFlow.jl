@@ -1,106 +1,115 @@
-function fcoeffs_0(nx::Int,ny::Int,Δt::Float64,t_end::Float64,k₁::Int,k₂::Int,aη::Float64,τ::Float64)
-
-    # initialise zero noise; should work with point jet!
-    tη = 0.0:Δt:t_end
-
-    η = []
-    for i in 1:length(tη)
-        η̂ = zeros(ComplexF64,2*ny-1,nx)
-        push!(η,η̂)
-    end
-    NoiseGrid(tη,η)
-
-end
-
-function fcoeffs_1(nx::Int,ny::Int,Δt::Float64,t_end::Float64,k₁::Int,k₂::Int,aη::Float64,τ::Float64)
-
-    R = (1-Δt/τ)/(1+Δt/τ)
-    tη = 0.0:Δt:t_end
-
-    η = []
-    rng = MersenneTwister(1234);
-    for i in 1:length(tη)
-        η̂ = zeros(ComplexF64,2*ny-1,nx)
-        for m=k₁:k₂
-            nmin = m == 0 ? 1 : -ny+1
-            for n=nmin:ny-1
-                η̂[n+ny,m+1] = aη^0.5*(randn(rng,Float64) + im*randn(rng,Float64))
-            end
-        end
-        push!(η,η̂)
-    end
-    for i in 2:length(tη)
-        η[i] .= η[i-1] .+ ((1-R^2)/τ)^0.5*η[i]
-    end
-    NoiseGrid(tη,η)
-
-end
-
-function fcoeffs_2!(nx::Int,ny::Int,k₁::Int,k₂::Int,aη::Float64,η::Vector{Array{ComplexF64,2}})
-
-    rng = MersenneTwister(1234);
-    for i=1:length(η)
-        for m=k₁:k₂
-            for n=k₁:k₂
-                η[i][n+ny,m+1] = aη^0.5*(randn(rng,Float64) + im*randn(rng,Float64))
-                η[i][-n+ny,m+1] = aη^0.5*(randn(rng,Float64) + im*randn(rng,Float64))
-            end
-        end
-    end
-    # for i in 2:length(tη)
-    #     η[i] .= η[i-1] .+ ((1-R^2)/τ)^0.5*η[i]
-    # end
-    # nothing
-end
-
-function fcoeffs_3(nx::Int,ny::Int,Δt::Float64,t_end::Float64,k₁::Int,k₂::Int,aη::Float64,τ::Float64)
-
-    R = (1-Δt/τ)/(1+Δt/τ)
-    tη = 0.0:Δt:t_end
-
-    η = Array{ComplexF64,2}[]
-    rng = MersenneTwister(1234);
-    for i in 1:length(tη)
-        η̂ = zeros(ComplexF64,2*ny-1,nx)
-        for m=1:nx-1
-            nmin = m == 0 ? 1 : -ny+1
-            for n=nmin:ny-1
-                k = (m^2 + n^2)^0.5
-                if(abs(k) <= k₂ && abs(k) >= k₁)
-                    η̂[n+ny,m+1] = aη^0.5*(randn(rng,Float64) + im*randn(rng,Float64))
-                    η̂[-n+ny,m+1] = aη^0.5*(randn(rng,Float64) + im*randn(rng,Float64))
-                end
-            end
-        end
-        push!(η,η̂)
-    end
-    # for i in 2:length(tη)
-    #     η[i] .= η[i-1] .+ ((1-R^2)/τ)^0.5*η[i]
-    # end
-    NoiseGrid(tη,η)
-
-end
-
-function fcoeffs(nx::Int,ny::Int,mmin::Int,mmax::Int,var::Float64)
-    η̂ = zeros(ComplexF64,2*ny-1,nx)
-    for m = mmin:mmax
-        nmin = m == 0 ? 1 : -(ny-1)
-        for n = nmin:ny-1
-            η̂[n+ny,m+1] = var*randn(ComplexF64)
-        end
-    end
-    η̂
-end
-
-function fcoeffs!(nx::Int,ny::Int,mmin::Int,mmax::Int,var::Float64,η̂::Array{ComplexF64,2})
-    η̂ .= 0.0 + 0.0im
-    for m = mmin:mmax
-        nmin = m == 0 ? 1 : -(ny-1)
-        for n = nmin:ny-1
-            η̂[n+ny,m+1] = var*randn(ComplexF64)
-        end
-    end
-end
+# function fcoeffs_0(nx::Int,ny::Int,Δt::Float64,t_end::Float64,k₁::Int,k₂::Int,aη::Float64,τ::Float64)
+#
+#     # initialise zero noise; should work with point jet!
+#     tη = 0.0:Δt:t_end
+#
+#     η = []
+#     for i in 1:length(tη)
+#         η̂ = zeros(ComplexF64,2*ny-1,nx)
+#         push!(η,η̂)
+#     end
+#     NoiseGrid(tη,η)
+#
+# end
+#
+# function fcoeffs!(out1,out2,p,t)
+#
+#     rng = MersenneTwister(1234);
+#     out1 .= 1e-2*(randn(rng,Float64) .+ im*randn(rng,Float64))
+#     out2 = nothing
+#     nothing
+#     # η[i] .= η[i-1] .+ ((1-R^2)/τ)^0.5*η[i]
+# end
+#
+# function fcoeffs_1(nx::Int,ny::Int,Δt::Float64,t_end::Float64,k₁::Int,k₂::Int,aη::Float64,τ::Float64)
+#
+#     R = (1-Δt/τ)/(1+Δt/τ)
+#     tη = 0.0:Δt:t_end
+#
+#     η = []
+#     rng = MersenneTwister(1234);
+#     for i in 1:length(tη)
+#         η̂ = zeros(ComplexF64,2*ny-1,nx)
+#         for m=k₁:k₂
+#             nmin = m == 0 ? 1 : -ny+1
+#             for n=nmin:ny-1
+#                 η̂[n+ny,m+1] = aη^0.5*(randn(rng,Float64) + im*randn(rng,Float64))
+#             end
+#         end
+#         push!(η,η̂)
+#     end
+#     for i in 2:length(tη)
+#         η[i] .= R*η[i-1] .+ ((1-R^2)/τ)^0.5*η[i]
+#     end
+#     NoiseGrid(tη,η)
+#
+# end
+#
+# function fcoeffs_2!(nx::Int,ny::Int,k₁::Int,k₂::Int,aη::Float64,η::Vector{Array{ComplexF64,2}})
+#
+#     rng = MersenneTwister(1234);
+#     for i=1:length(η)
+#         for m=k₁:k₂
+#             for n=k₁:k₂
+#                 η[i][n+ny,m+1] = aη^0.5*(randn(rng,Float64) + im*randn(rng,Float64))
+#                 η[i][-n+ny,m+1] = aη^0.5*(randn(rng,Float64) + im*randn(rng,Float64))
+#             end
+#         end
+#     end
+#     # for i in 2:length(tη)
+#     #     η[i] .= R*η[i-1] .+ ((1-R^2)/τ)^0.5*η[i]
+#     # end
+#     # nothing
+# end
+#
+# function fcoeffs_3(nx::Int,ny::Int,Δt::Float64,t_end::Float64,k₁::Int,k₂::Int,aη::Float64,τ::Float64)
+#
+#     R = (1-Δt/τ)/(1+Δt/τ)
+#     tη = 0.0:Δt:t_end
+#
+#     η = Array{ComplexF64,2}[]
+#     rng = MersenneTwister(1234);
+#     for i in 1:length(tη)
+#         η̂ = zeros(ComplexF64,2*ny-1,nx)
+#         for m=1:nx-1
+#             nmin = m == 0 ? 1 : -ny+1
+#             for n=nmin:ny-1
+#                 k = (m^2 + n^2)^0.5
+#                 if(abs(k) <= k₂ && abs(k) >= k₁)
+#                     η̂[n+ny,m+1] = aη^0.5*(randn(rng,Float64) + im*randn(rng,Float64))
+#                     η̂[-n+ny,m+1] = aη^0.5*(randn(rng,Float64) + im*randn(rng,Float64))
+#                 end
+#             end
+#         end
+#         push!(η,η̂)
+#     end
+#     # for i in 2:length(tη)
+#     #     η[i] .= R*η[i-1] .+ ((1-R^2)/τ)^0.5*η[i]
+#     # end
+#     NoiseGrid(tη,η)
+#
+# end
+#
+# function fcoeffs(nx::Int,ny::Int,mmin::Int,mmax::Int,var::Float64)
+#     η̂ = zeros(ComplexF64,2*ny-1,nx)
+#     for m = mmin:mmax
+#         nmin = m == 0 ? 1 : -(ny-1)
+#         for n = nmin:ny-1
+#             η̂[n+ny,m+1] = var*randn(ComplexF64)
+#         end
+#     end
+#     η̂
+# end
+#
+# function fcoeffs!(nx::Int,ny::Int,mmin::Int,mmax::Int,var::Float64,η̂::Array{ComplexF64,2})
+#     η̂ .= 0.0 + 0.0im
+#     for m = mmin:mmax
+#         nmin = m == 0 ? 1 : -(ny-1)
+#         for n = nmin:ny-1
+#             η̂[n+ny,m+1] = var*randn(ComplexF64)
+#         end
+#     end
+# end
 
 function acoeffs(ly::Float64,ny::Int)
     zeros(ComplexF64,2*ny-1)
