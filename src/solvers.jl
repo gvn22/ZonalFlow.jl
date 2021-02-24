@@ -109,11 +109,12 @@ function nl(lx::Float64,ly::Float64,nx::Int,ny::Int,                    # domain
                 end
             end
 
-            t0 = 0.0
-            W0 = zeros(ComplexF64,2*ny-1,nx)
             irf_noise!(t0,W0,Z0=nothing;kwargs...) = NoiseProcess(t0,W0,Z0,irf_dist!,nothing;kwargs...)
             nif_noise!(t0,W0,Z0=nothing;kwargs...) = NoiseProcess(t0,W0,Z0,nif_dist!,nothing;kwargs...)
             ibn_noise!(t0,W0,Z0=nothing;kwargs...) = NoiseProcess(t0,W0,Z0,ibn_dist!,nothing;kwargs...)
+
+            t0 = 0.0
+            W0 = zeros(ComplexF64,2*ny-1,nx)
 
             # η₀ = zeros(ComplexF64,2*ny-1,nx)
             # W = NoiseFunction(0.0,fcoeffs!,noise_prototype=η₀,reset=true)

@@ -18,6 +18,6 @@ include("analysis.jl")
 
 export nl,gql,gce2,ce2 # solvers
 export ic_pert_eqm,ic_eqm,ic_rand # ics
-export energy,zonalenergy,inversefourier,meanvorticity,zonalvelocity,meanzonalvelocity,fourierenergy # analysis
+export energy,zonalenergy,inversefourier,meanvorticity,zonalvelocity,meanzonalvelocity,fourierenergy,zonostrophy # analysis
 
 end

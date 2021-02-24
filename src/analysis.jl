@@ -548,3 +548,26 @@ function meanvorticity(lx::Float64,ly::Float64,nx::Int,ny::Int,t::Array{Float64,
     return ζy
 
 end
+
+function zonostrophy(lx::Float64,ly::Float64,nx::Int,ny::Int,β::Float64,κ::Float64,u::Array{Array{ComplexF64,2},1})
+    E = zeros(Float64,length(u))
+    for i in eachindex(u)
+
+        for m1 = 0:nx-1
+            n1min = m1 == 0 ? 1 : -(ny-1)
+            for n1 = n1min:ny-1
+
+                kx = 2.0*Float64(pi)/lx*m1
+                ky = 2.0*Float64(pi)/ly*n1
+
+                E[i] += abs(u[i][n1 + ny,m1 + 1])^2/(kx^2 + ky^2)
+
+            end
+        end
+    end
+    U = (2 .* E ./ (4.0π)) .^ 0.5
+    ε = κ .* U .^ 2
+    LR = (2 .* U/β) .^ 0.5
+    Lε = 0.5 .* (ε ./ β^3) .^ 0.2
+    LR,Lε,LR./Lε
+end
