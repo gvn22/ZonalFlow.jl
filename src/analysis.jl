@@ -567,7 +567,7 @@ function zonostrophy(lx::Float64,ly::Float64,nx::Int,ny::Int,β::Float64,κ::Flo
     end
     U = (2 .* E ./ (4.0π)) .^ 0.5
     ε = κ .* U .^ 2
-    LR = (2 .* U/β) .^ 0.5
+    LR = (2 .* U ./ β) .^ 0.5
     Lε = 0.5 .* (ε ./ β^3) .^ 0.2
     LR,Lε,LR./Lε
 end
