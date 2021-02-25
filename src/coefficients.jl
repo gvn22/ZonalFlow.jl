@@ -1,3 +1,20 @@
+# function white_dist!(rand_vec,W,dt,u,p,t,rng)
+#
+#     nx::Int,ny::Int,k₁::Int,k₂::Int,aη::Float64,τ::Float64,A::Array{ComplexF64,1},B::Array{ComplexF64,2},Cp::Array{Float64,4},Cm::Array{Float64,4} = p
+#
+#     rand_vec .= 0.0
+#     for m=1:nx-1
+#         for n=-ny+1:ny-1
+#             rand_vec[n+ny,m+1] = aη*(randn(rng) + im*randn(rng))
+#             # r = rand(rng,Normal(0,aη^0.5),2)
+#             # rand_vec[n+ny,m+1] = r[1] + im*r[2]
+#             # rand_vec[n+ny,m+1] = rand(Normal(0,aη^0.5)) + im*rand(Normal(0,aη^0.5))
+#         end
+#     end
+#     nothing
+# end
+# white_noise!(t0,W0,Z0=nothing;kwargs...) = NoiseProcess(t0,W0,Z0,white_dist!,nothing;kwargs...)
+
 # function fcoeffs_0(nx::Int,ny::Int,Δt::Float64,t_end::Float64,k₁::Int,k₂::Int,aη::Float64,τ::Float64)
 #
 #     # initialise zero noise; should work with point jet!
@@ -143,22 +160,22 @@ function acoeffs(ly::Float64,ny::Int,Ξ::Float64,τ::Float64=0.0;jw::Float64=0.0
     fftshift(fft(ζjet))*2.0/(2*ny-1) # scaling bug fix
 end
 
-function bcoeffs(lx::Float64,ly::Float64,nx::Int,ny::Int,β::Float64,τ::Float64=0.0,νn::Float64=0.0)
-    B = zeros(ComplexF64,2*ny-1,nx)
-    α::Int = 2
-    kxmax::Float64 = 2.0*Float64(pi)/lx*Float64(nx-1)
-    kymax::Float64 = 2.0*Float64(pi)/ly*Float64(ny-1)
-    γ::Float64 = τ == 0.0 ? 0.0 : 1.0/τ
-    for m = 0:1:nx-1
-        nmin = m == 0 ? 1 : -(ny-1)
-        for n=nmin:1:ny-1
-            kx::Float64 = 2.0*Float64(pi)*Float64(m)/lx
-            ky::Float64 = 2.0*Float64(pi)*Float64(n)/ly
-            B[n+ny,m+1] = -γ + im*β*kx/(kx^2 + ky^2) - νn*((kx^2 + ky^2)/(kxmax^2 + kymax^2))^(2*α)
-        end
-    end
-    B
-end
+# function bcoeffs(lx::Float64,ly::Float64,nx::Int,ny::Int,β::Float64,τ::Float64=0.0,νn::Float64=0.0)
+#     B = zeros(ComplexF64,2*ny-1,nx)
+#     α::Int = 2
+#     kxmax::Float64 = 2.0*Float64(pi)/lx*Float64(nx-1)
+#     kymax::Float64 = 2.0*Float64(pi)/ly*Float64(ny-1)
+#     γ::Float64 = τ == 0.0 ? 0.0 : 1.0/τ
+#     for m = 0:1:nx-1
+#         nmin = m == 0 ? 1 : -(ny-1)
+#         for n=nmin:1:ny-1
+#             kx::Float64 = 2.0*Float64(pi)*Float64(m)/lx
+#             ky::Float64 = 2.0*Float64(pi)*Float64(n)/ly
+#             B[n+ny,m+1] = -γ + im*β*kx/(kx^2 + ky^2) - νn*((kx^2 + ky^2)/(kxmax^2 + kymax^2))^(2*α)
+#         end
+#     end
+#     B
+# end
 
 function bcoeffs(lx::Float64,ly::Float64,nx::Int,ny::Int,β::Float64,κ::Float64,ν::Float64,ν3::Float64)
     B = zeros(ComplexF64,2*ny-1,nx)
