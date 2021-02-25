@@ -16,13 +16,14 @@ function inversefourier(nx::Int,ny::Int,u::Array{Array{ComplexF64,2},1})
     umn = zeros(ComplexF64,2*ny-1,2*nx-1,length(u))
     uxy = zeros(Float64,2*ny-1,2*nx-1,length(u))
     for i in eachindex(u)
-        for m1 = 0:1:nx-1
+        for m1 = 0:nx-1
             n1min = m1 == 0 ? 1 : -ny + 1
-            for n1 = n1min:1:ny-1
+            for n1 = n1min:ny-1
                 umn[n1 + ny,m1+nx,i] = u[i][n1+ny,m1+1]
                 umn[-n1 + ny,-m1+nx,i] = conj(u[i][n1+ny,m1+1])
             end
         end
+        umn[1,1,i] = 0.0 + 0.0im
         uxy[:,:,i] = real(ifft(ifftshift(umn[:,:,i])))*(2*ny-1)*(2*nx-1)/4.0 # scaling from IFFT
     end
     uxy
@@ -181,11 +182,11 @@ end
 function fourierenergy(lx::Float64,ly::Float64,nx::Int,ny::Int,u::Array{Array{ComplexF64,2},1})
     E = zeros(Float64,2*ny-1,2*nx-1,length(u))
     for i in eachindex(u)
-        for m1 = 0:1:nx-1
+        for m1 = 0:nx-1
             n1min = m1 == 0 ? 1 : -ny + 1
-            for n1 = n1min:1:ny-1
-                kx = 2.0*Float64(pi)/lx*m1
-                ky = 2.0*Float64(pi)/ly*n1
+            for n1 = n1min:ny-1
+                kx = 2.0*Float64(pi)*m1/lx
+                ky = 2.0*Float64(pi)*n1/ly
                 E[n1 + ny,m1+nx,i] = abs(u[i][n1+ny,m1+1])^2/(kx^2 + ky^2)
                 E[-n1 + ny,-m1+nx,i] = E[n1 + ny,m1+nx,i]
             end
