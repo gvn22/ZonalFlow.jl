@@ -7,7 +7,7 @@ using DiffEqCallbacks
 using RecursiveArrayTools
 using FFTW
 using LinearAlgebra
-using Random
+using Random,Distributions
 
 include("coefficients.jl")
 include("equations.jl")
