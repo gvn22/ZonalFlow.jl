@@ -179,7 +179,7 @@ end
 
 function bcoeffs(lx::Float64,ly::Float64,nx::Int,ny::Int,β::Float64,κ::Float64,ν::Float64,ν₄::Float64)
     B = zeros(ComplexF64,2*ny-1,nx)
-    α::Int = 1
+    α::Int = 2
     kxmax::Float64 = 2.0*Float64(pi)*Float64(nx-1)/lx
     kymax::Float64 = 2.0*Float64(pi)*Float64(ny-1)/ly
     for m = 0:nx-1
@@ -189,10 +189,10 @@ function bcoeffs(lx::Float64,ly::Float64,nx::Int,ny::Int,β::Float64,κ::Float64
             kx::Float64 = 2.0*Float64(pi)*Float64(m)/lx
             ky::Float64 = 2.0*Float64(pi)*Float64(n)/ly
 
-            B[n+ny,m+1] = im*β*kx/(kx^2 + ky^2)
-            B[n+ny,m+1] += - κ
-            # B[n+ny,m+1] += - ν*(kx^2 + ky^2)
-            B[n+ny,m+1] += - ν₄*((kx^2 + ky^2)/(kxmax^2 + kymax^2))^(2*α)
+            B[n+ny,m+1] += im*β*kx/(kx^2 + ky^2)
+            B[n+ny,m+1] += -κ
+            B[n+ny,m+1] += -ν*(kx^2 + ky^2)
+            B[n+ny,m+1] += -ν₄*((kx^2 + ky^2)/(kxmax^2 + kymax^2))^(2*α)
 
         end
     end
