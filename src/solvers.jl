@@ -60,18 +60,18 @@ end
 
 # NL -> stochastic forcing
 function nl(lx::Float64,ly::Float64,nx::Int,ny::Int,                    # domain
-            β::Float64,κ::Float64,ν::Float64,ν₄::Float64,               # linear coefficients
+            β::Float64,μ::Float64,ν::Float64,ν₄::Float64,               # linear coefficients
             k₁::Int,k₂::Int,aη::Float64,τ::Float64;                     # forcing parameters
             dt::Float64=0.01,t_end::Float64=1000.0,savefreq::Int=20)    # integration parameters
 
             @info   """ Solving NL equations for stochastic forcing
                     Domain extents: lx = $lx, ly = $ly, nx = $nx, ny = $ny
-                    Linear coefficients: β = $β, κ = $κ, ν = $ν, ν₄ = $ν₄
+                    Linear coefficients: β = $β, μ = $μ, ν = $ν, ν₄ = $ν₄
                     Forcing parameters: k₁ = $k₁, k₂ = $k₂, aη = $aη, τ = $τ
                     """
 
             A = acoeffs(ly,ny)
-            B = bcoeffs(lx,ly,nx,ny,β,κ,ν,ν₄)
+            B = bcoeffs(lx,ly,nx,ny,β,μ,ν,ν₄)
             Cp,Cm = ccoeffs(lx,ly,nx,ny)
             p = [nx,ny,A,B,Cp,Cm]
 
