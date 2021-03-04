@@ -23,7 +23,7 @@ function inversefourier(nx::Int,ny::Int,u::Array{Array{ComplexF64,2},1})
                 umn[-n1 + ny,-m1+nx,i] = conj(u[i][n1+ny,m1+1])
             end
         end
-        umn[1,1,i] = 0.0 + 0.0im
+        # umn[1,1,i] = 0.0 + 0.0im
         uxy[:,:,i] = real(ifft(ifftshift(umn[:,:,i])))*(2*ny-1)*(2*nx-1)/4.0 # scaling from IFFT
     end
     uxy
