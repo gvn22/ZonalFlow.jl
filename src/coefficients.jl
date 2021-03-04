@@ -128,7 +128,7 @@
 #     end
 # end
 
-function acoeffs(ly::Float64,ny::Int)
+function acoeffs(ny::Int)
     zeros(ComplexF64,2*ny-1)
 end
 
@@ -176,6 +176,10 @@ end
 #     end
 #     B
 # end
+
+function bcoeffs(nx::Int,ny::Int)
+    return zeros(ComplexF64,2*ny-1,nx)
+end
 
 function bcoeffs(lx::Float64,ly::Float64,nx::Int,ny::Int,β::Float64,μ::Float64,ν::Float64,ν₄::Float64)
     B = zeros(ComplexF64,2*ny-1,nx)
