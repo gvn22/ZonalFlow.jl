@@ -572,3 +572,24 @@ function zonostrophy(lx::Float64,ly::Float64,nx::Int,ny::Int,β::Float64,μ::Flo
     Lε = 0.5 .* (ε ./ β^3) .^ 0.2
     LR,Lε,LR./Lε
 end
+
+function injectionrate(lx::Float64,ly::Float64,nx::Int,ny::Int,sol)
+    u = sol.u
+    W = sol.W
+    E = zeros(Float64,length(u))
+    for i in eachindex(u)
+
+        for m1 = 0:nx-1
+            n1min = m1 == 0 ? 1 : -(ny-1)
+            for n1 = n1min:ny-1
+
+                kx = 2.0*Float64(pi)/lx*m1
+                ky = 2.0*Float64(pi)/ly*n1
+
+                E[i] += conj(W.dW[n1 + ny,m1 + 1])*W.dW[n1 + ny,m1 + 1]/(kx^2 + ky^2)
+
+            end
+        end
+    end
+    E
+end
