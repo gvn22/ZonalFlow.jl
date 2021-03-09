@@ -61,7 +61,7 @@ end
 # NL -> stochastic forcing
 function nl(lx::Float64,ly::Float64,nx::Int,ny::Int,                    # domain
             β::Float64,μ::Float64,ν::Float64,ν₄::Float64,               # linear coefficients
-            kf::Int,dk::Int,ε::Float64;                     # forcing parameters
+            kf::Int,dk::Int,ε::Float64;                                 # forcing parameters
             dt::Float64=0.01,t_end::Float64=1000.0,savefreq::Int=20)    # integration parameters
 
             @info   """ Solving NL equations for stochastic forcing
@@ -215,12 +215,12 @@ function gql(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,            # domai
 end
 
 # GQL -> stochastic forcing
-function gql(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,                    # domain
+function gql(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,            # domain
             β::Float64,κ::Float64,ν::Float64,ν3::Float64,               # linear coefficients
             k₁::Int,k₂::Int,aη::Float64,τ::Float64;                     # forcing parameters
             dt::Float64=0.01,t_end::Float64=1000.0,savefreq::Int=20)    # integration parameters
 
-            @info   """ Solving NL equations for stochastic forcing
+            @info   """ Solving GQL($Λ) equations for stochastic forcing
                     Domain extents: lx = $lx, ly = $ly, nx = $nx, ny = $ny
                     Linear coefficients: β = $β, κ = $κ, ν = $ν, ν3 = $ν3
                     Forcing parameters: k₁ = $k₁, k₂ = $k₂, aη = $aη, τ = $τ
@@ -238,6 +238,69 @@ function gql(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,                   
 
             solve(prob,EM(),dt=dt,adaptive=false,progress=true,progress_steps=10000,
             save_start=true,saveat=savefreq,save_everystep=savefreq==1 ? true : false,save_noise=true)
+end
+
+# GQL -> stochastic forcing
+function gql(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,            # domain
+            β::Float64,μ::Float64,ν::Float64,ν₄::Float64,               # linear coefficients
+            kf::Int,dk::Int,ε::Float64;                                 # forcing parameters
+            dt::Float64=0.01,t_end::Float64=1000.0,savefreq::Int=20)    # integration parameters
+
+            @info   """ Solving GQL($Λ) equations for stochastic forcing
+                    Domain extents: lx = $lx, ly = $ly, nx = $nx, ny = $ny
+                    Linear coefficients: β = $β, μ = $μ, ν = $ν, ν₄ = $ν₄
+                    Forcing parameters: kf = $kf, k₂ = $dk, ε = $ε
+                    """
+
+            A = acoeffs(ny)
+            B = bcoeffs(lx,ly,nx,ny,β,μ,ν,ν₄)
+            Cp,Cm = ccoeffs(lx,ly,nx,ny,Λ)
+            p = [nx,ny,Λ,A,B,Cp,Cm]
+
+            Random.seed!(123)
+            function sy_dist!(ξ,W,dt,u,p,t,rng)
+
+                ξ .= 0.0
+                Nf = 0
+                d = Uniform(0.0,2.0*Float64(π))
+                for m=0:nx-1
+                    nmin = m==0 ? 1 : -ny+1
+                    for n=nmin:ny-1
+
+                        k = (m^2 + n^2)^0.5
+
+                        if(k < kf + dk && k > kf - dk)
+                            ϕ = rand(d)
+                            ξ[n+ny,m+1] = cos(ϕ) + im*sin(ϕ)
+                            Nf += 1
+                        else
+                            ξ[n+ny,m+1] = 0.0
+                        end
+                    end
+                end
+                coeff = sqrt(2*ε*kf^2)/sqrt(Nf*dt)
+                ξ .= coeff .* dt .* ξ
+                return ξ
+            end
+            function sy_bridge!(dW,W,W0,Wh,q,h,u,p,t,rng)
+                return W0 .+ h .* (Wh .- W0)
+            end
+            sy_noise!(t0,W0,Z0=nothing;kwargs...) = NoiseProcess(t0,W0,Z0,sy_dist!,sy_bridge!;kwargs...)
+
+            t0 = 0.0
+            W0 = zeros(ComplexF64,2*ny-1,nx)
+            tspan = (0.0,t_end)
+            # u0 = zeros(ComplexF64,2*ny-1,nx)
+            # u0 = ic_rand(lx,ly,nx,ny)
+            u0 = ic_rand(lx,ly,nx,ny,1e-3)
+
+            prob = SDEProblem(gql_eqs!,unit_eqs!,u0,tspan,p,noise=sy_noise!(t0,W0))
+            # solve(prob,EM(),dt=dt,adaptive=false,progress=true,progress_steps=1000)
+            # solve(prob,SOSRA(),progress=true,progress_steps=10000,noise_prototype=zeros(ComplexF64,2*ny-1,nx),
+
+            solve(prob,EulerHeun(),dt=dt,adaptive=false,progress=true,progress_steps=10000,
+            save_start=true,saveat=savefreq,save_everystep=savefreq==1 ? true : false,save_noise=true)
+
 end
 
 ## NL
