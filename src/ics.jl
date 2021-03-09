@@ -26,7 +26,6 @@ function ic_rand(lx::Float64,ly::Float64,nx::Int,ny::Int,σ::Float64)
     end
 
     umn = fftshift(fft(uxy))
-    @show umn[ny,nx]
     umn[ny,nx] = 0.0 + 0.0im
     return umn[:,nx:2*nx-1]
     
