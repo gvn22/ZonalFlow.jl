@@ -14,6 +14,24 @@ function ic_rand(lx::Float64,ly::Float64,nx::Int,ny::Int)
     umn[:,nx:2*nx-1]
 end
 
+function ic_rand(lx::Float64,ly::Float64,nx::Int,ny::Int,σ::Float64)
+
+    uxy = zeros(Float64,2*ny-1,2*nx-1)
+    d = Normal(0.0,σ)
+
+    for i=1:2*ny-1
+        for j=1:2*nx-1
+            uxy[i,j] = rand(d)
+        end
+    end
+
+    umn = fftshift(fft(uxy))
+    @show umn[ny,nx]
+    umn[ny,nx] = 0.0 + 0.0im
+    return umn[:,nx:2*nx-1]
+    
+end
+
 function ic_pert_eqm(lx::Float64,ly::Float64,nx::Int,ny::Int,Ξ::Float64;jw::Float64=0.05)
     @. ic_eqm(lx,ly,nx,ny,Ξ,jw=jw) + ic_rand(lx,ly,nx,ny)*1e-4
 end
