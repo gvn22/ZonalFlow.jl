@@ -61,96 +61,62 @@ end
 # NL -> stochastic forcing
 function nl(lx::Float64,ly::Float64,nx::Int,ny::Int,                    # domain
             β::Float64,μ::Float64,ν::Float64,ν₄::Float64,               # linear coefficients
-            k₁::Int,k₂::Int,aη::Float64,τ::Float64;                     # forcing parameters
+            kf::Int,dk::Int,ε::Float64;                     # forcing parameters
             dt::Float64=0.01,t_end::Float64=1000.0,savefreq::Int=20)    # integration parameters
 
             @info   """ Solving NL equations for stochastic forcing
                     Domain extents: lx = $lx, ly = $ly, nx = $nx, ny = $ny
                     Linear coefficients: β = $β, μ = $μ, ν = $ν, ν₄ = $ν₄
-                    Forcing parameters: k₁ = $k₁, k₂ = $k₂, aη = $aη, τ = $τ
+                    Forcing parameters: kf = $kf, k₂ = $dk, ε = $ε
                     """
 
-            A = acoeffs(ly,ny)
+            A = acoeffs(ny)
             B = bcoeffs(lx,ly,nx,ny,β,μ,ν,ν₄)
             Cp,Cm = ccoeffs(lx,ly,nx,ny)
             p = [nx,ny,A,B,Cp,Cm]
 
-            function nif_dist!(rand_vec,W,dt,u,p,t,rng)
-
-                rand_vec .= rand(Normal(0.0,aη),2*ny-1,nx) .+ im.*rand(Normal(0.0,aη),2*ny-1,nx)
-                # rand_vec[:,1] .= 0.0
-                for m=1:nx-1
-                    for n=-ny+1:ny-1
-                        k = (m^2 + n^2)^0.5
-                        kx = 2.0*Float64(pi)*Float64(m)/lx
-                        ky = 2.0*Float64(pi)*Float64(n)/ly
-                        rand_vec[n+ny,m+1] *= (kx^2 + ky^2)^0.5
-                        # rand_vec[n+ny,m+1] *= abs(sqrt(dt))
-
-                        if(m > k₂ || m < k₁)
-                            rand_vec[n+ny,m+1] *= 0.0
-                        end
-                    end
-                end
-                # @info "Time step: $dt"
-            end
-            function nif_bridge!(dW,W,W0,Wh,q,h,u,p,t,rng)
-                return W0 .+ h .* Wh
-            end
-            nif_noise!(t0,W0,Z0=nothing;kwargs...) = NoiseProcess(t0,W0,Z0,nif_dist!,nif_bridge!;kwargs...)
-
-            function ibn_dist!(rand_vec,W,dt,u,p,t,rng)
-                rand_vec .= rand(Normal(0.0,aη),2*ny-1,nx) .+ im.*rand(Normal(0.0,aη),2*ny-1,nx)
-                rand_vec[:,1] .= 0.0
-                for m=1:nx-1
-                    for n=-ny+1:ny-1
-                        k = (m^2 + n^2)^0.5
-                        kx = 2.0*Float64(pi)*Float64(m)/lx
-                        ky = 2.0*Float64(pi)*Float64(n)/ly
-                        rand_vec[n+ny,m+1] *= (kx^2 + ky^2)^0.5
-                        # rand_vec[n+ny,m+1] *= abs(sqrt(dt))
-
-                        if(m > k₂ || m < k₁ && n > k₂ || n < k₁)
-                            rand_vec[n+ny,m+1] *= 0.0
-                        end
-                    end
-                end
-            end
-            ibn_noise!(t0,W0,Z0=nothing;kwargs...) = NoiseProcess(t0,W0,Z0,ibn_dist!,nothing;kwargs...)
-
             Random.seed!(123)
+            function sy_dist!(ξ,W,dt,u,p,t,rng)
 
-            function irf_dist!(rand_vec,W,dt,u,p,t,rng)
-
-                # rand!(Normal(0.0,aη),rand_vec)
-                rand_vec .= rand(Normal(0.0,aη),2*ny-1,nx) .+ im.*rand(Normal(0.0,aη),2*ny-1,nx)
-                rand_vec[:,1] .= 0.0
-                for m=1:nx-1
-                    for n=-ny+1:ny-1
+                ξ .= 0.0
+                Nf = 0
+                d = Uniform(0.0,2.0*Float64(π))
+                for m=0:nx-1
+                    nmin = m==0 ? 1 : -ny+1
+                    for n=nmin:ny-1
 
                         k = (m^2 + n^2)^0.5
-                        kx = 2.0*Float64(pi)*Float64(m)/lx
-                        ky = 2.0*Float64(pi)*Float64(n)/ly
-                        rand_vec[n+ny,m+1] *= (kx^2 + ky^2)^0.5
-                        # rand_vec[n+ny,m+1] *= abs(sqrt(dt))
 
-                        if(k > k₂ || k < k₁)
-                            rand_vec[n+ny,m+1] *= 0.0
+                        if(k < kf + dk && k > kf - dk)
+                            ϕ = rand(d)
+                            ξ[n+ny,m+1] = cos(ϕ) + im*sin(ϕ)
+                            Nf += 1
+                        else
+                            ξ[n+ny,m+1] = 0.0
                         end
                     end
                 end
+                coeff = sqrt(2*ε*kf^2)/sqrt(Nf*dt)
+                ξ .= coeff .* dt .* ξ
+                return ξ
             end
-            irf_noise!(t0,W0,Z0=nothing;kwargs...) = NoiseProcess(t0,W0,Z0,irf_dist!,nothing;kwargs...)
+            function sy_bridge!(dW,W,W0,Wh,q,h,u,p,t,rng)
+                return W0 .+ h .* (Wh .- W0)
+            end
+            sy_noise!(t0,W0,Z0=nothing;kwargs...) = NoiseProcess(t0,W0,Z0,sy_dist!,sy_bridge!;kwargs...)
 
             t0 = 0.0
             W0 = zeros(ComplexF64,2*ny-1,nx)
-
             tspan = (0.0,t_end)
-            # u0 = ic_rand(lx,ly,nx,ny)*0.0
-            u0 = zeros(ComplexF64,2*ny-1,nx)
-            prob = SDEProblem(nl_eqs!,unit_eqs!,u0,tspan,p,noise=nif_noise!(t0,W0))
+            # u0 = zeros(ComplexF64,2*ny-1,nx)
+            # u0 = ic_rand(lx,ly,nx,ny)
+            u0 = ic_rand(lx,ly,nx,ny,1e-3)
 
-            solve(prob,EM(),dt=dt,adaptive=false,progress=true,progress_steps=10000,
+            prob = SDEProblem(nl_eqs!,unit_eqs!,u0,tspan,p,noise=sy_noise!(t0,W0))
+            # solve(prob,EM(),dt=dt,adaptive=false,progress=true,progress_steps=1000)
+            # solve(prob,SOSRA(),progress=true,progress_steps=10000,noise_prototype=zeros(ComplexF64,2*ny-1,nx),
+
+            solve(prob,EulerHeun(),dt=dt,adaptive=false,progress=true,progress_steps=10000,
             save_start=true,saveat=savefreq,save_everystep=savefreq==1 ? true : false,save_noise=true)
 end
 
