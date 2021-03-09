@@ -3,37 +3,6 @@ function unit_eqs!(du,u,p,t)
     nothing
 end
 
-# function fcoeffs_ibn!(du,u,p,t)
-#
-#     nx::Int,ny::Int,k₁::Int,k₂::Int,aη::Float64,τ::Float64,A::Array{ComplexF64,1},B::Array{ComplexF64,2},Cp::Array{Float64,4},Cm::Array{Float64,4} = p
-#     du .= 0.0
-#     # F = zeros(ComplexF64,2*ny-1,nx)
-#     for m=k₁:k₂
-#         for n=k₁:k₂
-#             du[n+ny,m+1] = 1.0 + 0.0im
-#             du[-n+ny,m+1] = 1.0 + 0.0im
-#         end
-#     end
-#     nothing
-#
-# end
-#
-# function fcoeffs_irf!(du,u,p,t)
-#
-#     nx::Int,ny::Int,k₁::Int,k₂::Int,aη::Float64,τ::Float64,A::Array{ComplexF64,1},B::Array{ComplexF64,2},Cp::Array{Float64,4},Cm::Array{Float64,4} = p
-#     du .= 0.0
-#     for m=2:nx-1
-#         for n=-ny+1:ny-1
-#             k = (m^2 + n^2)^0.5
-#             if(abs(k) <= k₂ && abs(k) >= k₁)
-#                 du[n+ny,m+1] = 1.0 + 0.0im
-#             end
-#         end
-#     end
-#     nothing
-#
-# end
-
 function nl_eqs!(du,u,p,t)
 
     nx::Int,ny::Int,A::Array{ComplexF64,1},B::Array{ComplexF64,2},Cp::Array{Float64,4},Cm::Array{Float64,4} = p
