@@ -26,6 +26,9 @@ function fcoeffs(nx::Int,ny::Int,kf::Int,dk::Int,ε::Float64)
 
 end
 
+function fcoeffs(nx::Int,ny::Int,Λ::Int)
+    zeros(Float64,2*ny-1,nx-Λ,2*ny-1,nx-Λ)
+end
 
 function acoeffs(ny::Int)
     zeros(ComplexF64,2*ny-1)
