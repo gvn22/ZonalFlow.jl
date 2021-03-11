@@ -30,6 +30,36 @@ function fcoeffs(nx::Int,ny::Int,Λ::Int)
     zeros(Float64,2*ny-1,nx-Λ,2*ny-1,nx-Λ)
 end
 
+function fcoeffs(nx::Int,ny::Int,Λ::Int,kf::Int,dk::Int,ε::Float64)
+    F = ArrayPartition(zeros(Float64,2*ny-1,Λ+1),zeros(Float64,2*ny-1,nx-Λ,2*ny-1,nx-Λ))
+
+    for m=1:nx-1
+        for n=-ny+1:ny-1
+
+            k = (m^2 + n^2)^0.5
+
+            if(k < kf + dk && k > kf - dk)
+
+                if (m ≤ Λ)
+                    F.x[1][n+ny,m+1] = 1.0
+                else
+                    F.x[2][n+ny,m-Λ,n+ny,m-Λ] = 1.0
+                end
+            end
+
+        end
+    end
+
+    Nf = sum(F.x[1])
+    Cf = sqrt(2.0*ε*kf^2)/sqrt(Nf) # this is dt unaware - dist contains sqrt(dt)
+    F.x[1] .= Cf .* F.x[1]
+
+    Cf = 2.0*π*ε*kf/dk
+    F.x[2] .= Cf
+
+    return F
+end
+
 function acoeffs(ny::Int)
     zeros(ComplexF64,2*ny-1)
 end
