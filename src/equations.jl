@@ -3,6 +3,12 @@ function unit_eqs!(du,u,p,t)
     nothing
 end
 
+function unit_gce2_eqs!(du,u,p,t)
+    du.x[1] .= 1.0
+    du.x[2] .= 1.0
+    nothing
+end
+
 function nl_eqs!(du,u,p,t)
 
     nx::Int,ny::Int,A::Array{ComplexF64,1},B::Array{ComplexF64,2},Cp::Array{Float64,4},Cm::Array{Float64,4} = p
