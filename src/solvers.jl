@@ -450,6 +450,155 @@ end
 #     end
 # end
 
+""" Generalized Cumulant Expansion Equations
+    specialized dispatch for different forcing types
+"""
+
+# GCE2 -> point jet
+function gce2(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,            # domain
+            θ::Float64,μ::Float64,ν::Float64,ν₄::Float64,               # linear coefficients
+            Ξ::Float64,Δθ::Float64,τ::Float64;                          # forcing parameters
+            dt::Float64=0.01,t_end::Float64=1000.0,                     # integration parameters
+            savefreq::Int=20,poscheck::Bool=false,poscheckfreq::Int=20) #
+
+            # nb: theta is \theta
+            Ω = 2.0*π
+            β̂ = 2.0*cos(deg2rad(θ))*Ω
+            μ̂ = μ
+            τ̂ = τ
+            Ξ̂ = Ξ*Ω
+
+            @info   """ Solving GCE2($Λ) equations for relaxation to point jet
+                        Domain extents: lx = $lx, ly = $ly, nx = $nx, ny = $ny
+                        Linear coefficients: θ = $θ, μ̂ = $μ̂, ν = $ν, ν₄ = $ν₄
+                        Forcing parameters: Ξ̂ = $Ξ̂, Δθ = $Δθ, τ̂ = $τ̂
+                        """
+
+            A = acoeffs(ly,ny,Ξ̂,Δθ,τ̂)
+            B = bcoeffs(lx,ly,nx,ny,β̂,μ̂,ν,ν₄)
+            Cp,Cm = ccoeffs(lx,ly,nx,ny,Λ)
+
+            u0 = ic_rand(lx,ly,nx,ny)*1e-6
+            u0 = ic_cumulants(nx,ny,Λ,u0)
+
+            dx = fill!(similar(u0.x[1]),0)
+            dy = fill!(similar(u0.x[2]),0)
+            temp = fill!(similar(u0.x[2]),0)
+
+            p = [nx,ny,Λ,A,B,Cp,Cm,dx,dy,temp]
+            tspan = (0.0,t_end)
+
+            prob = ODEProblem(gce2_eqs!,u0,tspan,p)
+
+            if poscheck && Λ < nx - 1
+                poschecktimes = [tt for tt=1.0:poscheckfreq:t_end]
+                condition(u,t,integrator) = t ∈ poschecktimes && !ispositive(u.x[2],nx,ny,Λ)
+                affect!(integrator) = positivity!(integrator.u.x[2],nx,ny,Λ)
+                cbp = DiscreteCallback(condition,affect!,save_positions=(false,false))
+                return solve(prob,RK4(),callback=cbp,tstops=poschecktimes,dt=dt,adaptive=false,progress=true,progress_steps=10000,save_start=true,save_everystep=false,dense=false,saveat=savefreq)
+            else
+                return solve(prob,RK4(),dt=dt,adaptive=false,progress=true,progress_steps=10000,save_start=true,save_everystep=false,saveat=savefreq)
+            end
+end
+
+# GCE2 -> Kolmogorov
+function gce2(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,           # domain
+            β::Float64,κ::Float64,ν::Float64,ν3::Float64,               # linear coefficients
+            g::Array{ComplexF64,1};                                     # forcing parameters
+            dt::Float64=0.01,t_end::Float64=1000.0,                     # integration parameters
+            savefreq::Int=20,poscheck::Bool=false,poscheckfreq::Int=20) #
+
+            @info   """ Solving GCE2($Λ) equations for Kolmogorov flow
+                    Domain extents: lx = $lx, ly = $ly, nx = $nx, ny = $ny
+                    Linear coefficients: β = $β, κ = $κ, ν = $ν, ν3 = $ν3
+                    """
+
+            A = acoeffs(ly,ny,g)
+            B = bcoeffs(lx,ly,nx,ny,β,κ,ν,ν3)
+            Cp,Cm = ccoeffs(lx,ly,nx,ny,Λ)
+
+            # u0 = ic_cumulants(nx,ny,Λ,1e-3)
+            u0 = ic_rand(lx,ly,nx,ny)*1e-6
+            u0 = ic_cumulants(nx,ny,Λ,u0)
+
+            dx = fill!(similar(u0.x[1]),0)
+            dy = fill!(similar(u0.x[2]),0)
+            temp = fill!(similar(u0.x[2]),0)
+
+            p = [nx,ny,Λ,A,B,Cp,Cm,dx,dy,temp]
+            tspan = (0.0,t_end)
+
+            prob = ODEProblem(gce2_eqs!,u0,tspan,p)
+
+            if poscheck && Λ < nx - 1
+                poschecktimes = [tt for tt=1.0:poscheckfreq:t_end]
+                condition(u,t,integrator) = t ∈ poschecktimes && !ispositive(u.x[2],nx,ny,Λ)
+                affect!(integrator) = positivity!(integrator.u.x[2],nx,ny,Λ)
+                cbp = DiscreteCallback(condition,affect!,save_positions=(false,false))
+                return solve(prob,RK4(),callback=cbp,tstops=poschecktimes,dt=dt,adaptive=false,progress=true,progress_steps=10000,save_start=true,save_everystep=false,dense=false,saveat=savefreq)
+            else
+                return solve(prob,RK4(),dt=dt,adaptive=false,progress=true,progress_steps=10000,save_start=true,save_everystep=false,saveat=savefreq)
+            end
+end
+
+# GCE2 -> stochastic forcing
+function gce2(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,           # domain
+            β::Float64,μ::Float64,ν::Float64,ν₄::Float64,               # linear coefficients
+            kf::Int,dk::Int,ε::Float64;                                 # forcing parameters
+            dt::Float64=0.01,t_end::Float64=1000.0,savefreq::Int=20)    # integration parameters
+
+            @info   """ Solving GCE2($Λ) equations for stochastic forcing
+                    Domain extents: lx = $lx, ly = $ly, nx = $nx, ny = $ny
+                    Linear coefficients: β = $β, μ = $μ, ν = $ν, ν₄ = $ν₄
+                    Forcing parameters: kf = $kf, k₂ = $dk, ε = $ε
+                    """
+
+            A = acoeffs(ny)
+            B = bcoeffs(lx,ly,nx,ny,β,μ,ν,ν₄)
+            Cp,Cm = ccoeffs(lx,ly,nx,ny,Λ)
+            F = fcoeffs(nx,ny,Λ,kf,dk,ε)
+
+            u0 = ic_cumulants(nx,ny,Λ,1e-3)
+
+            dx = fill!(similar(u0.x[1]),0)
+            dy = fill!(similar(u0.x[2]),0)
+            temp = fill!(similar(u0.x[2]),0)
+
+            p = [nx,ny,Λ,A,B,Cp,Cm,F,dx,dy,temp]
+            tspan = (0.0,t_end)
+
+            Random.seed!(123)
+            function sy_dist!(ξ,W,dt,u,p,t,rng)
+
+                d = Uniform(0.0,2.0*Float64(π))
+                for m=1:Λ
+                    for n=-ny+1:ny-1
+
+                        ϕ = rand(d)
+                        ξ.x[1][n+ny,m+1] = abs(sqrt(dt))*F.x[1][n+ny,m+1]*(cos(ϕ) + im*sin(ϕ))
+
+                    end
+                end
+                ξ.x[2] .= abs(dt) .* F.x[2]
+
+                return ξ
+            end
+            function sy_bridge!(dW,W,W0,Wh,q,h,u,p,t,rng)
+                return W0 .+ h .* (Wh .- W0)
+            end
+            sy_noise!(t0,W0,Z0=nothing;kwargs...) = NoiseProcess(t0,W0,Z0,sy_dist!,sy_bridge!;kwargs...)
+
+            t0 = 0.0
+            W0 = ArrayPartition(zeros(ComplexF64,2*ny-1,Λ+1),zeros(ComplexF64,2*ny-1,nx-Λ,2*ny-1,nx-Λ))
+
+            prob = SDEProblem(gce2_eqs!,unit_gce2_eqs!,u0,tspan,p,noise=sy_noise!(t0,W0))
+            solve(prob,EulerHeun(),dt=dt,adaptive=false,progress=true,progress_steps=10000,
+            save_start=true,saveat=savefreq,save_everystep=savefreq==1 ? true : false,save_noise=true)
+
+            # prob = ODEProblem(gce2_eqs!,u0,tspan,p)
+            # solve(prob,RK4(),dt=dt,adaptive=false,progress=true,progress_steps=10000,save_start=true,save_everystep=false,saveat=savefreq)
+end
+
 ## GCE2
 function gce2(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,Ξ::Float64,β::Float64,τ::Float64=0.0,
     νn::Float64=0.0;jw::Float64=0.1,icnl::Bool=true,ic::Array{ComplexF64,2},dt::Float64=0.01,t_end::Float64=1000.0,savefreq::Int=20,saveinfo::Bool=false,saveinfofreq::Int=50,poscheck::Bool=false,poscheckfreq::Int=20,kwargs...)
