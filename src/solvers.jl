@@ -1,3 +1,7 @@
+""" Fully Nonlinear Equations
+    specialized dispatch for different forcing types
+"""
+
 # NL -> Point jet
 function nl(lx::Float64,ly::Float64,nx::Int,ny::Int,                    # domain
             θ::Float64,κ::Float64,ν::Float64,ν3::Float64,               # linear coefficients
@@ -42,7 +46,6 @@ function nl(lx::Float64,ly::Float64,nx::Int,ny::Int,                    # domain
             @info   """ Solving NL equations for Kolmogorov flow
                     Domain extents: lx = $lx, ly = $ly, nx = $nx, ny = $ny
                     Linear coefficients: β = $β, κ = $κ, ν = $ν, ν3 = $ν3
-                    Forcing parameters: Ξ = $Ξ, Δθ = $Δθ, τ = $τ
                     """
 
             A = acoeffs(ly,ny,g)
@@ -81,9 +84,8 @@ function nl(lx::Float64,ly::Float64,nx::Int,ny::Int,                    # domain
                 ξ .= 0.0
                 Nf = 0
                 d = Uniform(0.0,2.0*Float64(π))
-                for m=0:nx-1
-                    nmin = m==0 ? 1 : -ny+1
-                    for n=nmin:ny-1
+                for m=1:nx-1
+                    for n=-ny+1:ny-1
 
                         k = (m^2 + n^2)^0.5
 
@@ -108,9 +110,9 @@ function nl(lx::Float64,ly::Float64,nx::Int,ny::Int,                    # domain
             t0 = 0.0
             W0 = zeros(ComplexF64,2*ny-1,nx)
             tspan = (0.0,t_end)
-            # u0 = zeros(ComplexF64,2*ny-1,nx)
+            u0 = zeros(ComplexF64,2*ny-1,nx)
             # u0 = ic_rand(lx,ly,nx,ny)
-            u0 = ic_rand(lx,ly,nx,ny,1e-3)
+            # u0 = ic_rand(lx,ly,nx,ny,1e-3)
 
             prob = SDEProblem(nl_eqs!,unit_eqs!,u0,tspan,p,noise=sy_noise!(t0,W0))
             # solve(prob,EM(),dt=dt,adaptive=false,progress=true,progress_steps=1000)
@@ -294,7 +296,6 @@ function gql(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,            # domai
             @info   """ Solving GQL($Λ) equations for Kolmogorov flow
                     Domain extents: lx = $lx, ly = $ly, nx = $nx, ny = $ny
                     Linear coefficients: β = $β, κ = $κ, ν = $ν, ν3 = $ν3
-                    Forcing parameters: Ξ = $Ξ, Δθ = $Δθ, τ = $τ
                     """
 
             A = acoeffs(ly,ny,g)
@@ -377,8 +378,8 @@ function gql(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,            # domai
             t0 = 0.0
             W0 = zeros(ComplexF64,2*ny-1,nx)
             tspan = (0.0,t_end)
-            # u0 = zeros(ComplexF64,2*ny-1,nx)
-            u0 = ic_rand(lx,ly,nx,ny,1e-3)
+            u0 = zeros(ComplexF64,2*ny-1,nx)
+            # u0 = ic_rand(lx,ly,nx,ny,1e-3)
 
             prob = SDEProblem(gql_eqs!,unit_eqs!,u0,tspan,p,noise=sy_noise!(t0,W0))
             solve(prob,EulerHeun(),dt=dt,adaptive=false,progress=true,progress_steps=10000,
