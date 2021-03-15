@@ -76,31 +76,23 @@ function nl(lx::Float64,ly::Float64,nx::Int,ny::Int,                    # domain
             A = acoeffs(ny)
             B = bcoeffs(lx,ly,nx,ny,β,μ,ν,ν₄)
             Cp,Cm = ccoeffs(lx,ly,nx,ny)
+            F = fcoeffs(nx,ny,kf,dk,ε)
             p = [nx,ny,A,B,Cp,Cm]
 
             Random.seed!(123)
             function sy_dist!(ξ,W,dt,u,p,t,rng)
+                nx,ny = p[1],p[2]
 
-                ξ .= 0.0
-                Nf = 0
                 d = Uniform(0.0,2.0*Float64(π))
                 for m=1:nx-1
                     for n=-ny+1:ny-1
 
-                        k = (m^2 + n^2)^0.5
+                        ϕ = rand(d)
+                        ξ[n+ny,m+1] = abs(sqrt(dt))*F[n+ny,m+1]*(cos(ϕ) + im*sin(ϕ))
 
-                        if(k < kf + dk && k > kf - dk)
-                            ϕ = rand(d)
-                            ξ[n+ny,m+1] = cos(ϕ) + im*sin(ϕ)
-                            Nf += 1
-                        else
-                            ξ[n+ny,m+1] = 0.0
-                        end
                     end
                 end
-                coeff = sqrt(2*ε*kf^2)/sqrt(Nf*dt)
-                ξ .= coeff .* dt .* ξ
-                return ξ
+                ξ
             end
             function sy_bridge!(dW,W,W0,Wh,q,h,u,p,t,rng)
                 return W0 .+ h .* (Wh .- W0)
@@ -358,6 +350,7 @@ function gql(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,            # domai
 
             Random.seed!(123)
             function sy_dist!(ξ,W,dt,u,p,t,rng)
+                nx,ny = p[1],p[2]
 
                 d = Uniform(0.0,2.0*Float64(π))
                 for m=1:nx-1
@@ -564,11 +557,13 @@ function gce2(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,           # domai
             dy = fill!(similar(u0.x[2]),0)
             temp = fill!(similar(u0.x[2]),0)
 
-            p = [nx,ny,Λ,A,B,Cp,Cm,F,dx,dy,temp]
+            p = [nx,ny,Λ,A,B,Cp,Cm,dx,dy,temp]
             tspan = (0.0,t_end)
 
             Random.seed!(123)
             function sy_dist!(ξ,W,dt,u,p,t,rng)
+
+                nx,ny = p[1],p[2]
 
                 d = Uniform(0.0,2.0*Float64(π))
                 for m=1:Λ
