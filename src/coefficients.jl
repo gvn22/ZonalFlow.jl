@@ -1,68 +1,3 @@
-function fcoeffs(nx::Int,ny::Int)
-    zeros(ComplexF64,2*ny-1,nx)
-end
-
-function fcoeffs(nx::Int,ny::Int,kf::Int,dk::Int,ε::Float64)
-    # Srinivasan and Young (2012)
-    F = zeros(Float64,2*ny-1,nx)
-
-    for m=1:nx-1 # kf + 1 is max possible
-        for n=-ny+1:ny-1
-
-            k = (m^2 + n^2)^0.5
-
-            if(k < kf + dk && k > kf - dk)
-                F[n+ny,m+1] = 1.0
-            else
-                F[n+ny,m+1] = 0.0
-            end
-        end
-    end
-
-    Nf = sum(F)
-    Cf = sqrt(2.0*ε*kf^2)/sqrt(Nf) # this is dt unaware - dist contains sqrt(dt)
-
-    return Cf .* F
-
-end
-
-function fcoeffs(nx::Int,ny::Int,Λ::Int)
-    zeros(Float64,2*ny-1,nx-Λ,2*ny-1,nx-Λ)
-end
-
-function fcoeffs(nx::Int,ny::Int,Λ::Int,kf::Int,dk::Int,ε::Float64)
-
-    F = ArrayPartition(zeros(Float64,2*ny-1,Λ+1),zeros(Float64,2*ny-1,nx-Λ,2*ny-1,nx-Λ))
-
-    for m=1:nx-1
-        for n=-ny+1:ny-1
-
-            k = (m^2 + n^2)^0.5
-
-            if(k < kf + dk && k > kf - dk)
-
-                if (m <= Λ)
-                    @info "Forcing term ($m, $n) -> $k as low mode"
-                    F.x[1][n+ny,m+1] = 1.0
-                else
-                    @info "Forcing term ($m, $n) -> $k to field bilinear"
-                    F.x[2][n+ny,m-Λ,n+ny,m-Λ] = 2.0*π*ε*kf/dk/32.0 #1.0
-                end
-            end
-
-        end
-    end
-
-    Nf = sum(F.x[1])
-    Cf = sqrt(2.0*ε*kf^2)/sqrt(Nf) # this is dt unaware - dist contains dt/sqrt(dt)
-    F.x[1] .= Cf .* F.x[1]
-
-    # Cf = 2.0*π*ε*kf/dk
-    # F.x[2] .= Cf .* F.x[2] # this is dt unaware - dist contains dt
-
-    return F
-end
-
 function acoeffs(ny::Int)
     zeros(ComplexF64,2*ny-1)
 end
@@ -95,7 +30,7 @@ function acoeffs(ly::Float64,ny::Int,Ξ::Float64,τ::Float64=0.0;jw::Float64=0.0
 end
 
 function bcoeffs(nx::Int,ny::Int)
-    return zeros(ComplexF64,2*ny-1,nx)
+    zeros(ComplexF64,2*ny-1,nx)
 end
 
 function bcoeffs(lx::Float64,ly::Float64,nx::Int,ny::Int,β::Float64,μ::Float64,ν::Float64,ν₄::Float64)
@@ -117,12 +52,12 @@ function bcoeffs(lx::Float64,ly::Float64,nx::Int,ny::Int,β::Float64,μ::Float64
 
         end
     end
-    return B
+    B
 end
 
 function ccoeffs(nx::Int,ny::Int)
 
-    # stub
+    # stub for linear solve
     Cp = zeros(Float64,2*ny-1,nx,2*ny-1,nx)
     Cm = zeros(Float64,2*ny-1,nx,2*ny-1,nx)
     Cp,Cm
@@ -302,4 +237,70 @@ function ccoeffs(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int)
         end
     end
     Cp,Cm
+end
+
+function fcoeffs(nx::Int,ny::Int)
+    zeros(ComplexF64,2*ny-1,nx)
+end
+
+function fcoeffs(nx::Int,ny::Int,kf::Int,dk::Int,ε::Float64)
+    # Srinivasan and Young (2012)
+    F = zeros(Float64,2*ny-1,nx)
+
+    for m=1:nx-1 # kf + 1 is max possible
+        for n=-ny+1:ny-1
+
+            k = (m^2 + n^2)^0.5
+
+            if(k < kf + dk && k > kf - dk)
+                F[n+ny,m+1] = 1.0
+            else
+                F[n+ny,m+1] = 0.0
+            end
+        end
+    end
+
+    Nf = sum(F)
+    Cf = sqrt(2.0*ε*kf^2)/sqrt(Nf) # this is dt unaware - dist contains sqrt(dt)
+
+    Cf .* F
+
+end
+
+function fcoeffs(nx::Int,ny::Int,Λ::Int)
+    zeros(Float64,2*ny-1,nx-Λ,2*ny-1,nx-Λ)
+end
+
+function fcoeffs(nx::Int,ny::Int,Λ::Int,kf::Int,dk::Int,ε::Float64)
+
+    ξ = zeros(Float64,2*ny-1,Λ+1)
+    Ξ = zeros(Float64,2*ny-1,nx-Λ,2*ny-1,nx-Λ)
+
+    for m=1:nx-1 # should 0 be included?
+        for n=-ny+1:ny-1
+
+            k = (m^2 + n^2)^0.5 # k = norm([m,n])
+
+            if(k < kf + dk && k > kf - dk)
+
+                if (m <= Λ)
+                    @info "Forcing term ($m, $n) -> $k as low mode"
+                    ξ[n+ny,m+1] = 1.0
+                else
+                    @info "Forcing term ($m, $n) -> $k to field bilinear"
+                    Ξ[n+ny,m-Λ,n+ny,m-Λ] = 1.0
+                end
+            end
+
+        end
+    end
+
+    Nf = sum(ξ)
+    Cf = sqrt(2.0*ε*kf^2)/sqrt(Nf) # this is dt unaware - dist contains dt/sqrt(dt)
+    ξ .= Cf .* ξ
+
+    Cf = 2.0*π*ε*kf/dk/32.0 # 2.0*π*ε*kf/dk
+    Ξ .= Cf .* Ξ # this is dt unaware - dist contains dt
+
+    ArrayPartition(ξ,Ξ)
 end
