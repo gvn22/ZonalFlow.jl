@@ -1,3 +1,7 @@
+""" Fully Nonlinear Equations
+    specialized dispatch for different forcing types
+"""
+
 # NL -> Point jet
 function nl(lx::Float64,ly::Float64,nx::Int,ny::Int,                    # domain
             θ::Float64,κ::Float64,ν::Float64,ν3::Float64,               # linear coefficients
@@ -42,7 +46,6 @@ function nl(lx::Float64,ly::Float64,nx::Int,ny::Int,                    # domain
             @info   """ Solving NL equations for Kolmogorov flow
                     Domain extents: lx = $lx, ly = $ly, nx = $nx, ny = $ny
                     Linear coefficients: β = $β, κ = $κ, ν = $ν, ν3 = $ν3
-                    Forcing parameters: Ξ = $Ξ, Δθ = $Δθ, τ = $τ
                     """
 
             A = acoeffs(ly,ny,g)
@@ -60,59 +63,165 @@ end
 
 # NL -> stochastic forcing
 function nl(lx::Float64,ly::Float64,nx::Int,ny::Int,                    # domain
-            θ::Float64,κ::Float64,ν::Float64,ν3::Float64,               # linear coefficients
-            m₁::Int,m₂::Int,τ::Float64;                                 # forcing parameters
+            β::Float64,μ::Float64,ν::Float64,ν₄::Float64,               # linear coefficients
+            kf::Int,dk::Int,ε::Float64;                                 # forcing parameters
             dt::Float64=0.01,t_end::Float64=1000.0,savefreq::Int=20)    # integration parameters
-
-            Ω = 2.0*π
-            β̂ = 2.0*cos(deg2rad(θ))*Ω
-            κ̂ = κ
 
             @info   """ Solving NL equations for stochastic forcing
                     Domain extents: lx = $lx, ly = $ly, nx = $nx, ny = $ny
-                    Linear coefficients: θ = $θ, κ = $κ, ν = $ν, ν3 = $ν3
-                    Forcing parameters: m₁ = $m₁, m₂ = $m₂, τ = $τ
+                    Linear coefficients: β = $β, μ = $μ, ν = $ν, ν₄ = $ν₄
+                    Forcing parameters: kf = $kf, k₂ = $dk, ε = $ε
                     """
 
-            Δt = dt
-            R = (1-Δt/τ)/(1+Δt/τ)
-            tη = 0.0:Δt:t_end
-            sf = 0.001
-
-            η = []
-            rng = MersenneTwister(1234);
-            for i in 1:length(tη)
-                η̂ = zeros(ComplexF64,2*ny-1,nx)
-                for m=m₁:m₂
-                    nmin = m == 0 ? 1 : -ny+1
-                    for n=nmin:ny-1
-                    # for n=m₁:m₂
-                        η̂[n+ny,m+1] = sf^0.5*(randn(rng,Float64) + im*randn(rng,Float64))
-                    end
-                end
-                push!(η,η̂)
-            end
-            for i in 2:length(tη)
-                η[i] .= η[i-1] .+ ((1-R^2)/τ)^0.5*η[i]
-            end
-            W = NoiseGrid(tη,η)
-
-            A = acoeffs(ly,ny)
-            B = bcoeffs(lx,ly,nx,ny,β̂,κ̂,ν,ν3)
+            A = acoeffs(ny)
+            B = bcoeffs(lx,ly,nx,ny,β,μ,ν,ν₄)
             Cp,Cm = ccoeffs(lx,ly,nx,ny)
+            F = fcoeffs(nx,ny,kf,dk,ε)
 
-            p = [nx,ny,A,B,Cp,Cm]
+            p = [nx,ny,A,B,Cp,Cm,F]
             tspan = (0.0,t_end)
-            u0 = ic_rand(lx,ly,nx,ny)*0.0
-            # prob = SDEProblem(nl_eqs!,u0,tspan,p,noise=W)
-            function g!(du,u,p,t)
-                du .= 1.0 + 0.0im
-            end
-            prob = SDEProblem(nl_eqs!,g!,u0,tspan,p,noise=W)
 
-            solve(prob,EM(),dt=dt,adaptive=false,progress=true,progress_steps=10000,
-            save_start=true,saveat=savefreq,save_everystep=savefreq==1 ? true : false)
+            u0 = zeros(ComplexF64,2*ny-1,nx) # u0 = ic_rand(lx,ly,nx,ny,1e-3)
+            W0 = zeros(ComplexF64,2*ny-1,nx)
+
+            Random.seed!(123)
+            noise!(t0,W0,Z0=nothing;kwargs...) = NoiseProcess(t0,W0,Z0,sy_dist!,sy_bridge!;kwargs...)
+
+            prob = SDEProblem(nl_eqs!,unit_eqs!,u0,tspan,p,noise=noise!(0.0,W0))
+
+            solve(prob,EulerHeun(),dt=dt,adaptive=false,progress=true,progress_steps=10000,
+            save_start=true,saveat=savefreq,save_everystep=savefreq==1 ? true : false,save_noise=true)
+
 end
+
+# function nl(lx::Float64,ly::Float64,nx::Int,ny::Int,                    # domain
+#             β::Float64,μ::Float64,ν::Float64,ν₄::Float64,               # linear coefficients
+#             k₁::Int,k₂::Int,aη::Float64,τ::Float64;                     # forcing parameters
+#             dt::Float64=0.01,t_end::Float64=1000.0,savefreq::Int=20)    # integration parameters
+#
+#             @info   """ Solving NL equations for stochastic forcing
+#                     Domain extents: lx = $lx, ly = $ly, nx = $nx, ny = $ny
+#                     Linear coefficients: β = $β, μ = $μ, ν = $ν, ν₄ = $ν₄
+#                     Forcing parameters: k₁ = $k₁, k₂ = $k₂, aη = $aη, τ = $τ
+#                     """
+#
+#             A = acoeffs(ly,ny)
+#             B = bcoeffs(lx,ly,nx,ny,β,μ,ν,ν₄)
+#             Cp,Cm = ccoeffs(lx,ly,nx,ny)
+#             p = [nx,ny,A,B,Cp,Cm]
+#
+#             function nif_dist!(rand_vec,W,dt,u,p,t,rng)
+#
+#                 rand_vec .= rand(Normal(0.0,aη),2*ny-1,nx) .+ im.*rand(Normal(0.0,aη),2*ny-1,nx)
+#                 # rand_vec[:,1] .= 0.0
+#                 for m=1:nx-1
+#                     for n=-ny+1:ny-1
+#                         k = (m^2 + n^2)^0.5
+#                         kx = 2.0*Float64(pi)*Float64(m)/lx
+#                         ky = 2.0*Float64(pi)*Float64(n)/ly
+#                         rand_vec[n+ny,m+1] *= (kx^2 + ky^2)^0.5
+#                         # rand_vec[n+ny,m+1] *= abs(sqrt(dt))
+#
+#                         if(m > k₂ || m < k₁)
+#                             rand_vec[n+ny,m+1] *= 0.0
+#                         end
+#                     end
+#                 end
+#                 # @info "Time step: $dt"
+#             end
+#             function nif_bridge!(dW,W,W0,Wh,q,h,u,p,t,rng)
+#                 return W0 .+ h .* Wh
+#             end
+#             nif_noise!(t0,W0,Z0=nothing;kwargs...) = NoiseProcess(t0,W0,Z0,nif_dist!,nif_bridge!;kwargs...)
+#
+#             function ibn_dist!(rand_vec,W,dt,u,p,t,rng)
+#                 rand_vec .= rand(Normal(0.0,aη),2*ny-1,nx) .+ im.*rand(Normal(0.0,aη),2*ny-1,nx)
+#                 rand_vec[:,1] .= 0.0
+#                 for m=1:nx-1
+#                     for n=-ny+1:ny-1
+#                         k = (m^2 + n^2)^0.5
+#                         kx = 2.0*Float64(pi)*Float64(m)/lx
+#                         ky = 2.0*Float64(pi)*Float64(n)/ly
+#                         rand_vec[n+ny,m+1] *= (kx^2 + ky^2)^0.5
+#                         # rand_vec[n+ny,m+1] *= abs(sqrt(dt))
+#
+#                         if(m > k₂ || m < k₁ && n > k₂ || n < k₁)
+#                             rand_vec[n+ny,m+1] *= 0.0
+#                         end
+#                     end
+#                 end
+#             end
+#             ibn_noise!(t0,W0,Z0=nothing;kwargs...) = NoiseProcess(t0,W0,Z0,ibn_dist!,nothing;kwargs...)
+#
+#             Random.seed!(123)
+#
+#             function irf_dist!(rand_vec,W,dt,u,p,t,rng)
+#
+#                 # rand!(Normal(0.0,aη),rand_vec)
+#                 rand_vec .= rand(Normal(0.0,aη),2*ny-1,nx) .+ im.*rand(Normal(0.0,aη),2*ny-1,nx)
+#                 rand_vec[:,1] .= 0.0
+#                 for m=1:nx-1
+#                     for n=-ny+1:ny-1
+#
+#                         k = (m^2 + n^2)^0.5
+#                         kx = 2.0*Float64(pi)*Float64(m)/lx
+#                         ky = 2.0*Float64(pi)*Float64(n)/ly
+#                         rand_vec[n+ny,m+1] *= (kx^2 + ky^2)^0.5
+#                         # rand_vec[n+ny,m+1] *= abs(sqrt(dt))
+#
+#                         if(k > k₂ || k < k₁)
+#                             rand_vec[n+ny,m+1] *= 0.0
+#                         end
+#                     end
+#                 end
+#             end
+#             irf_noise!(t0,W0,Z0=nothing;kwargs...) = NoiseProcess(t0,W0,Z0,irf_dist!,nothing;kwargs...)
+#
+#             t0 = 0.0
+#             W0 = zeros(ComplexF64,2*ny-1,nx)
+#
+#             tspan = (0.0,t_end)
+#             # u0 = ic_rand(lx,ly,nx,ny)*0.0
+#             u0 = zeros(ComplexF64,2*ny-1,nx)
+#             prob = SDEProblem(nl_eqs!,unit_eqs!,u0,tspan,p,noise=nif_noise!(t0,W0))
+#
+#             solve(prob,EM(),dt=dt,adaptive=false,progress=true,progress_steps=10000,
+#             save_start=true,saveat=savefreq,save_everystep=savefreq==1 ? true : false,save_noise=true)
+# end
+
+# NL -> stochastic forcing
+# function nl(lx::Float64,ly::Float64,nx::Int,ny::Int,                    # domain
+#             β::Float64,κ::Float64,ν::Float64,ν3::Float64,               # linear coefficients
+#             k₁::Int,k₂::Int,aη::Float64,τ::Float64;                     # forcing parameters
+#             dt::Float64=0.01,t_end::Float64=1000.0,savefreq::Int=20)    # integration parameters
+#
+#             @info   """ Solving NL equations for stochastic forcing
+#                     Domain extents: lx = $lx, ly = $ly, nx = $nx, ny = $ny
+#                     Linear coefficients: β = $β, κ = $κ, ν = $ν, ν3 = $ν3
+#                     Forcing parameters: k₁ = $k₁, k₂ = $k₂, aη = $aη, τ = $τ
+#                     """
+#
+#             A = acoeffs(ly,ny)
+#             B = bcoeffs(lx,ly,nx,ny,β,κ,ν,ν3)
+#             Cp,Cm = ccoeffs(lx,ly,nx,ny)
+#             D = [k₁,k₂]
+#             tη = 0.0:dt:t_end
+#             η = [zeros(ComplexF64,2*ny-1,nx) for i=1:length(tη)]
+#             fcoeffs_2!(nx,ny,k₁,k₂,aη,η)
+#             W = NoiseGrid(tη,η)
+#
+#             p = [nx,ny,A,B,Cp,Cm,D]
+#
+#             # η₀ = zeros(ComplexF64,2*ny-1,nx)
+#             # W = NoiseFunction(0.0,fcoeffs!,noise_prototype=η₀,reset=true)
+#
+#             tspan = (0.0,t_end)
+#             u0 = ic_rand(lx,ly,nx,ny)*0.0
+#             prob = SDEProblem(nl_eqs!,unit_eqs!,u0,tspan,p,noise=W)
+#
+#             solve(prob,EM(),dt=dt,adaptive=false,progress=true,progress_steps=10000,
+#             save_start=true,saveat=savefreq,save_everystep=savefreq==1 ? true : false,save_noise=true)
+# end
 
 """ Generalized Quasilinear Equations
     specialized dispatch for different forcing types
@@ -158,7 +267,6 @@ function gql(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,            # domai
             @info   """ Solving GQL($Λ) equations for Kolmogorov flow
                     Domain extents: lx = $lx, ly = $ly, nx = $nx, ny = $ny
                     Linear coefficients: β = $β, κ = $κ, ν = $ν, ν3 = $ν3
-                    Forcing parameters: Ξ = $Ξ, Δθ = $Δθ, τ = $τ
                     """
 
             A = acoeffs(ly,ny,g)
@@ -174,68 +282,256 @@ function gql(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,            # domai
             save_start=true,saveat=savefreq,save_everystep=savefreq==1 ? true : false)
 end
 
+# GQL -> stochastic forcing
+# function gql(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,            # domain
+#             β::Float64,κ::Float64,ν::Float64,ν3::Float64,               # linear coefficients
+#             k₁::Int,k₂::Int,aη::Float64,τ::Float64;                     # forcing parameters
+#             dt::Float64=0.01,t_end::Float64=1000.0,savefreq::Int=20)    # integration parameters
+#
+#             @info   """ Solving GQL($Λ) equations for stochastic forcing
+#                     Domain extents: lx = $lx, ly = $ly, nx = $nx, ny = $ny
+#                     Linear coefficients: β = $β, κ = $κ, ν = $ν, ν3 = $ν3
+#                     Forcing parameters: k₁ = $k₁, k₂ = $k₂, aη = $aη, τ = $τ
+#                     """
+#
+#             A = acoeffs(ly,ny)
+#             B = bcoeffs(lx,ly,nx,ny,β,κ,ν,ν3)
+#             Cp,Cm = ccoeffs(lx,ly,nx,ny,Λ)
+#             W = fcoeffs_2(nx,ny,dt,t_end,k₁,k₂,aη,τ)
+#
+#             p = [nx,ny,Λ,A,B,Cp,Cm]
+#             tspan = (0.0,t_end)
+#             u0 = ic_rand(lx,ly,nx,ny)*0.0
+#             prob = SDEProblem(gql_eqs!,unit_eqs!,u0,tspan,p,noise=W)
+#
+#             solve(prob,EM(),dt=dt,adaptive=false,progress=true,progress_steps=10000,
+#             save_start=true,saveat=savefreq,save_everystep=savefreq==1 ? true : false,save_noise=true)
+# end
 
-## NL
-function nl(lx::Float64,ly::Float64,nx::Int,ny::Int,Ξ::Float64,β::Float64,τ::Float64=0.0,
-    νn::Float64=0.0;jw::Float64=0.1,ic::Array{ComplexF64,2},dt::Float64=0.01,t_end::Float64=1000.0,savefreq::Int=20,kwargs...)
-    A = acoeffs(ly,ny,Ξ,τ)
-    B = bcoeffs(lx,ly,nx,ny,β,τ,νn)
-    Cp,Cm = ccoeffs(lx,ly,nx,ny)
-    p = [nx,ny,A,B,Cp,Cm]
-    tspan = (0.0,t_end)
-    prob = ODEProblem(nl_eqs!,ic,tspan,p)
-    @info "Solving NL equations on $(nx-1)x$(ny-1) grid"
-    @info "Parameters: Ξ = $Ξ, Δθ = $jw, β = $β, τ = $τ"
-    solve(prob,RK4(),dt=dt,adaptive=false,progress=true,progress_steps=10000,save_start=true,saveat=savefreq,save_everystep=savefreq==1 ? true : false)
+# GQL -> stochastic forcing
+function gql(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,            # domain
+            β::Float64,μ::Float64,ν::Float64,ν₄::Float64,               # linear coefficients
+            kf::Int,dk::Int,ε::Float64;                                 # forcing parameters
+            dt::Float64=0.01,t_end::Float64=1000.0,savefreq::Int=20)    # integration parameters
+
+            @info   """ Solving GQL($Λ) equations for stochastic forcing
+                    Domain extents: lx = $lx, ly = $ly, nx = $nx, ny = $ny
+                    Linear coefficients: β = $β, μ = $μ, ν = $ν, ν₄ = $ν₄
+                    Forcing parameters: kf = $kf, k₂ = $dk, ε = $ε
+                    """
+
+            A = acoeffs(ny)
+            B = bcoeffs(lx,ly,nx,ny,β,μ,ν,ν₄)
+            Cp,Cm = ccoeffs(lx,ly,nx,ny,Λ)
+            # Cp,Cm = ccoeffs(nx,ny)
+            F = fcoeffs(nx,ny,kf,dk,ε)
+
+            p = [nx,ny,Λ,A,B,Cp,Cm,F]
+            tspan = (0.0,t_end)
+
+            Random.seed!(123)
+            noise!(t0,W0,Z0=nothing;kwargs...) = NoiseProcess(t0,W0,Z0,sy_dist!,sy_bridge!;kwargs...)
+
+            u0 = ic_rand(nx,ny,1e-3)
+            W0 = zeros(ComplexF64,2*ny-1,nx)
+
+            prob = SDEProblem(gql_eqs!,unit_eqs!,u0,tspan,p,noise=noise!(0.0,W0))
+            solve(prob,EulerHeun(),dt=dt,adaptive=false,progress=true,progress_steps=10000,
+            save_start=true,saveat=savefreq,save_everystep=savefreq==1 ? true : false,save_noise=true)
+
 end
 
+## NL
+# function nl(lx::Float64,ly::Float64,nx::Int,ny::Int,Ξ::Float64,β::Float64,τ::Float64=0.0,
+#     νn::Float64=0.0;jw::Float64=0.1,ic::Array{ComplexF64,2},dt::Float64=0.01,t_end::Float64=1000.0,savefreq::Int=20,kwargs...)
+#     A = acoeffs(ly,ny,Ξ,τ)
+#     B = bcoeffs(lx,ly,nx,ny,β,τ,νn)
+#     Cp,Cm = ccoeffs(lx,ly,nx,ny)
+#     p = [nx,ny,A,B,Cp,Cm]
+#     tspan = (0.0,t_end)
+#     prob = ODEProblem(nl_eqs!,ic,tspan,p)
+#     @info "Solving NL equations on $(nx-1)x$(ny-1) grid"
+#     @info "Parameters: Ξ = $Ξ, Δθ = $jw, β = $β, τ = $τ"
+#     solve(prob,RK4(),dt=dt,adaptive=false,progress=true,progress_steps=10000,save_start=true,saveat=savefreq,save_everystep=savefreq==1 ? true : false)
+# end
+
 ## GQL
-function gql(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,Ξ::Float64,β::Float64,τ::Float64=0.0,νn::Float64=0.0;
-    sfparams,jw::Float64=0.1,ic::Array{ComplexF64,2},dt::Float64=0.01,t_end::Float64=1000.0,savefreq::Int=20,kwargs...)
+# function gql(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,Ξ::Float64,β::Float64,τ::Float64=0.0,νn::Float64=0.0;
+#     sfparams,jw::Float64=0.1,ic::Array{ComplexF64,2},dt::Float64=0.01,t_end::Float64=1000.0,savefreq::Int=20,kwargs...)
+#
+#     A = acoeffs(ly,ny,Ξ,τ)
+#     B = bcoeffs(lx,ly,nx,ny,β,τ,νn)
+#     # Cp,Cm = ccoeffs(nx,ny)
+#     Cp,Cm = ccoeffs(lx,ly,nx,ny,Λ)
+#
+#     tprev = 0.0
+#     trenew,mmin,mmax,amp = sfparams
+#     η = fill!(similar(ic),0.0 + 0.0im)
+#     η̂ = fill!(similar(ic),0.0 + 0.0im)
+#     fcoeffs!(nx,ny,mmin,mmax,amp,η̂)
+#     # η̂ = fcoeffs(nx,ny,mmin,mmax,amp)
+#     F = (tprev,trenew,η,η̂)
+#
+#     p = [nx,ny,Λ,A,B,Cp,Cm,F]
+#     tspan = (0.0,t_end)
+#     prob = ODEProblem(gql_eqs!,ic,tspan,p)
+#     @info "Solving GQL equations on $(nx-1)x$(ny-1) grid with Λ = $Λ"
+#     @info "Parameters: Ξ = $Ξ, Δθ = $jw, β = $β, τ = $τ"
+#
+#     if trenew > 0.0
+#
+#         integrator = init(prob,RK4(),dt=dt,adaptive=false,progress=true,progress_steps=10000,save_start=true,save_everystep=false,dense=false,saveat=savefreq)
+#         for i in integrator
+#
+#             step!(integrator)
+#
+#             tprev,trenew,η,η̂ = integrator.p[8]
+#             Δt = integrator.t - tprev
+#             onebytr = trenew > 0.0 ? 1.0/trenew : 0.0
+#             R = (1.0 - Δt*onebytr)/(1.0 + Δt*onebytr)
+#             η .= R*η .+ sqrt((1.0 - R*R)*onebytr)*η̂
+#
+#             tprev = integrator.t
+#             # η̂ = fcoeffs(nx,ny,mmin,mmax,amp)
+#             fcoeffs!(nx,ny,mmin,mmax,amp,η̂)
+#             F = (tprev,trenew,η,η̂)
+#             integrator.p = [nx,ny,Λ,A,B,Cp,Cm,F]
+#
+#         end
+#         return integrator.sol
+#     else
+#         solve(prob,RK4(),dt=dt,adaptive=false,progress=true,progress_steps=10000,save_start=true,save_everystep=false,dense=false,saveat=savefreq)
+#     end
+# end
 
-    A = acoeffs(ly,ny,Ξ,τ)
-    B = bcoeffs(lx,ly,nx,ny,β,τ,νn)
-    # Cp,Cm = ccoeffs(nx,ny)
-    Cp,Cm = ccoeffs(lx,ly,nx,ny,Λ)
+""" Generalized Cumulant Expansion Equations
+    specialized dispatch for different forcing types
+"""
 
-    tprev = 0.0
-    trenew,mmin,mmax,amp = sfparams
-    η = fill!(similar(ic),0.0 + 0.0im)
-    η̂ = fill!(similar(ic),0.0 + 0.0im)
-    fcoeffs!(nx,ny,mmin,mmax,amp,η̂)
-    # η̂ = fcoeffs(nx,ny,mmin,mmax,amp)
-    F = (tprev,trenew,η,η̂)
+# GCE2 -> point jet
+function gce2(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,            # domain
+            θ::Float64,μ::Float64,ν::Float64,ν₄::Float64,               # linear coefficients
+            Ξ::Float64,Δθ::Float64,τ::Float64;                          # forcing parameters
+            dt::Float64=0.01,t_end::Float64=1000.0,                     # integration parameters
+            savefreq::Int=20,poscheck::Bool=false,poscheckfreq::Int=20) #
 
-    p = [nx,ny,Λ,A,B,Cp,Cm,F]
-    tspan = (0.0,t_end)
-    prob = ODEProblem(gql_eqs!,ic,tspan,p)
-    @info "Solving GQL equations on $(nx-1)x$(ny-1) grid with Λ = $Λ"
-    @info "Parameters: Ξ = $Ξ, Δθ = $jw, β = $β, τ = $τ"
+            # nb: theta is \theta
+            Ω = 2.0*π
+            β̂ = 2.0*cos(deg2rad(θ))*Ω
+            μ̂ = μ
+            τ̂ = τ
+            Ξ̂ = Ξ*Ω
 
-    if trenew > 0.0
+            @info   """ Solving GCE2($Λ) equations for relaxation to point jet
+                        Domain extents: lx = $lx, ly = $ly, nx = $nx, ny = $ny
+                        Linear coefficients: θ = $θ, μ̂ = $μ̂, ν = $ν, ν₄ = $ν₄
+                        Forcing parameters: Ξ̂ = $Ξ̂, Δθ = $Δθ, τ̂ = $τ̂
+                        """
 
-        integrator = init(prob,RK4(),dt=dt,adaptive=false,progress=true,progress_steps=10000,save_start=true,save_everystep=false,dense=false,saveat=savefreq)
-        for i in integrator
+            A = acoeffs(ly,ny,Ξ̂,Δθ,τ̂)
+            B = bcoeffs(lx,ly,nx,ny,β̂,μ̂,ν,ν₄)
+            Cp,Cm = ccoeffs(lx,ly,nx,ny,Λ)
 
-            step!(integrator)
+            u0 = ic_rand(lx,ly,nx,ny)*1e-6
+            u0 = ic_cumulants(nx,ny,Λ,u0)
 
-            tprev,trenew,η,η̂ = integrator.p[8]
-            Δt = integrator.t - tprev
-            onebytr = trenew > 0.0 ? 1.0/trenew : 0.0
-            R = (1.0 - Δt*onebytr)/(1.0 + Δt*onebytr)
-            η .= R*η .+ sqrt((1.0 - R*R)*onebytr)*η̂
+            dx = fill!(similar(u0.x[1]),0)
+            dy = fill!(similar(u0.x[2]),0)
+            temp = fill!(similar(u0.x[2]),0)
 
-            tprev = integrator.t
-            # η̂ = fcoeffs(nx,ny,mmin,mmax,amp)
-            fcoeffs!(nx,ny,mmin,mmax,amp,η̂)
-            F = (tprev,trenew,η,η̂)
-            integrator.p = [nx,ny,Λ,A,B,Cp,Cm,F]
+            p = [nx,ny,Λ,A,B,Cp,Cm,dx,dy,temp]
+            tspan = (0.0,t_end)
 
-        end
-        return integrator.sol
-    else
-        solve(prob,RK4(),dt=dt,adaptive=false,progress=true,progress_steps=10000,save_start=true,save_everystep=false,dense=false,saveat=savefreq)
-    end
+            prob = ODEProblem(gce2_eqs!,u0,tspan,p)
+
+            if poscheck && Λ < nx - 1
+                poschecktimes = [tt for tt=1.0:poscheckfreq:t_end]
+                condition(u,t,integrator) = t ∈ poschecktimes && !ispositive(u.x[2],nx,ny,Λ)
+                affect!(integrator) = positivity!(integrator.u.x[2],nx,ny,Λ)
+                cbp = DiscreteCallback(condition,affect!,save_positions=(false,false))
+                return solve(prob,RK4(),callback=cbp,tstops=poschecktimes,dt=dt,adaptive=false,progress=true,progress_steps=10000,save_start=true,save_everystep=false,dense=false,saveat=savefreq)
+            else
+                return solve(prob,RK4(),dt=dt,adaptive=false,progress=true,progress_steps=10000,save_start=true,save_everystep=false,saveat=savefreq)
+            end
+end
+
+# GCE2 -> Kolmogorov
+function gce2(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,           # domain
+            β::Float64,κ::Float64,ν::Float64,ν3::Float64,               # linear coefficients
+            g::Array{ComplexF64,1};                                     # forcing parameters
+            dt::Float64=0.01,t_end::Float64=1000.0,                     # integration parameters
+            savefreq::Int=20,poscheck::Bool=false,poscheckfreq::Int=20) #
+
+            @info   """ Solving GCE2($Λ) equations for Kolmogorov flow
+                    Domain extents: lx = $lx, ly = $ly, nx = $nx, ny = $ny
+                    Linear coefficients: β = $β, κ = $κ, ν = $ν, ν3 = $ν3
+                    """
+
+            A = acoeffs(ly,ny,g)
+            B = bcoeffs(lx,ly,nx,ny,β,κ,ν,ν3)
+            Cp,Cm = ccoeffs(lx,ly,nx,ny,Λ)
+
+            # u0 = ic_cumulants(nx,ny,Λ,1e-3)
+            u0 = ic_rand(lx,ly,nx,ny)*1e-6
+            u0 = ic_cumulants(nx,ny,Λ,u0)
+
+            dx = fill!(similar(u0.x[1]),0)
+            dy = fill!(similar(u0.x[2]),0)
+            temp = fill!(similar(u0.x[2]),0)
+
+            p = [nx,ny,Λ,A,B,Cp,Cm,dx,dy,temp]
+            tspan = (0.0,t_end)
+
+            prob = ODEProblem(gce2_eqs!,u0,tspan,p)
+
+            if poscheck && Λ < nx - 1
+                poschecktimes = [tt for tt=1.0:poscheckfreq:t_end]
+                condition(u,t,integrator) = t ∈ poschecktimes && !ispositive(u.x[2],nx,ny,Λ)
+                affect!(integrator) = positivity!(integrator.u.x[2],nx,ny,Λ)
+                cbp = DiscreteCallback(condition,affect!,save_positions=(false,false))
+                return solve(prob,RK4(),callback=cbp,tstops=poschecktimes,dt=dt,adaptive=false,progress=true,progress_steps=10000,save_start=true,save_everystep=false,dense=false,saveat=savefreq)
+            else
+                return solve(prob,RK4(),dt=dt,adaptive=false,progress=true,progress_steps=10000,save_start=true,save_everystep=false,saveat=savefreq)
+            end
+end
+
+# GCE2 -> stochastic forcing
+function gce2(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,           # domain
+            β::Float64,μ::Float64,ν::Float64,ν₄::Float64,               # linear coefficients
+            kf::Int,dk::Int,ε::Float64;                                 # forcing parameters
+            dt::Float64=0.01,t_end::Float64=1000.0,savefreq::Int=20)    # integration parameters
+
+            @info   """ Solving GCE2($Λ) equations for stochastic forcing
+                    Domain extents: lx = $lx, ly = $ly, nx = $nx, ny = $ny
+                    Linear coefficients: β = $β, μ = $μ, ν = $ν, ν₄ = $ν₄
+                    Forcing parameters: kf = $kf, k₂ = $dk, ε = $ε
+                    """
+
+            A = acoeffs(ny)
+            B = bcoeffs(lx,ly,nx,ny,β,μ,ν,ν₄)
+            Cp,Cm = ccoeffs(lx,ly,nx,ny,Λ)
+            # Cp,Cm = ccoeffs(nx,ny)
+            F = fcoeffs(nx,ny,Λ,kf,dk,ε)
+
+            Random.seed!(123)
+            noise!(t0,W0,Z0=nothing;kwargs...) = NoiseProcess(t0,W0,Z0,sy_gce2_dist!,sy_bridge!;kwargs...)
+
+            u0 = ic_rand(nx,ny,1e-3)
+            u0 = ic_cumulants(nx,ny,Λ,u0)
+            W0 = ArrayPartition(zeros(ComplexF64,2*ny-1,Λ+1),zeros(ComplexF64,2*ny-1,nx-Λ,2*ny-1,nx-Λ))
+
+            dx = fill!(similar(u0.x[1]),0)
+            dy = fill!(similar(u0.x[2]),0)
+            temp = fill!(similar(u0.x[2]),0)
+
+            p = [nx,ny,Λ,A,B,Cp,Cm,dx,dy,temp,F]
+            tspan = (0.0,t_end)
+
+            prob = SDEProblem(gce2_eqs!,unit_gce2_eqs!,u0,tspan,p,noise=noise!(0.0,W0))
+
+            solve(prob,EulerHeun(),dt=dt,adaptive=false,progress=true,progress_steps=10000,
+            save_start=true,saveat=savefreq,save_everystep=savefreq==1 ? true : false,save_noise=true)
+
 end
 
 ## GCE2

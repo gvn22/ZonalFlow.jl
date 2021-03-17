@@ -7,7 +7,8 @@ end
 function positivity!(cumulant::Array{ComplexF64,4},nx::Int,ny::Int,Λ::Int)
     twopoint = reshape(cumulant,(2*ny-1)*(nx-Λ),(2*ny-1)*(nx-Λ))
     D,V = eigen(twopoint)
-    @info "Removing following eignvalues from second cumulant ", D[isless.(D,0)]
+    # @info "Removing following eignvalues from second cumulant ", D[isless.(D,0)]
+    @info "Largest (abs) eigenvalue removed from second cumulant = ", maximum(abs.(D[isless.(D,0)]))
     Dpos = max.(D,0.0)
     twopoint = V*diagm(Dpos)*inv(V)
     # optimise further:
