@@ -11,10 +11,6 @@ function acoeffs(ly::Float64,ny::Int,g::Array{ComplexF64,1})
 end
 
 function acoeffs(ly::Float64,ny::Int,Ξ::Float64,Δθ::Float64,τ::Float64)
-    # ζjet = zeros(Float64,2*ny-1)
-    # κ::Float64 = τ == 0.0 ? 0.0 : 1.0/τ
-    # ζjet = [-κ*Ξ*tanh(-y/Δθ) for y in LinRange(-ly/2.0,ly/2.0,2*ny-1)]
-    # cleaned up a lot of junk!
     Y = LinRange(0,ly,2*ny-1)
     ζ₀ = -Ξ/τ*tanh.((Y.-ly/2.0)/Δθ)
     fftshift(fft(ζ₀))*2.0/(2*ny-1) # scaling bug fix
@@ -128,13 +124,13 @@ function ccoeffs(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int)
     Cm = zeros(Float64,2*ny-1,nx,2*ny-1,nx)
 
     # L + L = L
-    for m1=0:1:Λ
+    for m1=0:Λ
         n1min = m1 == 0 ? 1 : -N
-        for n1=n1min:1:N
-            for m2=0:1:min(m1,Λ-m1)
+        for n1=n1min:N
+            for m2=0:min(m1,Λ-m1)
 
                 n2min = m2 == 0 ? 1 : -N
-                for n2=max(n2min,-N-n1):1:min(N,N-n1)
+                for n2=max(n2min,-N-n1):min(N,N-n1)
 
                     px::Float64 = 2.0*Float64(pi)/lx*Float64(m1)
                     py::Float64 = 2.0*Float64(pi)/ly*Float64(n1)
@@ -154,11 +150,11 @@ function ccoeffs(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int)
 
     # L - L = L
     # note: -L should always include (0,-n)
-    for m1=0:1:Λ
+    for m1=0:Λ
         n1min = m1 == 0 ? 1 : -N
-        for n1=n1min:1:N
+        for n1=n1min:N
 
-            for m2=0:1:m1
+            for m2=0:m1
 
                 n2min = m2 == 0 ? 1 : -N
                 n2max = m2 == m1 ? n1 - 1 : N
@@ -177,9 +173,9 @@ function ccoeffs(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int)
     end
 
     # H - H = L
-    for m1=Λ+1:1:M
-        for n1=-N:1:N
-            for m2=max(Λ+1,m1-Λ):1:m1
+    for m1=Λ+1:M
+        for n1=-N:N
+            for m2=max(Λ+1,m1-Λ):m1
 
                 n2max = m2 == m1 ? n1 - 1 : N
                 for n2=max(-N,n1-N):1:min(n2max,n1+N)
@@ -197,9 +193,9 @@ function ccoeffs(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int)
     end
 
     # H + L = H
-    for m1=Λ+1:1:M
-        for n1=-N:1:N
-            for m2=0:1:min(M-m1,Λ)
+    for m1=Λ+1:M
+        for n1=-N:N
+            for m2=0:min(M-m1,Λ)
 
                 n2min = m2 == 0 ? 1 : -N
                 for n2=max(n2min,-N-n1):1:min(N,N-n1)
@@ -218,12 +214,12 @@ function ccoeffs(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int)
 
     # H - L = H
     # note: -L should always include (0,-n)
-    for m1=Λ+1:1:M
-        for n1=-N:1:N
-            for m2=0:1:min(Λ,m1 - Λ - 1)
+    for m1=Λ+1:M
+        for n1=-N:N
+            for m2=0:min(Λ,m1 - Λ - 1)
 
                 n2min = m2 == 0 ? 1 : -N
-                for n2=max(n2min,n1-N):1:min(N,n1+N)
+                for n2=max(n2min,n1-N):min(N,n1+N)
 
                     px::Float64 = 2.0*Float64(pi)/lx*Float64(m1)
                     py::Float64 = 2.0*Float64(pi)/ly*Float64(n1)

@@ -24,8 +24,9 @@ function nl(lx::Float64,ly::Float64,nx::Int,ny::Int,                    # domain
             A = acoeffs(ly,ny,Ξ̂,Δθ,τ̂)
             B = bcoeffs(lx,ly,nx,ny,β̂,κ̂,ν,ν3)
             Cp,Cm = ccoeffs(lx,ly,nx,ny)
+            F = fcoeffs(nx,ny)
 
-            p = [nx,ny,A,B,Cp,Cm]
+            p = [nx,ny,Λ,A,B,Cp,Cm,F]
             tspan = (0.0,t_end)
             u0 = ic_rand(lx,ly,nx,ny)*1e-6
             prob = ODEProblem(nl_eqs!,u0,tspan,p)
@@ -51,8 +52,9 @@ function nl(lx::Float64,ly::Float64,nx::Int,ny::Int,                    # domain
             A = acoeffs(ly,ny,g)
             B = bcoeffs(lx,ly,nx,ny,β,κ,ν,ν3)
             Cp,Cm = ccoeffs(lx,ly,nx,ny)
+            F = fcoeffs(nx,ny)
 
-            p = [nx,ny,A,B,Cp,Cm]
+            p = [nx,ny,Λ,A,B,Cp,Cm,F]
             tspan = (0.0,t_end)
             u0 = ic_rand(lx,ly,nx,ny)*1e-6
             prob = ODEProblem(nl_eqs!,u0,tspan,p)
@@ -119,8 +121,9 @@ function gql(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,            # domai
             A = acoeffs(ly,ny,Ξ̂,Δθ,τ̂)
             B = bcoeffs(lx,ly,nx,ny,β̂,κ̂,ν,ν3)
             Cp,Cm = ccoeffs(lx,ly,nx,ny,Λ)
+            F = fcoeffs(nx,ny)
 
-            p = [nx,ny,Λ,A,B,Cp,Cm]
+            p = [nx,ny,Λ,A,B,Cp,Cm,F]
             tspan = (0.0,t_end)
             u0 = ic_rand(lx,ly,nx,ny)*1e-6
             prob = ODEProblem(gql_eqs!,u0,tspan,p)
@@ -143,8 +146,9 @@ function gql(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,            # domai
             A = acoeffs(ly,ny,g)
             B = bcoeffs(lx,ly,nx,ny,β,κ,ν,ν3)
             Cp,Cm = ccoeffs(lx,ly,nx,ny,Λ)
+            F = fcoeffs(nx,ny)
 
-            p = [nx,ny,Λ,A,B,Cp,Cm]
+            p = [nx,ny,Λ,A,B,Cp,Cm,F]
             tspan = (0.0,t_end)
             u0 = ic_rand(lx,ly,nx,ny)*1e-6
             prob = ODEProblem(gql_eqs!,u0,tspan,p)
@@ -213,6 +217,7 @@ function gce2(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,            # doma
             A = acoeffs(ly,ny,Ξ̂,Δθ,τ̂)
             B = bcoeffs(lx,ly,nx,ny,β̂,μ̂,ν,ν₄)
             Cp,Cm = ccoeffs(lx,ly,nx,ny,Λ)
+            F = fcoeffs(nx,ny,Λ)
 
             u0 = ic_rand(lx,ly,nx,ny)*1e-6
             u0 = ic_cumulants(nx,ny,Λ,u0)
@@ -221,7 +226,7 @@ function gce2(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,            # doma
             dy = fill!(similar(u0.x[2]),0)
             temp = fill!(similar(u0.x[2]),0)
 
-            p = [nx,ny,Λ,A,B,Cp,Cm,dx,dy,temp]
+            p = [nx,ny,Λ,A,B,Cp,Cm,dx,dy,temp,F]
             tspan = (0.0,t_end)
 
             prob = ODEProblem(gce2_eqs!,u0,tspan,p)
@@ -252,6 +257,7 @@ function gce2(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,           # domai
             A = acoeffs(ly,ny,g)
             B = bcoeffs(lx,ly,nx,ny,β,κ,ν,ν3)
             Cp,Cm = ccoeffs(lx,ly,nx,ny,Λ)
+            F = fcoeffs(nx,ny,Λ)
 
             # u0 = ic_cumulants(nx,ny,Λ,1e-3)
             u0 = ic_rand(lx,ly,nx,ny)*1e-6
@@ -261,7 +267,7 @@ function gce2(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,           # domai
             dy = fill!(similar(u0.x[2]),0)
             temp = fill!(similar(u0.x[2]),0)
 
-            p = [nx,ny,Λ,A,B,Cp,Cm,dx,dy,temp]
+            p = [nx,ny,Λ,A,B,Cp,Cm,dx,dy,temp,F]
             tspan = (0.0,t_end)
 
             prob = ODEProblem(gce2_eqs!,u0,tspan,p)
