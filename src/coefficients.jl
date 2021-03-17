@@ -264,7 +264,9 @@ function fcoeffs(nx::Int,ny::Int,kf::Int,dk::Int,ε::Float64)
 end
 
 function fcoeffs(nx::Int,ny::Int,Λ::Int)
-    zeros(Float64,2*ny-1,nx-Λ,2*ny-1,nx-Λ)
+    ξ = zeros(Float64,2*ny-1,Λ+1)
+    Ξ = zeros(Float64,2*ny-1,nx-Λ,2*ny-1,nx-Λ)
+    ArrayPartition(ξ,Ξ)
 end
 
 function fcoeffs(nx::Int,ny::Int,Λ::Int,kf::Int,dk::Int,ε::Float64)
