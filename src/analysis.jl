@@ -342,9 +342,9 @@ function zonalenergy(lx::Float64,ly::Float64,nx::Int,ny::Int,u::Array{Array{Comp
 
     for i in eachindex(u)
 
-        for m1 = 0:1:nx-1
+        for m1 = 0:nx-1
             n1min = m1 == 0 ? 1 : -(ny-1)
-            for n1 = n1min:1:ny-1
+            for n1 = n1min:ny-1
 
                 kx = 2.0*Float64(pi)/lx*m1
                 ky = 2.0*Float64(pi)/ly*n1
@@ -586,7 +586,7 @@ function injectionrate(lx::Float64,ly::Float64,nx::Int,ny::Int,sol)
                 kx = 2.0*Float64(pi)/lx*m1
                 ky = 2.0*Float64(pi)/ly*n1
 
-                E[i] += conj(W.dW[n1 + ny,m1 + 1])*W.dW[n1 + ny,m1 + 1]/(kx^2 + ky^2)
+                E[i] += u[n1 + ny,m1 + 1]*W.dW[n1 + ny,m1 + 1]/(kx^2 + ky^2)
 
             end
         end
