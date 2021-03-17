@@ -334,7 +334,7 @@ end
 
 function ce2_eqs!(du,u,p,t)
 
-    nx::Int,ny::Int,A::Array{ComplexF64,1},B::Array{ComplexF64,2},Cp::Array{Float64,4},Cm::Array{Float64,4},dx::Array{ComplexF64,1},dy::Array{ComplexF64,3},temp::Array{ComplexF64,3} = p
+    nx::Int,ny::Int,A::Array{ComplexF64,1},B::Array{ComplexF64,2},Cp::Array{Float64,4},Cm::Array{Float64,4},F::Array{ComplexF64,4},dx::Array{ComplexF64,1},dy::Array{ComplexF64,3},temp::Array{ComplexF64,3} = p
 
     # first cumulant equations
     dx .= 0.0 + 0.0im
@@ -391,6 +391,7 @@ function ce2_eqs!(du,u,p,t)
             @inbounds for n=-(ny-1):ny-1
 
                 dy[n+ny,n3+ny,m3] = B[n+ny,m3+1]*u.x[2][n+ny,n3+ny,m3]
+                dy[n+ny,n3+ny,m3] += F[n+ny,m3,n3+ny,m3]
 
                 accumulator::ComplexF64 = 0.0 + 0.0im
                 @inbounds for n1=max(-(ny-1),n-(ny-1)):min(n-1,ny-1)
