@@ -77,38 +77,17 @@ function nl(lx::Float64,ly::Float64,nx::Int,ny::Int,                    # domain
             B = bcoeffs(lx,ly,nx,ny,β,μ,ν,ν₄)
             Cp,Cm = ccoeffs(lx,ly,nx,ny)
             F = fcoeffs(nx,ny,kf,dk,ε)
-            p = [nx,ny,A,B,Cp,Cm]
+
+            p = [nx,ny,A,B,Cp,Cm,F]
+            tspan = (0.0,t_end)
+
+            u0 = zeros(ComplexF64,2*ny-1,nx) # u0 = ic_rand(lx,ly,nx,ny,1e-3)
+            W0 = zeros(ComplexF64,2*ny-1,nx)
 
             Random.seed!(123)
-            function sy_dist!(ξ,W,dt,u,p,t,rng)
-                nx,ny = p[1],p[2]
+            noise!(t0,W0,Z0=nothing;kwargs...) = NoiseProcess(t0,W0,Z0,sy_dist!,sy_bridge!;kwargs...)
 
-                d = Uniform(0.0,2.0*Float64(π))
-                for m=1:nx-1
-                    for n=-ny+1:ny-1
-
-                        ϕ = rand(d)
-                        ξ[n+ny,m+1] = abs(sqrt(dt))*F[n+ny,m+1]*(cos(ϕ) + im*sin(ϕ))
-
-                    end
-                end
-                ξ
-            end
-            function sy_bridge!(dW,W,W0,Wh,q,h,u,p,t,rng)
-                return W0 .+ h .* (Wh .- W0)
-            end
-            sy_noise!(t0,W0,Z0=nothing;kwargs...) = NoiseProcess(t0,W0,Z0,sy_dist!,sy_bridge!;kwargs...)
-
-            t0 = 0.0
-            W0 = zeros(ComplexF64,2*ny-1,nx)
-            tspan = (0.0,t_end)
-            u0 = zeros(ComplexF64,2*ny-1,nx)
-            # u0 = ic_rand(lx,ly,nx,ny)
-            # u0 = ic_rand(lx,ly,nx,ny,1e-3)
-
-            prob = SDEProblem(nl_eqs!,unit_eqs!,u0,tspan,p,noise=sy_noise!(t0,W0))
-            # solve(prob,EM(),dt=dt,adaptive=false,progress=true,progress_steps=1000)
-            # solve(prob,SOSRA(),progress=true,progress_steps=10000,noise_prototype=zeros(ComplexF64,2*ny-1,nx),
+            prob = SDEProblem(nl_eqs!,unit_eqs!,u0,tspan,p,noise=noise!(0.0,W0))
 
             solve(prob,EulerHeun(),dt=dt,adaptive=false,progress=true,progress_steps=10000,
             save_start=true,saveat=savefreq,save_everystep=savefreq==1 ? true : false,save_noise=true)
@@ -344,37 +323,19 @@ function gql(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,            # domai
             A = acoeffs(ny)
             B = bcoeffs(lx,ly,nx,ny,β,μ,ν,ν₄)
             Cp,Cm = ccoeffs(lx,ly,nx,ny,Λ)
+            # Cp,Cm = ccoeffs(nx,ny)
             F = fcoeffs(nx,ny,kf,dk,ε)
 
-            p = [nx,ny,Λ,A,B,Cp,Cm]
+            p = [nx,ny,Λ,A,B,Cp,Cm,F]
+            tspan = (0.0,t_end)
 
             Random.seed!(123)
-            function sy_dist!(ξ,W,dt,u,p,t,rng)
-                nx,ny = p[1],p[2]
+            noise!(t0,W0,Z0=nothing;kwargs...) = NoiseProcess(t0,W0,Z0,sy_dist!,sy_bridge!;kwargs...)
 
-                d = Uniform(0.0,2.0*Float64(π))
-                for m=1:nx-1
-                    for n=-ny+1:ny-1
-
-                        ϕ = rand(d)
-                        ξ[n+ny,m+1] = abs(sqrt(dt))*F[n+ny,m+1]*(cos(ϕ) + im*sin(ϕ))
-
-                    end
-                end
-                ξ
-            end
-            function sy_bridge!(dW,W,W0,Wh,q,h,u,p,t,rng)
-                return W0 .+ h .* (Wh .- W0)
-            end
-            sy_noise!(t0,W0,Z0=nothing;kwargs...) = NoiseProcess(t0,W0,Z0,sy_dist!,sy_bridge!;kwargs...)
-
-            t0 = 0.0
+            u0 = ic_rand(nx,ny,1e-3)
             W0 = zeros(ComplexF64,2*ny-1,nx)
-            tspan = (0.0,t_end)
-            u0 = zeros(ComplexF64,2*ny-1,nx)
-            # u0 = ic_rand(lx,ly,nx,ny,1e-3)
 
-            prob = SDEProblem(gql_eqs!,unit_eqs!,u0,tspan,p,noise=sy_noise!(t0,W0))
+            prob = SDEProblem(gql_eqs!,unit_eqs!,u0,tspan,p,noise=noise!(0.0,W0))
             solve(prob,EulerHeun(),dt=dt,adaptive=false,progress=true,progress_steps=10000,
             save_start=true,saveat=savefreq,save_everystep=savefreq==1 ? true : false,save_noise=true)
 
@@ -549,49 +510,28 @@ function gce2(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,           # domai
             A = acoeffs(ny)
             B = bcoeffs(lx,ly,nx,ny,β,μ,ν,ν₄)
             Cp,Cm = ccoeffs(lx,ly,nx,ny,Λ)
+            # Cp,Cm = ccoeffs(nx,ny)
             F = fcoeffs(nx,ny,Λ,kf,dk,ε)
 
-            u0 = ic_cumulants(nx,ny,Λ,1e-3)
+            Random.seed!(123)
+            noise!(t0,W0,Z0=nothing;kwargs...) = NoiseProcess(t0,W0,Z0,sy_gce2_dist!,sy_bridge!;kwargs...)
+
+            u0 = ic_rand(nx,ny,1e-3)
+            u0 = ic_cumulants(nx,ny,Λ,u0)
+            W0 = ArrayPartition(zeros(ComplexF64,2*ny-1,Λ+1),zeros(ComplexF64,2*ny-1,nx-Λ,2*ny-1,nx-Λ))
 
             dx = fill!(similar(u0.x[1]),0)
             dy = fill!(similar(u0.x[2]),0)
             temp = fill!(similar(u0.x[2]),0)
 
-            p = [nx,ny,Λ,A,B,Cp,Cm,dx,dy,temp]
+            p = [nx,ny,Λ,A,B,Cp,Cm,dx,dy,temp,F]
             tspan = (0.0,t_end)
 
-            Random.seed!(123)
-            function sy_dist!(ξ,W,dt,u,p,t,rng)
+            prob = SDEProblem(gce2_eqs!,unit_gce2_eqs!,u0,tspan,p,noise=noise!(0.0,W0))
 
-                nx,ny = p[1],p[2]
-
-                d = Uniform(0.0,2.0*Float64(π))
-                for m=1:Λ
-                    for n=-ny+1:ny-1
-
-                        ϕ = rand(d)
-                        ξ.x[1][n+ny,m+1] = abs(sqrt(dt))*F.x[1][n+ny,m+1]*(cos(ϕ) + im*sin(ϕ))
-
-                    end
-                end
-                ξ.x[2] .= abs(dt) .* F.x[2]
-
-                return ξ
-            end
-            function sy_bridge!(dW,W,W0,Wh,q,h,u,p,t,rng)
-                return W0 .+ h .* (Wh .- W0)
-            end
-            sy_noise!(t0,W0,Z0=nothing;kwargs...) = NoiseProcess(t0,W0,Z0,sy_dist!,sy_bridge!;kwargs...)
-
-            t0 = 0.0
-            W0 = ArrayPartition(zeros(ComplexF64,2*ny-1,Λ+1),zeros(ComplexF64,2*ny-1,nx-Λ,2*ny-1,nx-Λ))
-
-            prob = SDEProblem(gce2_eqs!,unit_gce2_eqs!,u0,tspan,p,noise=sy_noise!(t0,W0))
             solve(prob,EulerHeun(),dt=dt,adaptive=false,progress=true,progress_steps=10000,
             save_start=true,saveat=savefreq,save_everystep=savefreq==1 ? true : false,save_noise=true)
 
-            # prob = ODEProblem(gce2_eqs!,u0,tspan,p)
-            # solve(prob,RK4(),dt=dt,adaptive=false,progress=true,progress_steps=10000,save_start=true,save_everystep=false,saveat=savefreq)
 end
 
 ## GCE2

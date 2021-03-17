@@ -12,6 +12,7 @@ using Random,Distributions
 include("coefficients.jl")
 include("equations.jl")
 include("ics.jl")
+include("noise.jl")
 include("tools.jl")
 include("solvers.jl")
 include("analysis.jl")

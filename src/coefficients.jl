@@ -6,7 +6,7 @@ function fcoeffs(nx::Int,ny::Int,kf::Int,dk::Int,ε::Float64)
     # Srinivasan and Young (2012)
     F = zeros(Float64,2*ny-1,nx)
 
-    for m=1:nx-1
+    for m=1:nx-1 # kf + 1 is max possible
         for n=-ny+1:ny-1
 
             k = (m^2 + n^2)^0.5
@@ -31,6 +31,7 @@ function fcoeffs(nx::Int,ny::Int,Λ::Int)
 end
 
 function fcoeffs(nx::Int,ny::Int,Λ::Int,kf::Int,dk::Int,ε::Float64)
+
     F = ArrayPartition(zeros(Float64,2*ny-1,Λ+1),zeros(Float64,2*ny-1,nx-Λ,2*ny-1,nx-Λ))
 
     for m=1:nx-1
@@ -40,10 +41,12 @@ function fcoeffs(nx::Int,ny::Int,Λ::Int,kf::Int,dk::Int,ε::Float64)
 
             if(k < kf + dk && k > kf - dk)
 
-                if (m ≤ Λ)
+                if (m <= Λ)
+                    @info "Forcing term ($m, $n) -> $k as low mode"
                     F.x[1][n+ny,m+1] = 1.0
                 else
-                    F.x[2][n+ny,m-Λ,n+ny,m-Λ] = 1.0
+                    @info "Forcing term ($m, $n) -> $k to field bilinear"
+                    F.x[2][n+ny,m-Λ,n+ny,m-Λ] = 2.0*π*ε*kf/dk/32.0 #1.0
                 end
             end
 
@@ -51,11 +54,11 @@ function fcoeffs(nx::Int,ny::Int,Λ::Int,kf::Int,dk::Int,ε::Float64)
     end
 
     Nf = sum(F.x[1])
-    Cf = sqrt(2.0*ε*kf^2)/sqrt(Nf) # this is dt unaware - dist contains sqrt(dt)
+    Cf = sqrt(2.0*ε*kf^2)/sqrt(Nf) # this is dt unaware - dist contains dt/sqrt(dt)
     F.x[1] .= Cf .* F.x[1]
 
-    Cf = 2.0*π*ε*kf/dk
-    F.x[2] .= Cf
+    # Cf = 2.0*π*ε*kf/dk
+    # F.x[2] .= Cf .* F.x[2] # this is dt unaware - dist contains dt
 
     return F
 end

@@ -7,6 +7,22 @@ function ic_eqm(lx::Float64,ly::Float64,nx::Int,ny::Int,Ξ::Float64;jw::Float64=
     ζ0
 end
 
+function ic_rand(nx::Int,ny::Int,a::Float64)
+
+    u0 = zeros(ComplexF64,2*ny-1,nx)
+    d = Uniform(0.0,2.0*Float64(π))
+
+    for m=0:nx-1
+        nmin = m == 0 ? 1 : -ny + 1
+        for n=nmin:ny-1
+            ϕ = rand(d)
+            u0[n+ny,m+1] = a*(cos(ϕ) + im*sin(ϕ))
+        end
+    end
+
+    u0
+end
+
 function ic_rand(lx::Float64,ly::Float64,nx::Int,ny::Int)
     uxy = randn(Float64,2*ny-1,2*nx-1)
     umn = fftshift(fft(uxy))
@@ -28,7 +44,7 @@ function ic_rand(lx::Float64,ly::Float64,nx::Int,ny::Int,σ::Float64)
     umn = fftshift(fft(uxy))
     umn[ny,nx] = 0.0 + 0.0im
     return umn[:,nx:2*nx-1]
-    
+
 end
 
 function ic_pert_eqm(lx::Float64,ly::Float64,nx::Int,ny::Int,Ξ::Float64;jw::Float64=0.05)
