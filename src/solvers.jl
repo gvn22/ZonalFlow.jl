@@ -171,8 +171,8 @@ function gql(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,            # domai
 
             A = acoeffs(ny)
             B = bcoeffs(lx,ly,nx,ny,β,μ,ν,ν₄)
-            Cp,Cm = ccoeffs(lx,ly,nx,ny,Λ)
-            # Cp,Cm = ccoeffs(nx,ny)
+            # Cp,Cm = ccoeffs(lx,ly,nx,ny,Λ)
+            Cp,Cm = ccoeffs(nx,ny)
             F = fcoeffs(nx,ny,kf,dk,ε)
 
             p = [nx,ny,Λ,A,B,Cp,Cm,F]
@@ -297,8 +297,8 @@ function gce2(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,           # domai
 
             A = acoeffs(ny)
             B = bcoeffs(lx,ly,nx,ny,β,μ,ν,ν₄)
-            Cp,Cm = ccoeffs(lx,ly,nx,ny,Λ)
-            # Cp,Cm = ccoeffs(nx,ny)
+            # Cp,Cm = ccoeffs(lx,ly,nx,ny,Λ)
+            Cp,Cm = ccoeffs(nx,ny)
             F = fcoeffs(nx,ny,Λ,kf,dk,ε)
 
             Random.seed!(123)
@@ -414,8 +414,8 @@ function ce2(lx::Float64,ly::Float64,nx::Int,ny::Int,                   # domain
 
             A = acoeffs(ny)
             B = bcoeffs(lx,ly,nx,ny,β,μ,ν,ν₄)
-            Cp,Cm = ccoeffs(lx,ly,nx,ny,0)
-            # Cp,Cm = ccoeffs(nx,ny)
+            # Cp,Cm = ccoeffs(lx,ly,nx,ny,0)
+            Cp,Cm = ccoeffs(nx,ny)
             F = fcoeffs(nx,ny,0,kf,dk,ε).x[2]
 
             u0 = ic_rand(nx,ny,1e-3)
