@@ -8,7 +8,7 @@ function sy_dist!(ξ,W,dt,u,p,t,rng)
         for n=-ny+1:ny-1
 
             ϕ = rand(d)
-            ξ[n+ny,m+1] = abs(sqrt(dt))*F[n+ny,m+1]*(cos(ϕ) + im*sin(ϕ))
+            ξ[n+ny,m+1] = abs(sqrt(dt))*F[n+ny,m+1]*exp(im*ϕ)
 
         end
     end
@@ -23,7 +23,7 @@ function sy_gce2_dist!(ξ,W,dt,u,p,t,rng)
         for n=-ny+1:ny-1
 
             ϕ = rand(d)
-            ξ.x[1][n+ny,m+1] = abs(sqrt(dt))*F.x[1][n+ny,m+1]*(cos(ϕ) + im*sin(ϕ))
+            ξ.x[1][n+ny,m+1] = abs(sqrt(dt))*F.x[1][n+ny,m+1]*exp(im*ϕ)
 
         end
     end

@@ -16,7 +16,7 @@ function ic_rand(nx::Int,ny::Int,a::Float64)
         nmin = m == 0 ? 1 : -ny + 1
         for n=nmin:ny-1
             ϕ = rand(d)
-            u0[n+ny,m+1] = a*(cos(ϕ) + im*sin(ϕ))
+            u0[n+ny,m+1] = a*exp(im*ϕ)
         end
     end
 

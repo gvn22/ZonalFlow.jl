@@ -246,12 +246,11 @@ function fcoeffs(nx::Int,ny::Int,kf::Int,dk::Int,ε::Float64)
     for m=1:nx-1 # kf + 1 is max possible
         for n=-ny+1:ny-1
 
-            k = (m^2 + n^2)^0.5
+            k = norm([m,n]) # k = (m^2 + n^2)^0.5
 
             if(k < kf + dk && k > kf - dk)
+                @info "Forcing term ($m, $n) -> $k"
                 F[n+ny,m+1] = 1.0
-            else
-                F[n+ny,m+1] = 0.0
             end
         end
     end
@@ -277,7 +276,7 @@ function fcoeffs(nx::Int,ny::Int,Λ::Int,kf::Int,dk::Int,ε::Float64)
     for m=1:nx-1 # should 0 be included?
         for n=-ny+1:ny-1
 
-            k = (m^2 + n^2)^0.5 # k = norm([m,n])
+            k = norm([m,n]) # k = (m^2 + n^2)^0.5 # k = norm([m,n])
 
             if(k < kf + dk && k > kf - dk)
 
@@ -297,7 +296,7 @@ function fcoeffs(nx::Int,ny::Int,Λ::Int,kf::Int,dk::Int,ε::Float64)
     Cf = sqrt(2.0*ε*kf^2)/sqrt(Nf) # this is dt unaware - dist contains dt/sqrt(dt)
     ξ .= Cf .* ξ
 
-    Cf = 2.0*π*ε*kf/dk/32.0 # 2.0*π*ε*kf/dk
+    Cf = 2.0*Float64(π)*ε*kf/dk/64.0 # 2.0*π*ε*kf/dk
     Ξ .= Cf .* Ξ # this is dt unaware - dist contains dt
 
     ArrayPartition(ξ,Ξ)
