@@ -241,6 +241,34 @@ function energy(lx::Float64,ly::Float64,nx::Int,ny::Int,u::Array{Array{ComplexF6
     E,Z
 end
 
+function energy(lx::Float64,ly::Float64,nx::Int,ny::Int,u::Array{ArrayPartition{Complex{Float64},Tuple{Array{Complex{Float64},1},Array{Complex{Float64},3}}},1})
+
+    E = zeros(Float64,length(u))
+    Z = fill!(similar(E),0)
+
+    for i in eachindex(u)
+
+        for n1 = 1:ny-1
+            ky = 2.0*Float64(pi)/ly*n1
+            E[1] += abs(u[i].x[1][n1 + ny])^2/ky^2
+            Z[1] += abs(u[i].x[1][n1 + ny])^2
+        end
+
+        for m1 = 1:nx-1
+            for n1 = -ny+1:ny-1
+
+                kx = 2.0*Float64(pi)/lx*m1
+                ky = 2.0*Float64(pi)/ly*n1
+
+                E[i] += abs(u[i].x[2][n1 + ny,n1 + ny,m1])^2/(kx^2 + ky^2)
+                Z[i] += abs(u[i].x[2][n1 + ny,n1 + ny,m1])^2
+
+            end
+        end
+    end
+    E,Z
+end
+
 # energy for GCE2
 function energy(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,u::Array{ArrayPartition{Complex{Float64},Tuple{Array{Complex{Float64},2},Array{Complex{Float64},4}}},1})
 
@@ -359,6 +387,46 @@ function zonalenergy(lx::Float64,ly::Float64,nx::Int,ny::Int,u::Array{Array{Comp
     P,O
 end
 
+function zonalenergy(lx::Float64,ly::Float64,nx::Int,ny::Int,t::Array{Float64,1},u::Array{Array{ComplexF64,2},1};t_begin::Float64=100.0)
+
+    E = zeros(Float64,length(u),nx)
+
+    i_begin = findall(x->x>t_begin,t)[1]
+
+    for i in eachindex(u)
+
+        for m1 = 0:nx-1
+            n1min = m1 == 0 ? 1 : -(ny-1)
+            for n1 = n1min:ny-1
+
+                kx = 2.0*Float64(pi)/lx*m1
+                ky = 2.0*Float64(pi)/ly*n1
+
+                E[i,m1+1] += abs(u[i][n1 + ny,m1 + 1])^2/(kx^2 + ky^2)
+
+            end
+
+            if i > i_begin
+
+                T = 0.0
+                temp = 0.0
+
+                for j = i_begin:i
+
+                    dt = t[j] - t[j-1]
+                    T += dt
+                    temp += E[j,m1+1]*dt
+                end
+
+                E[i,m1+1] = temp/T
+            end
+
+        end
+
+    end
+    E
+end
+
 function zonalenergy(lx::Float64,ly::Float64,nx::Int,ny::Int,u::Array{ArrayPartition{Complex{Float64},Tuple{Array{Complex{Float64},1},Array{Complex{Float64},3}}},1})
 
     P = zeros(Float64,length(u),nx)
@@ -426,6 +494,76 @@ function zonalenergy(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,u::Array{Ar
 
     end
     P,O
+end
+
+
+function zonalenergy(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,t::Array{Float64,1},u::Array{ArrayPartition{Complex{Float64},Tuple{Array{Complex{Float64},2},Array{Complex{Float64},4}}},1};t_begin::Float64=100.0)
+
+    E = zeros(Float64,length(u),nx)
+
+    i_begin = findall(x->x>t_begin,t)[1]
+
+    for i in eachindex(u)
+
+        for m1 = 0:Λ
+
+            n1min = m1 == 0 ? 1 : -(ny-1)
+            for n1 = n1min:ny-1
+
+                kx = 2.0*Float64(pi)/lx*m1
+                ky = 2.0*Float64(pi)/ly*n1
+
+                E[i,m1+1] += abs(u[i].x[1][n1 + ny,m1 + 1])^2/(kx^2 + ky^2)
+
+            end
+
+            if i > i_begin
+
+                T = 0.0
+                temp = 0.0
+
+                for j = i_begin+1:i
+
+                    dt = t[j] - t[j-1]
+                    T += dt
+                    temp += E[j,m1+1]*dt
+                end
+
+                E[i,m1+1] = temp/T
+            end
+
+
+        end
+
+        for m1 = Λ+1:nx-1
+            for n1 = -(ny-1):ny-1
+
+                kx = 2.0*Float64(pi)/lx*m1
+                ky = 2.0*Float64(pi)/ly*n1
+
+                E[i,m1+1] += abs(u[i].x[2][n1 + ny,m1 - Λ,n1 + ny,m1 - Λ])/(kx^2 + ky^2)
+
+            end
+
+            if i > i_begin
+
+                T = 0.0
+                temp = 0.0
+
+                for j = i_begin+1:i
+
+                    dt = t[j] - t[j-1]
+                    T += dt
+                    temp += E[j,m1+1]*dt
+                end
+
+                E[i,m1+1] = temp/T
+            end
+
+        end
+
+    end
+    E
 end
 
 ## mean vorticity NL/GQL
