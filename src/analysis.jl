@@ -354,21 +354,22 @@ Time averaged zonal quadratic invariants for NL/GQL/CE2/GCE2
 function zonalenergy(lx::Float64,ly::Float64,nx::Int,ny::Int,t::Array{Float64,1},u;t0::Float64=200.0)
 
     E,Z = zonalenergy(lx,ly,nx,ny,u)
+    Eav,Zav = copy(E),copy(Z)
 
     if (t0 < t[end])
+
         i0 = max(findfirst(x -> x > t0,t),2)
-        for i=i0+1:length(u)
+        for i=i0:length(u)
             for m=1:nx
 
-                w = (t[i]-t[i-1])/(t[i]-t[i0-1])
-                @views E[i,m] = sum(E[i0:i,m])*w
-                @views Z[i,m] = sum(Z[i0:i,m])*w
+                Eav[i,m] = mean(E[i0-1:i,m])
+                Zav[i,m] = mean(Z[i0-1:i,m])
 
             end
         end
     end
 
-    E,Z
+    Eav,Zav
 end
 
 ## mean vorticity NL/GQL
