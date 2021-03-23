@@ -425,7 +425,7 @@ end
 function ce2(lx::Float64,ly::Float64,nx::Int,ny::Int,                   # domain
             β::Float64,μ::Float64,ν::Float64,ν₄::Float64,               # linear coefficients
             kf::Int,dk::Int,ε::Float64;                                 # forcing parameters
-            dt::Float64=0.01,t_end::Float64=1000.0,savefreq::Int=20)    # integration parameters
+            dt::Float64=0.01,t_end::Float64=1000.0,saveat::Int=20)    # integration parameters
 
             @info   """ Solving CE2 equations for stochastic forcing
                     Domain extents: lx = $lx, ly = $ly, nx = $nx, ny = $ny
@@ -458,7 +458,7 @@ function ce2(lx::Float64,ly::Float64,nx::Int,ny::Int,                   # domain
                             progress_steps=10000,
                             save_start=true,
                             save_everystep=false,
-                            saveat=savefreq
+                            saveat=saveat
                             )
 
 end
