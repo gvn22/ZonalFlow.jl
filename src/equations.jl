@@ -1,3 +1,20 @@
+function g!(du,u,p,t)
+
+    F::Array{Float64,2} = p[end]
+    du .= ComplexF64.(F)
+    nothing
+
+end
+
+function g2!(du,u,p,t)
+
+    F = p[end]
+    du.x[1] .= ComplexF64.(F.x[1])
+    du.x[2] .= ComplexF64(0)
+    nothing
+
+end
+
 function unit_eqs!(du,u,p,t)
     du .= 1.0
     nothing

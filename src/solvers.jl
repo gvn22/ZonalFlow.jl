@@ -173,21 +173,31 @@ function gql(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,            # domai
             B = bcoeffs(lx,ly,nx,ny,β,μ,ν,ν₄)
             # Cp,Cm = ccoeffs(lx,ly,nx,ny,Λ)
             Cp,Cm = ccoeffs(nx,ny)
-            F = fcoeffs(nx,ny,kf,dk,ε)
+            F = fcoeffs(nx,ny,kf,dk,ε,isotropic=false)
 
             p = [nx,ny,Λ,A,B,Cp,Cm,F]
             tspan = (0.0,t_end)
 
             Random.seed!(123)
-            noise!(t0,W0,Z0=nothing;kwargs...) = NoiseProcess(t0,W0,Z0,sy_dist!,sy_bridge!;kwargs...)
+            noise!(t0,W0,Z0=nothing;kwargs...) = NoiseProcess(t0,W0,Z0,sm_dist!,sy_bridge!;kwargs...)
 
             u0 = ic_rand(nx,ny,1e-3)
             W0 = zeros(ComplexF64,2*ny-1,nx)
 
-            prob = SDEProblem(gql_eqs!,unit_eqs!,u0,tspan,p,noise=noise!(0.0,W0))
-            solve(prob,EulerHeun(),dt=dt,adaptive=false,progress=true,progress_steps=10000,
-            save_start=true,saveat=savefreq,save_everystep=savefreq==1 ? true : false,save_noise=true)
+            prob = SDEProblem(gql_eqs!,g!,u0,tspan,p,noise=noise!(0.0,W0))
 
+            solve(
+                    prob,
+                    EulerHeun(),
+                    dt=dt,
+                    adaptive=false,
+                    progress=true,
+                    progress_steps=10000,
+                    save_start=true,
+                    saveat=savefreq,
+                    save_everystep=false,
+                    save_noise=false
+                    )
 end
 
 """ Generalized Cumulant Expansion Equations
@@ -299,10 +309,11 @@ function gce2(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,           # domai
             B = bcoeffs(lx,ly,nx,ny,β,μ,ν,ν₄)
             # Cp,Cm = ccoeffs(lx,ly,nx,ny,Λ)
             Cp,Cm = ccoeffs(nx,ny)
-            F = fcoeffs(nx,ny,Λ,kf,dk,ε)
+            F = fcoeffs(nx,ny,Λ,kf,dk,ε,isotropic=false)
+            # F = fcoeffs2(nx,ny,Λ,nx-3,ny-3,ε)
 
             Random.seed!(123)
-            noise!(t0,W0,Z0=nothing;kwargs...) = NoiseProcess(t0,W0,Z0,sy_gce2_dist!,sy_bridge!;kwargs...)
+            noise!(t0,W0,Z0=nothing;kwargs...) = NoiseProcess(t0,W0,Z0,sm_gce2_dist!,sy_bridge!;kwargs...)
 
             u0 = ic_rand(nx,ny,1e-3)
             u0 = ic_cumulants(nx,ny,Λ,u0)
@@ -318,10 +329,20 @@ function gce2(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,           # domai
             p = [nx,ny,Λ,A,B,Cp,Cm,dx,dy,temp,F]
             tspan = (0.0,t_end)
 
-            prob = SDEProblem(gce2_eqs!,unit_gce2_eqs!,u0,tspan,p,noise=noise!(0.0,W0))
+            prob = SDEProblem(gce2_eqs!,g2!,u0,tspan,p,noise=noise!(0.0,W0))
 
-            solve(prob,EulerHeun(),dt=dt,adaptive=false,progress=true,progress_steps=10000,
-            save_start=true,saveat=savefreq,save_everystep=savefreq==1 ? true : false,save_noise=true)
+            solve(
+                    prob,
+                    EulerHeun(),
+                    dt=dt,
+                    adaptive=false,
+                    progress=true,
+                    progress_steps=10000,
+                    save_start=true,
+                    save_everystep=false,
+                    saveat=savefreq,
+                    save_noise=false
+                )
 
 end
 
@@ -416,7 +437,7 @@ function ce2(lx::Float64,ly::Float64,nx::Int,ny::Int,                   # domain
             B = bcoeffs(lx,ly,nx,ny,β,μ,ν,ν₄)
             # Cp,Cm = ccoeffs(lx,ly,nx,ny,0)
             Cp,Cm = ccoeffs(nx,ny)
-            F = fcoeffs(nx,ny,0,kf,dk,ε).x[2]
+            F = fcoeffs(nx,ny,0,kf,dk,ε,isotropic=false).x[2]
 
             u0 = ic_rand(nx,ny,1e-3)
             u0 = ic_cumulants(nx,ny,u0)
@@ -429,7 +450,16 @@ function ce2(lx::Float64,ly::Float64,nx::Int,ny::Int,                   # domain
             tspan = (0.0,t_end)
 
             prob = ODEProblem(ce2_eqs!,u0,tspan,p)
-            solve(prob,RK4(),dt=dt,adaptive=false,progress=true,progress_steps=10000,save_start=true,save_everystep=false,saveat=savefreq)
+                    solve(prob,
+                            Heun(),
+                            dt=dt,
+                            adaptive=false,
+                            progress=true,
+                            progress_steps=10000,
+                            save_start=true,
+                            save_everystep=false,
+                            saveat=savefreq
+                            )
 
 end
 

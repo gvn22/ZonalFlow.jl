@@ -239,14 +239,14 @@ function fcoeffs(nx::Int,ny::Int)
     zeros(ComplexF64,2*ny-1,nx)
 end
 
-function fcoeffs(nx::Int,ny::Int,kf::Int,dk::Int,ε::Float64)
+function fcoeffs(nx::Int,ny::Int,kf::Int,dk::Int,ε::Float64;isotropic::Bool=true)
     # Srinivasan and Young (2012)
     F = zeros(Float64,2*ny-1,nx)
 
-    for m=1:nx-1 # kf + 1 is max possible
+    for m=1:nx-1 # should 0 be included?
         for n=-ny+1:ny-1
 
-            k = norm([m,n]) # k = (m^2 + n^2)^0.5
+            k = isotropic == true ? norm([m,n]) : m
 
             if(k < kf + dk && k > kf - dk)
                 @info "Forcing term ($m, $n) -> $k"
@@ -268,7 +268,7 @@ function fcoeffs(nx::Int,ny::Int,Λ::Int)
     ArrayPartition(ξ,Ξ)
 end
 
-function fcoeffs(nx::Int,ny::Int,Λ::Int,kf::Int,dk::Int,ε::Float64)
+function fcoeffs(nx::Int,ny::Int,Λ::Int,kf::Int,dk::Int,ε::Float64;isotropic::Bool=true)
 
     ξ = zeros(Float64,2*ny-1,Λ+1)
     Ξ = zeros(Float64,2*ny-1,nx-Λ,2*ny-1,nx-Λ)
@@ -276,15 +276,15 @@ function fcoeffs(nx::Int,ny::Int,Λ::Int,kf::Int,dk::Int,ε::Float64)
     for m=1:nx-1 # should 0 be included?
         for n=-ny+1:ny-1
 
-            k = norm([m,n]) # k = (m^2 + n^2)^0.5 # k = norm([m,n])
+            k = isotropic == true ? norm([m,n]) : m
 
             if(k < kf + dk && k > kf - dk)
 
                 if (m <= Λ)
-                    @info "Forcing term ($m, $n) -> $k as low mode"
+                    # @info "Forcing term ($m, $n) -> $k as low mode"
                     ξ[n+ny,m+1] = 1.0
                 else
-                    @info "Forcing term ($m, $n) -> $k to field bilinear"
+                    # @info "Forcing term ($m, $n) -> $k to field bilinear"
                     Ξ[n+ny,m-Λ,n+ny,m-Λ] = 1.0
                 end
             end
@@ -293,10 +293,14 @@ function fcoeffs(nx::Int,ny::Int,Λ::Int,kf::Int,dk::Int,ε::Float64)
     end
 
     Nf = sum(ξ)
-    Cf = sqrt(2.0*ε*kf^2)/sqrt(Nf) # this is dt unaware - dist contains dt/sqrt(dt)
-    ξ .= Cf .* ξ
+    if(Nf ≥ 1.0)
+        Cf = sqrt(2.0*ε*kf^2)/sqrt(Nf) # this is dt unaware - dist contains dt/sqrt(dt)
+        ξ .= Cf .* ξ
+    else
+        ξ .= 0.0
+    end
 
-    Cf = 2.0*Float64(π)*ε*kf/dk/64.0 # 2.0*π*ε*kf/dk
+    Cf = 2.0*Float64(π)*ε*kf/dk/32.0 # 2.0*π*ε*kf/dk
     Ξ .= Cf .* Ξ # this is dt unaware - dist contains dt
 
     ArrayPartition(ξ,Ξ)
