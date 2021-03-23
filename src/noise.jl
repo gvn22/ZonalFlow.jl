@@ -13,7 +13,8 @@ function sy_dist!(ξ,W,dt,u,p,t,rng)
     end
     nothing
 end
-function sy_gce2_dist!(ξ,W,dt,u,p,t,rng)
+
+function sy_gce2_dist!(dW,W,dt,u,p,t,rng)
 
     nx,ny,Λ,F = p[1],p[2],p[3],p[end]
 
@@ -46,6 +47,7 @@ function sm_gce2_dist!(dW,W,dt,u,p,t,rng)
 end
 
 function sy_bridge!(dW,W,W0,Wh,q,h,u,p,t,rng)
+
     dW .= W0 .+ h .* (Wh .- W0)
     nothing
 
