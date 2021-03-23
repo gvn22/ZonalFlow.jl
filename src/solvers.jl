@@ -160,7 +160,7 @@ end
 # GQL -> stochastic forcing
 function gql(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,            # domain
             β::Float64,μ::Float64,ν::Float64,ν₄::Float64,               # linear coefficients
-            kf::Int,dk::Int,ε::Float64;                                 # forcing parameters
+            kf::Int,dk::Int,ε::Float64,isotropic::Bool=true;                                 # forcing parameters
             dt::Float64=0.01,t_end::Float64=1000.0,savefreq::Int=20)    # integration parameters
 
             @info   """ Solving GQL($Λ) equations for stochastic forcing
@@ -171,9 +171,9 @@ function gql(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,            # domai
 
             A = acoeffs(ny)
             B = bcoeffs(lx,ly,nx,ny,β,μ,ν,ν₄)
-            # Cp,Cm = ccoeffs(lx,ly,nx,ny,Λ)
-            Cp,Cm = ccoeffs(nx,ny)
-            F = fcoeffs(nx,ny,kf,dk,ε,isotropic=false)
+            Cp,Cm = ccoeffs(lx,ly,nx,ny,Λ)
+            # Cp,Cm = ccoeffs(nx,ny)
+            F = fcoeffs(nx,ny,kf,dk,ε,isotropic=isotropic)
 
             p = [nx,ny,Λ,A,B,Cp,Cm,F]
             tspan = (0.0,t_end)
@@ -296,7 +296,7 @@ end
 # GCE2 -> stochastic forcing
 function gce2(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,           # domain
             β::Float64,μ::Float64,ν::Float64,ν₄::Float64,               # linear coefficients
-            kf::Int,dk::Int,ε::Float64;                                 # forcing parameters
+            kf::Int,dk::Int,ε::Float64,isotropic::Bool=true;                                 # forcing parameters
             dt::Float64=0.01,t_end::Float64=1000.0,savefreq::Int=20)    # integration parameters
 
             @info   """ Solving GCE2($Λ) equations for stochastic forcing
@@ -307,10 +307,9 @@ function gce2(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,           # domai
 
             A = acoeffs(ny)
             B = bcoeffs(lx,ly,nx,ny,β,μ,ν,ν₄)
-            # Cp,Cm = ccoeffs(lx,ly,nx,ny,Λ)
-            Cp,Cm = ccoeffs(nx,ny)
-            F = fcoeffs(nx,ny,Λ,kf,dk,ε,isotropic=false)
-            # F = fcoeffs2(nx,ny,Λ,nx-3,ny-3,ε)
+            Cp,Cm = ccoeffs(lx,ly,nx,ny,Λ)
+            # Cp,Cm = ccoeffs(nx,ny)
+            F = fcoeffs(nx,ny,Λ,kf,dk,ε,isotropic=isotropic)
 
             Random.seed!(123)
             noise!(t0,W0,Z0=nothing;kwargs...) = NoiseProcess(t0,W0,Z0,sm_gce2_dist!,sy_bridge!;kwargs...)
@@ -424,7 +423,7 @@ end
 # CE2 -> Stochastic jet
 function ce2(lx::Float64,ly::Float64,nx::Int,ny::Int,                   # domain
             β::Float64,μ::Float64,ν::Float64,ν₄::Float64,               # linear coefficients
-            kf::Int,dk::Int,ε::Float64;                                 # forcing parameters
+            kf::Int,dk::Int,ε::Float64,isotropic::Bool=true;           # forcing parameters
             dt::Float64=0.01,t_end::Float64=1000.0,saveat::Int=20)    # integration parameters
 
             @info   """ Solving CE2 equations for stochastic forcing
@@ -435,9 +434,9 @@ function ce2(lx::Float64,ly::Float64,nx::Int,ny::Int,                   # domain
 
             A = acoeffs(ny)
             B = bcoeffs(lx,ly,nx,ny,β,μ,ν,ν₄)
-            # Cp,Cm = ccoeffs(lx,ly,nx,ny,0)
-            Cp,Cm = ccoeffs(nx,ny)
-            F = fcoeffs(nx,ny,0,kf,dk,ε,isotropic=false).x[2]
+            Cp,Cm = ccoeffs(lx,ly,nx,ny,0)
+            # Cp,Cm = ccoeffs(nx,ny)
+            F = fcoeffs(nx,ny,0,kf,dk,ε,isotropic=isotropic).x[2]
 
             u0 = ic_rand(nx,ny,1e-3)
             u0 = ic_cumulants(nx,ny,u0)
