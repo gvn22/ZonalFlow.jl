@@ -220,350 +220,155 @@ function fourierenergy(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,u::Array{
     E
 end
 
-function energy(lx::Float64,ly::Float64,nx::Int,ny::Int,u::Array{Array{ComplexF64,2},1})
+"""
+Quadratic invariants for NL/GQL
+"""
+function energy(lx::Float64,ly::Float64,nx::Int,ny::Int,u)
+
     E = zeros(Float64,length(u))
-    Z = fill!(similar(E),0)
-    for i in eachindex(u)
+    Z = zeros(Float64,length(u))
 
-        for m1 = 0:nx-1
-            n1min = m1 == 0 ? 1 : -(ny-1)
-            for n1 = n1min:ny-1
+    Em,Zm = zonalenergy(lx,ly,nx,ny,u)
 
-                kx = 2.0*Float64(pi)/lx*m1
-                ky = 2.0*Float64(pi)/ly*n1
-
-                E[i] += abs(u[i][n1 + ny,m1 + 1])^2/(kx^2 + ky^2)
-                Z[i] += abs(u[i][n1 + ny,m1 + 1])^2
-
-            end
-        end
+    for i=1:length(u)
+        E[i] = sum(Em[i,:])
+        Z[i] = sum(Zm[i,:])
     end
+
     E,Z
 end
 
-function energy(lx::Float64,ly::Float64,nx::Int,ny::Int,u::Array{ArrayPartition{Complex{Float64},Tuple{Array{Complex{Float64},1},Array{Complex{Float64},3}}},1})
+"""
+Time averaged quadratic invariants for NL/GQL/CE2
+"""
+function energy(lx::Float64,ly::Float64,nx::Int,ny::Int,t,u;t0::Float64=200.0)
 
     E = zeros(Float64,length(u))
-    Z = fill!(similar(E),0)
+    Z = zeros(Float64,length(u))
 
-    for i in eachindex(u)
+    Em,Zm = zonalenergy(lx,ly,nx,ny,t,u,t0=t0)
 
-        for n1 = 1:ny-1
-            ky = 2.0*Float64(pi)/ly*n1
-            E[1] += abs(u[i].x[1][n1 + ny])^2/ky^2
-            Z[1] += abs(u[i].x[1][n1 + ny])^2
-        end
+    @info "Computing time averaged energy and enstrophy for NL/GQL/CE2/GCE2 fields..."
 
-        for m1 = 1:nx-1
-            for n1 = -ny+1:ny-1
-
-                kx = 2.0*Float64(pi)/lx*m1
-                ky = 2.0*Float64(pi)/ly*n1
-
-                E[i] += abs(u[i].x[2][n1 + ny,n1 + ny,m1])^2/(kx^2 + ky^2)
-                Z[i] += abs(u[i].x[2][n1 + ny,n1 + ny,m1])^2
-
-            end
-        end
+    for i=1:length(u)
+        E[i] = sum(Em[i,:])
+        Z[i] = sum(Zm[i,:])
     end
+
     E,Z
 end
 
-# energy for GCE2
-function energy(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,u::Array{ArrayPartition{Complex{Float64},Tuple{Array{Complex{Float64},2},Array{Complex{Float64},4}}},1})
-
-    E = zeros(Float64,length(u))
-    Z = fill!(similar(E),0)
-
-    for i in eachindex(u)
-
-        for m1 = 0:1:Λ
-            n1min = m1 == 0 ? 1 : -(ny-1)
-            for n1 = n1min:1:ny-1
-
-                kx = 2.0*Float64(pi)/lx*m1
-                ky = 2.0*Float64(pi)/ly*n1
-
-                E[i] += abs(u[i].x[1][n1 + ny,m1 + 1])^2/(kx^2 + ky^2)
-                Z[i] += abs(u[i].x[1][n1 + ny,m1 + 1])^2
-
-            end
-        end
-
-        for m1 = Λ+1:1:nx-1
-            for n1 = -(ny-1):1:ny-1
-
-                kx = 2.0*Float64(pi)/lx*m1
-                ky = 2.0*Float64(pi)/ly*n1
-
-                E[i] += abs(u[i].x[2][n1 + ny,m1 - Λ,n1 + ny,m1 - Λ])/(kx^2 + ky^2)
-                Z[i] += abs(u[i].x[2][n1 + ny,m1 - Λ,n1 + ny,m1 - Λ])
-
-            end
-        end
-    end
-    E,Z
-end
-
-## modal strength
-function modalstrength(lx::Float64,ly::Float64,nx::Int,ny::Int,u::Array{Array{ComplexF64,2},1})
-
-    E = zeros(Float64,length(u),(2*ny-1)*nx)
-
-    for i in eachindex(u)
-
-        for m1 = 0:1:nx-1
-            n1min = m1 == 0 ? 1 : -(ny-1)
-            for n1 = n1min:1:ny-1
-
-                kx = 2.0*Float64(pi)/lx*m1
-                ky = 2.0*Float64(pi)/ly*n1
-
-                E[i,m1*(2*ny-1) + n1+ny] = abs(u[i][n1 + ny,m1 + 1])
-
-            end
-        end
-
-    end
-    E
-end
-
-function modalstrength(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,u::Array{ArrayPartition{Complex{Float64},Tuple{Array{Complex{Float64},2},Array{Complex{Float64},4}}},1})
-
-    E = zeros(Float64,length(u),(2*ny-1)*nx)
-
-    for i in eachindex(u)
-
-        for m1 = 0:1:Λ
-
-            n1min = m1 == 0 ? 1 : -(ny-1)
-            for n1 = n1min:1:ny-1
-
-                kx = 2.0*Float64(pi)/lx*m1
-                ky = 2.0*Float64(pi)/ly*n1
-
-                E[i,m1*(2*ny-1) + n1+ny] = abs(u[i].x[1][n1 + ny,m1 + 1])
-
-            end
-        end
-
-        for m1 = Λ+1:1:nx-1
-            for n1 = -(ny-1):1:ny-1
-
-                kx = 2.0*Float64(pi)/lx*m1
-                ky = 2.0*Float64(pi)/ly*n1
-
-                E[i,m1*(2*ny-1) + n1+ny] = sqrt(abs(u[i].x[2][n1 + ny,m1 - Λ,n1 + ny,m1 - Λ]))
-
-            end
-        end
-
-    end
-    E
-end
-
-## zonal energy
+"""
+Zonal quadratic invariants for NL/GQL
+"""
 function zonalenergy(lx::Float64,ly::Float64,nx::Int,ny::Int,u::Array{Array{ComplexF64,2},1})
 
-    P = zeros(Float64,length(u),nx)
-    O = fill!(similar(P),0)
-
-    for i in eachindex(u)
-
-        for m1 = 0:nx-1
-            n1min = m1 == 0 ? 1 : -(ny-1)
-            for n1 = n1min:ny-1
-
-                kx = 2.0*Float64(pi)/lx*m1
-                ky = 2.0*Float64(pi)/ly*n1
-
-                P[i,m1+1] += abs(u[i][n1 + ny,m1 + 1])^2/(kx^2 + ky^2)
-                O[i,m1+1] += abs(u[i][n1 + ny,m1 + 1])^2
-
-            end
-        end
-
-    end
-    P,O
-end
-
-function zonalenergy(lx::Float64,ly::Float64,nx::Int,ny::Int,t::Array{Float64,1},u::Array{Array{ComplexF64,2},1};t_begin::Float64=100.0)
-
     E = zeros(Float64,length(u),nx)
+    Z = zeros(Float64,length(u),nx)
 
-    i_begin = findall(x->x>t_begin,t)[1]
+    @info "Computing zonal energy and enstrophy for NL/GQL fields..."
+    for i=1:length(u)
+        for m = 0:nx-1
+            nmin = m==0 ? 1 : -ny+1
+            for n = nmin:ny-1
 
-    for i in eachindex(u)
+                k = 2π*norm([m/lx,n/ly])
 
-        for m1 = 0:nx-1
-            n1min = m1 == 0 ? 1 : -(ny-1)
-            for n1 = n1min:ny-1
-
-                kx = 2.0*Float64(pi)/lx*m1
-                ky = 2.0*Float64(pi)/ly*n1
-
-                E[i,m1+1] += abs(u[i][n1 + ny,m1 + 1])^2/(kx^2 + ky^2)
+                E[i,m+1] += abs(u[i][n+ny,m+1])^2/k^2
+                Z[i,m+1] += abs(u[i][n+ny,m+1])^2
 
             end
-
-            if i > i_begin
-
-                T = 0.0
-                temp = 0.0
-
-                for j = i_begin:i
-
-                    dt = t[j] - t[j-1]
-                    T += dt
-                    temp += E[j,m1+1]*dt
-                end
-
-                E[i,m1+1] = temp/T
-            end
-
         end
-
     end
-    E
+
+    E,Z
 end
 
+"""
+Zonal quadratic invariants for CE2
+"""
 function zonalenergy(lx::Float64,ly::Float64,nx::Int,ny::Int,u::Array{ArrayPartition{Complex{Float64},Tuple{Array{Complex{Float64},1},Array{Complex{Float64},3}}},1})
 
-    P = zeros(Float64,length(u),nx)
-    O = fill!(similar(P),0)
+    E = zeros(Float64,length(u),nx)
+    Z = zeros(Float64,length(u),nx)
 
-    for i in eachindex(u)
+    @info "Computing zonal energy and enstrophy for CE2 fields..."
+    for i=1:length(u)
+        for m = 0:nx-1
+            nmin = m==0 ? 1 : -(ny-1)
+            for n = nmin:ny-1
 
-        for n1 = 1:ny-1
+                k = 2π*norm([m/lx,n/ly])
 
-            ky = 2.0*Float64(pi)/ly*n1
-
-            P[i,1] += abs(u[i].x[1][n1 + ny])^2/(ky^2)
-            O[i,1] += abs(u[i].x[1][n1 + ny])^2
-
-        end
-
-        for m1 = 1:nx-1
-            for n1 = -(ny-1):ny-1
-
-                kx = 2.0*Float64(pi)/lx*m1
-                ky = 2.0*Float64(pi)/ly*n1
-
-                P[i,m1+1] += abs(u[i].x[2][n1 + ny,n1 + ny,m1])/(kx^2 + ky^2)
-                O[i,m1+1] += abs(u[i].x[2][n1 + ny,n1 + ny,m1])
+                if(m == 0)
+                    E[i,m+1] += abs(u[i].x[1][n+ny]/k)^2
+                    Z[i,m+1] += abs(u[i].x[1][n+ny])^2
+                else
+                    E[i,m+1] += abs(u[i].x[2][n+ny,n+ny,m])/k^2
+                    Z[i,m+1] += abs(u[i].x[2][n+ny,n+ny,m])
+                end
 
             end
         end
-
     end
-    P,O
+
+    E,Z
 end
 
-function zonalenergy(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,u::Array{ArrayPartition{Complex{Float64},Tuple{Array{Complex{Float64},2},Array{Complex{Float64},4}}},1})
-
-    P = zeros(Float64,length(u),nx)
-    O = fill!(similar(P),0)
-
-    for i in eachindex(u)
-
-        for m1 = 0:1:Λ
-
-            n1min = m1 == 0 ? 1 : -(ny-1)
-            for n1 = n1min:1:ny-1
-
-                kx = 2.0*Float64(pi)/lx*m1
-                ky = 2.0*Float64(pi)/ly*n1
-
-                P[i,m1+1] += abs(u[i].x[1][n1 + ny,m1 + 1])^2/(kx^2 + ky^2)
-                O[i,m1+1] += abs(u[i].x[1][n1 + ny,m1 + 1])^2
-
-            end
-        end
-
-        for m1 = Λ+1:1:nx-1
-            for n1 = -(ny-1):1:ny-1
-
-                kx = 2.0*Float64(pi)/lx*m1
-                ky = 2.0*Float64(pi)/ly*n1
-
-                P[i,m1+1] += abs(u[i].x[2][n1 + ny,m1 - Λ,n1 + ny,m1 - Λ])/(kx^2 + ky^2)
-                O[i,m1+1] += abs(u[i].x[2][n1 + ny,m1 - Λ,n1 + ny,m1 - Λ])
-
-            end
-        end
-
-    end
-    P,O
-end
-
-
-function zonalenergy(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,t::Array{Float64,1},u::Array{ArrayPartition{Complex{Float64},Tuple{Array{Complex{Float64},2},Array{Complex{Float64},4}}},1};t_begin::Float64=100.0)
+"""
+Zonal quadratic invariants for GCE2
+"""
+function zonalenergy(lx::Float64,ly::Float64,nx::Int,ny::Int,u::Array{ArrayPartition{Complex{Float64},Tuple{Array{Complex{Float64},2},Array{Complex{Float64},4}}},1})
 
     E = zeros(Float64,length(u),nx)
+    Z = zeros(Float64,length(u),nx)
 
-    i_begin = findall(x->x>t_begin,t)[1]
+    Λ = size(u[1].x[1],2)-1
 
-    for i in eachindex(u)
+    @info "Computing zonal energy and enstrophy for GCE2 fields..."
+    for i=1:length(u)
+        for m=0:nx-1
+            nmin = m==0 ? 1 : -(ny-1)
+            for n=nmin:ny-1
 
-        for m1 = 0:Λ
+                k = 2π*norm([m/lx,n/ly])
 
-            n1min = m1 == 0 ? 1 : -(ny-1)
-            for n1 = n1min:ny-1
-
-                kx = 2.0*Float64(pi)/lx*m1
-                ky = 2.0*Float64(pi)/ly*n1
-
-                E[i,m1+1] += abs(u[i].x[1][n1 + ny,m1 + 1])^2/(kx^2 + ky^2)
-
-            end
-
-            if i > i_begin
-
-                T = 0.0
-                temp = 0.0
-
-                for j = i_begin+1:i
-
-                    dt = t[j] - t[j-1]
-                    T += dt
-                    temp += E[j,m1+1]*dt
+                if(m ≤ Λ)
+                    E[i,m+1] += abs(u[i].x[1][n+ny,m+1])^2/k^2
+                    Z[i,m+1] += abs(u[i].x[1][n+ny,m+1])^2
+                else
+                    E[i,m+1] += abs(u[i].x[2][n+ny,m-Λ,n+ny,m-Λ])/k^2
+                    Z[i,m+1] += abs(u[i].x[2][n+ny,m-Λ,n+ny,m-Λ])
                 end
 
-                E[i,m1+1] = temp/T
             end
-
-
         end
-
-        for m1 = Λ+1:nx-1
-            for n1 = -(ny-1):ny-1
-
-                kx = 2.0*Float64(pi)/lx*m1
-                ky = 2.0*Float64(pi)/ly*n1
-
-                E[i,m1+1] += abs(u[i].x[2][n1 + ny,m1 - Λ,n1 + ny,m1 - Λ])/(kx^2 + ky^2)
-
-            end
-
-            if i > i_begin
-
-                T = 0.0
-                temp = 0.0
-
-                for j = i_begin+1:i
-
-                    dt = t[j] - t[j-1]
-                    T += dt
-                    temp += E[j,m1+1]*dt
-                end
-
-                E[i,m1+1] = temp/T
-            end
-
-        end
-
     end
-    E
+
+    E,Z
+end
+
+"""
+Time averaged zonal quadratic invariants for NL/GQL/CE2/GCE2
+"""
+function zonalenergy(lx::Float64,ly::Float64,nx::Int,ny::Int,t::Array{Float64,1},u;t0::Float64=200.0)
+
+    E,Z = zonalenergy(lx,ly,nx,ny,u)
+
+    if (t0 < t[end])
+        i0 = max(findfirst(x -> x > t0,t),2)
+        for i=i0+1:length(u)
+            for m=1:nx
+
+                w = (t[i]-t[i-1])/(t[i]-t[i0-1])
+                @views E[i,m] = sum(E[i0:i,m])*w
+                @views Z[i,m] = sum(Z[i0:i,m])*w
+
+            end
+        end
+    end
+
+    E,Z
 end
 
 ## mean vorticity NL/GQL
