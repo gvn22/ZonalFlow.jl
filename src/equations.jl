@@ -1,12 +1,40 @@
+function g!(du,u,p,t)
+
+    F::Array{Float64,2} = p[end]
+    du .= ComplexF64.(F)
+    nothing
+
+end
+
+function g2!(du,u,p,t)
+
+    F = p[end]
+    du.x[1] .= ComplexF64.(F.x[1])
+    du.x[2] .= ComplexF64(0)
+    nothing
+
+end
+
+function unit_eqs!(du,u,p,t)
+    du .= 1.0
+    nothing
+end
+
+function unit_gce2_eqs!(du,u,p,t)
+    du.x[1] .= 1.0
+    du.x[2] .= 1.0
+    nothing
+end
+
 function nl_eqs!(du,u,p,t)
 
-    nx::Int,ny::Int,A::Array{ComplexF64,1},B::Array{ComplexF64,2},Cp::Array{Float64,4},Cm::Array{Float64,4} = p
+    nx::Int,ny::Int,A::Array{ComplexF64,1},B::Array{ComplexF64,2},Cp::Array{Float64,4},Cm::Array{Float64,4},F::Array{Float64,2} = p
 
     du .= 0.0 + 0.0im
     # @views du[ny:end,1] = A[ny:end]
 
     # constant terms
-    @inbounds for n=1:1:ny-1
+    @inbounds for n=1:ny-1
 
         du[n+ny,1] += A[n+ny]
 
@@ -61,15 +89,9 @@ end
 
 function gql_eqs!(du,u,p,t)
 
-    nx::Int,ny::Int,Λ::Int,A::Array{ComplexF64,1},B::Array{ComplexF64,2},Cp::Array{Float64,4},Cm::Array{Float64,4},F::Tuple{Float64,Float64,Array{Complex{Float64},2},Array{Complex{Float64},2}} = p
+    nx::Int,ny::Int,Λ::Int,A::Array{ComplexF64,1},B::Array{ComplexF64,2},Cp::Array{Float64,4},Cm::Array{Float64,4},F::Array{Float64,2} = p
 
     du .= 0.0 + 0.0im
-
-    tprev,trenew,η,η̂ = F
-    Δt = t - tprev
-    onebytr = trenew > 0.0 ? 1.0/trenew : 0.0
-    R = (1.0 - Δt*onebytr)/(1.0 + Δt*onebytr)
-    η .= R*η .+ sqrt((1.0 - R*R)*onebytr)*η̂
 
     # zonal constant terms
     @inbounds for n=1:ny-1
@@ -83,7 +105,6 @@ function gql_eqs!(du,u,p,t)
         nmin = m == 0 ? 1 : -(ny-1)
         @inbounds for n=nmin:ny-1
 
-            du[n+ny,m+1] += η[n+ny,m+1]
             du[n+ny,m+1] += B[n+ny,m+1]*u[n+ny,m+1]
 
         end
@@ -179,7 +200,7 @@ end
 
 function gce2_eqs!(du,u,p,t)
 
-    nx::Int,ny::Int,Λ::Int,A::Array{ComplexF64,1},B::Array{ComplexF64,2},Cp::Array{Float64,4},Cm::Array{Float64,4},dx::Array{ComplexF64,2},dy::Array{ComplexF64,4},temp::Array{ComplexF64,4} = p
+    nx::Int,ny::Int,Λ::Int,A::Array{ComplexF64,1},B::Array{ComplexF64,2},Cp::Array{Float64,4},Cm::Array{Float64,4},dx::Array{ComplexF64,2},dy::Array{ComplexF64,4},temp::Array{ComplexF64,4},F::ArrayPartition{Float64,Tuple{Array{Float64,2},Array{Float64,4}}} = p
 
     # low mode equations
     # du.x[1] .= 0.0 + 0.0im
@@ -278,10 +299,12 @@ function gce2_eqs!(du,u,p,t)
     # H'*H
     @inbounds for m3=Λ+1:nx-1
         @inbounds for n3=-(ny-1):ny-1
+
             @inbounds for m=Λ+1:nx-1
                 @inbounds for n=-(ny-1):ny-1
 
-                    dy[n+ny,m-Λ,n3+ny,m3-Λ] = B[n+ny,m+1]*u.x[2][n+ny,m-Λ,n3+ny,m3-Λ]
+                    dy[n+ny,m-Λ,n3+ny,m3-Λ] += B[n+ny,m+1]*u.x[2][n+ny,m-Λ,n3+ny,m3-Λ]
+                    dy[n+ny,m-Λ,n3+ny,m3-Λ] += F.x[2][n+ny,m-Λ,n3+ny,m3-Λ]
 
                     accumulator::ComplexF64 = 0.0 + 0.0im
                     # from H+L
@@ -328,7 +351,7 @@ end
 
 function ce2_eqs!(du,u,p,t)
 
-    nx::Int,ny::Int,A::Array{ComplexF64,1},B::Array{ComplexF64,2},Cp::Array{Float64,4},Cm::Array{Float64,4},dx::Array{ComplexF64,1},dy::Array{ComplexF64,3},temp::Array{ComplexF64,3} = p
+    nx::Int,ny::Int,A::Array{ComplexF64,1},B::Array{ComplexF64,2},Cp::Array{Float64,4},Cm::Array{Float64,4},F::Array{ComplexF64,4},dx::Array{ComplexF64,1},dy::Array{ComplexF64,3},temp::Array{ComplexF64,3} = p
 
     # first cumulant equations
     dx .= 0.0 + 0.0im
@@ -385,6 +408,7 @@ function ce2_eqs!(du,u,p,t)
             @inbounds for n=-(ny-1):ny-1
 
                 dy[n+ny,n3+ny,m3] = B[n+ny,m3+1]*u.x[2][n+ny,n3+ny,m3]
+                dy[n+ny,n3+ny,m3] += F[n+ny,m3,n3+ny,m3]
 
                 accumulator::ComplexF64 = 0.0 + 0.0im
                 @inbounds for n1=max(-(ny-1),n-(ny-1)):min(n-1,ny-1)

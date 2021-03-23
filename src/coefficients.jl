@@ -1,44 +1,51 @@
-function fcoeffs(nx::Int,ny::Int,mmin::Int,mmax::Int,var::Float64)
-    η̂ = zeros(ComplexF64,2*ny-1,nx)
-    for m = mmin:mmax
-        nmin = m == 0 ? 1 : -(ny-1)
-        for n = nmin:ny-1
-            η̂[n+ny,m+1] = var*randn(ComplexF64)
-        end
-    end
-    η̂
+function acoeffs(ny::Int)
+    zeros(ComplexF64,2*ny-1)
 end
 
-function fcoeffs!(nx::Int,ny::Int,mmin::Int,mmax::Int,var::Float64,η̂::Array{ComplexF64,2})
-    η̂ .= 0.0 + 0.0im
-    for m = mmin:mmax
-        nmin = m == 0 ? 1 : -(ny-1)
-        for n = nmin:ny-1
-            η̂[n+ny,m+1] = var*randn(ComplexF64)
-        end
-    end
+function acoeffs(ly::Float64,ny::Int,g::Array{Float64,1})
+    fftshift(fft(g))*(2.0/length(g)) # 2/L normalization for FFT
+end
+
+function acoeffs(ly::Float64,ny::Int,g::Array{ComplexF64,1})
+    g # This is the FFT
+end
+
+function acoeffs(ly::Float64,ny::Int,Ξ::Float64,Δθ::Float64,τ::Float64)
+    Y = LinRange(0,ly,2*ny-1)
+    ζ₀ = -Ξ/τ*tanh.((Y.-ly/2.0)/Δθ)
+    fftshift(fft(ζ₀))*2.0/(2*ny-1) # scaling bug fix
 end
 
 function acoeffs(ly::Float64,ny::Int,Ξ::Float64,τ::Float64=0.0;jw::Float64=0.05)
-    ζjet = zeros(Float64,2*ny-1)
+    # this is getting quite complicated, but just fix the bug for now:
+    # ζjet = zeros(Float64,2*ny-1)
     Δθ::Float64 = jw
     κ::Float64 = τ == 0.0 ? 0.0 : 1.0/τ
     ζjet = [-κ*Ξ*tanh(-y/Δθ) for y in LinRange(-ly/2.0,ly/2.0,2*ny-1)]
-    fftshift(fft(ζjet))
+    fftshift(fft(ζjet))*2.0/(2*ny-1) # scaling bug fix
 end
 
-function bcoeffs(lx::Float64,ly::Float64,nx::Int,ny::Int,β::Float64,τ::Float64=0.0,νn::Float64=0.0)
+function bcoeffs(nx::Int,ny::Int)
+    zeros(ComplexF64,2*ny-1,nx)
+end
+
+function bcoeffs(lx::Float64,ly::Float64,nx::Int,ny::Int,β::Float64,μ::Float64,ν::Float64,ν₄::Float64)
     B = zeros(ComplexF64,2*ny-1,nx)
     α::Int = 2
-    kxmax::Float64 = 2.0*Float64(pi)/lx*Float64(nx-1)
-    kymax::Float64 = 2.0*Float64(pi)/ly*Float64(ny-1)
-    γ::Float64 = τ == 0.0 ? 0.0 : 1.0/τ
-    for m = 0:1:nx-1
+    kxmax::Float64 = 2.0*Float64(pi)*Float64(nx-1)/lx
+    kymax::Float64 = 2.0*Float64(pi)*Float64(ny-1)/ly
+    for m = 0:nx-1
         nmin = m == 0 ? 1 : -(ny-1)
-        for n=nmin:1:ny-1
+        for n=nmin:ny-1
+
             kx::Float64 = 2.0*Float64(pi)*Float64(m)/lx
             ky::Float64 = 2.0*Float64(pi)*Float64(n)/ly
-            B[n+ny,m+1] = -γ + im*β*kx/(kx^2 + ky^2) - νn*((kx^2 + ky^2)/(kxmax^2 + kymax^2))^(2*α)
+
+            B[n+ny,m+1] += im*β*kx/(kx^2 + ky^2)
+            B[n+ny,m+1] += -μ
+            B[n+ny,m+1] += -ν*(kx^2 + ky^2)
+            B[n+ny,m+1] += -ν₄*((kx^2 + ky^2)/(kxmax^2 + kymax^2))^(2*α)
+
         end
     end
     B
@@ -46,7 +53,7 @@ end
 
 function ccoeffs(nx::Int,ny::Int)
 
-    # stub
+    # stub for linear solve
     Cp = zeros(Float64,2*ny-1,nx,2*ny-1,nx)
     Cm = zeros(Float64,2*ny-1,nx,2*ny-1,nx)
     Cp,Cm
@@ -117,13 +124,13 @@ function ccoeffs(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int)
     Cm = zeros(Float64,2*ny-1,nx,2*ny-1,nx)
 
     # L + L = L
-    for m1=0:1:Λ
+    for m1=0:Λ
         n1min = m1 == 0 ? 1 : -N
-        for n1=n1min:1:N
-            for m2=0:1:min(m1,Λ-m1)
+        for n1=n1min:N
+            for m2=0:min(m1,Λ-m1)
 
                 n2min = m2 == 0 ? 1 : -N
-                for n2=max(n2min,-N-n1):1:min(N,N-n1)
+                for n2=max(n2min,-N-n1):min(N,N-n1)
 
                     px::Float64 = 2.0*Float64(pi)/lx*Float64(m1)
                     py::Float64 = 2.0*Float64(pi)/ly*Float64(n1)
@@ -143,11 +150,11 @@ function ccoeffs(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int)
 
     # L - L = L
     # note: -L should always include (0,-n)
-    for m1=0:1:Λ
+    for m1=0:Λ
         n1min = m1 == 0 ? 1 : -N
-        for n1=n1min:1:N
+        for n1=n1min:N
 
-            for m2=0:1:m1
+            for m2=0:m1
 
                 n2min = m2 == 0 ? 1 : -N
                 n2max = m2 == m1 ? n1 - 1 : N
@@ -166,9 +173,9 @@ function ccoeffs(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int)
     end
 
     # H - H = L
-    for m1=Λ+1:1:M
-        for n1=-N:1:N
-            for m2=max(Λ+1,m1-Λ):1:m1
+    for m1=Λ+1:M
+        for n1=-N:N
+            for m2=max(Λ+1,m1-Λ):m1
 
                 n2max = m2 == m1 ? n1 - 1 : N
                 for n2=max(-N,n1-N):1:min(n2max,n1+N)
@@ -186,9 +193,9 @@ function ccoeffs(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int)
     end
 
     # H + L = H
-    for m1=Λ+1:1:M
-        for n1=-N:1:N
-            for m2=0:1:min(M-m1,Λ)
+    for m1=Λ+1:M
+        for n1=-N:N
+            for m2=0:min(M-m1,Λ)
 
                 n2min = m2 == 0 ? 1 : -N
                 for n2=max(n2min,-N-n1):1:min(N,N-n1)
@@ -207,12 +214,12 @@ function ccoeffs(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int)
 
     # H - L = H
     # note: -L should always include (0,-n)
-    for m1=Λ+1:1:M
-        for n1=-N:1:N
-            for m2=0:1:min(Λ,m1 - Λ - 1)
+    for m1=Λ+1:M
+        for n1=-N:N
+            for m2=0:min(Λ,m1 - Λ - 1)
 
                 n2min = m2 == 0 ? 1 : -N
-                for n2=max(n2min,n1-N):1:min(N,n1+N)
+                for n2=max(n2min,n1-N):min(N,n1+N)
 
                     px::Float64 = 2.0*Float64(pi)/lx*Float64(m1)
                     py::Float64 = 2.0*Float64(pi)/ly*Float64(n1)
@@ -226,4 +233,75 @@ function ccoeffs(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int)
         end
     end
     Cp,Cm
+end
+
+function fcoeffs(nx::Int,ny::Int)
+    zeros(ComplexF64,2*ny-1,nx)
+end
+
+function fcoeffs(nx::Int,ny::Int,kf::Int,dk::Int,ε::Float64;isotropic::Bool=true)
+    # Srinivasan and Young (2012)
+    F = zeros(Float64,2*ny-1,nx)
+
+    for m=1:nx-1 # should 0 be included?
+        for n=-ny+1:ny-1
+
+            k = isotropic == true ? norm([m,n]) : m
+
+            if(k < kf + dk && k > kf - dk)
+                @info "Forcing term ($m, $n) -> $k"
+                F[n+ny,m+1] = 1.0
+            end
+        end
+    end
+
+    Nf = sum(F)
+    Cf = sqrt(2.0*ε*kf^2)/sqrt(Nf) # this is dt unaware - dist contains sqrt(dt)
+
+    Cf .* F
+
+end
+
+function fcoeffs(nx::Int,ny::Int,Λ::Int)
+    ξ = zeros(Float64,2*ny-1,Λ+1)
+    Ξ = zeros(Float64,2*ny-1,nx-Λ,2*ny-1,nx-Λ)
+    ArrayPartition(ξ,Ξ)
+end
+
+function fcoeffs(nx::Int,ny::Int,Λ::Int,kf::Int,dk::Int,ε::Float64;isotropic::Bool=true)
+
+    ξ = zeros(Float64,2*ny-1,Λ+1)
+    Ξ = zeros(Float64,2*ny-1,nx-Λ,2*ny-1,nx-Λ)
+
+    for m=1:nx-1 # should 0 be included?
+        for n=-ny+1:ny-1
+
+            k = isotropic == true ? norm([m,n]) : m
+
+            if(k < kf + dk && k > kf - dk)
+
+                if (m <= Λ)
+                    # @info "Forcing term ($m, $n) -> $k as low mode"
+                    ξ[n+ny,m+1] = 1.0
+                else
+                    # @info "Forcing term ($m, $n) -> $k to field bilinear"
+                    Ξ[n+ny,m-Λ,n+ny,m-Λ] = 1.0
+                end
+            end
+
+        end
+    end
+
+    Nf = sum(ξ)
+    if(Nf ≥ 1.0)
+        Cf = sqrt(2.0*ε*kf^2)/sqrt(Nf) # this is dt unaware - dist contains dt/sqrt(dt)
+        ξ .= Cf .* ξ
+    else
+        ξ .= 0.0
+    end
+
+    Cf = 2.0*Float64(π)*ε*kf/dk/32.0 # 2.0*π*ε*kf/dk
+    Ξ .= Cf .* Ξ # this is dt unaware - dist contains dt
+
+    ArrayPartition(ξ,Ξ)
 end
