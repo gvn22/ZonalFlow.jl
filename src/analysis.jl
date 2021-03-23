@@ -517,23 +517,31 @@ function zonostrophy(lx::Float64,ly::Float64,nx::Int,ny::Int,β::Float64,μ::Flo
     LR,Lε,LR./Lε
 end
 
-function injectionrate(lx::Float64,ly::Float64,nx::Int,ny::Int,sol)
-    u = sol.u
-    W = sol.W
-    E = zeros(Float64,length(u))
-    for i in eachindex(u)
+function energyinjectionrate(lx::Float64,ly::Float64,nx::Int,ny::Int,kf::Int,dk::Int,ε::Float64,sol;dt::Float64=0.005)
 
-        for m1 = 0:nx-1
-            n1min = m1 == 0 ? 1 : -(ny-1)
-            for n1 = n1min:ny-1
+    F = fcoeffs(nx,ny,kf,dk,ε)
+    W = fill!(similar(sol.u[1]),0)
+    E = zeros(Float64,length(sol.u))
 
-                kx = 2.0*Float64(pi)/lx*m1
-                ky = 2.0*Float64(pi)/ly*n1
+    Random.seed!(123)
+    for i=1:length(E)
 
-                E[i] += u[n1 + ny,m1 + 1]*W.dW[n1 + ny,m1 + 1]/(kx^2 + ky^2)
+        d = Uniform(0.0,Float64(2π))
+        W .= abs(1.0/sqrt(dt))*exp.(im*rand!(d,W))
+
+        for m = 0:nx-1
+            nmin = m == 0 ? 1 : -ny+1
+            for n = nmin:ny-1
+
+                k = Float64(2π)*norm([m/lx,n/ly])
+                @info "Step $i"
+
+                E[i] += abs(sol.u[i][n+ny,m+1]*W[n+ny,m+1]*F[n+ny,m+1])/k^2
+                # E[i] += u[n1 + ny,m1 + 1]*W.dW[n1 + ny,m1 + 1]*F[n1 + ny,m1 + 1]/(kx^2 + ky^2)
 
             end
         end
     end
-    E
+
+    sum(E)/length(E)
 end
