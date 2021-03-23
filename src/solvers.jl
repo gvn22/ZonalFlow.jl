@@ -381,7 +381,7 @@ function ce2(lx::Float64,ly::Float64,nx::Int,ny::Int,                   # domain
             dy = fill!(similar(u0.x[2]),0)
             temp = fill!(similar(u0.x[2]),0)
 
-            p = [nx,ny,Λ,A,B,Cp,Cm,dx,dy,temp,F]
+            p = [nx,ny,A,B,Cp,Cm,dx,dy,temp,F]
             tspan = (0.0,t_end)
 
             prob = ODEProblem(ce2_eqs!,u0,tspan,p)
@@ -413,7 +413,7 @@ function ce2(lx::Float64,ly::Float64,nx::Int,ny::Int,                   # domain
             dy = fill!(similar(u0.x[2]),0)
             temp = fill!(similar(u0.x[2]),0)
 
-            p = [nx,ny,Λ,A,B,Cp,Cm,dx,dy,temp,F]
+            p = [nx,ny,A,B,Cp,Cm,dx,dy,temp,F]
             tspan = (0.0,t_end)
 
             prob = ODEProblem(ce2_eqs!,u0,tspan,p)
