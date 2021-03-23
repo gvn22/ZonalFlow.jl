@@ -239,16 +239,16 @@ function energy(lx::Float64,ly::Float64,nx::Int,ny::Int,u)
 end
 
 """
-Time averaged quadratic invariants for NL/GQL/CE2
+Time averaged energy and enstrophy for NL/GQL/CE2
 """
 function energy(lx::Float64,ly::Float64,nx::Int,ny::Int,t,u;t0::Float64=200.0)
 
     E = zeros(Float64,length(u))
     Z = zeros(Float64,length(u))
 
-    Em,Zm = zonalenergy(lx,ly,nx,ny,t,u,t0=t0)
-
     @info "Computing time averaged energy and enstrophy for NL/GQL/CE2/GCE2 fields..."
+
+    Em,Zm = zonalenergy(lx,ly,nx,ny,t,u,t0=t0)
 
     for i=1:length(u)
         E[i] = sum(Em[i,:])
@@ -272,7 +272,7 @@ function zonalenergy(lx::Float64,ly::Float64,nx::Int,ny::Int,u::Array{Array{Comp
             nmin = m==0 ? 1 : -ny+1
             for n = nmin:ny-1
 
-                k = 2π*norm([m/lx,n/ly])
+                k = Float64(2π)*norm([m/lx,n/ly])
 
                 E[i,m+1] += abs(u[i][n+ny,m+1])^2/k^2
                 Z[i,m+1] += abs(u[i][n+ny,m+1])^2
@@ -301,7 +301,7 @@ function zonalenergy(lx::Float64,ly::Float64,nx::Int,ny::Int,u::Array{ArrayParti
                 k = 2π*norm([m/lx,n/ly])
 
                 if(m == 0)
-                    E[i,m+1] += abs(u[i].x[1][n+ny]/k)^2
+                    E[i,m+1] += abs(u[i].x[1][n+ny])^2/k^2
                     Z[i,m+1] += abs(u[i].x[1][n+ny])^2
                 else
                     E[i,m+1] += abs(u[i].x[2][n+ny,n+ny,m])/k^2
@@ -325,7 +325,7 @@ function zonalenergy(lx::Float64,ly::Float64,nx::Int,ny::Int,u::Array{ArrayParti
 
     Λ = size(u[1].x[1],2)-1
 
-    @info "Computing zonal energy and enstrophy for GCE2 fields..."
+    @info "Computing zonal energy and enstrophy for GCE2($Λ) fields..."
     for i=1:length(u)
         for m=0:nx-1
             nmin = m==0 ? 1 : -(ny-1)
