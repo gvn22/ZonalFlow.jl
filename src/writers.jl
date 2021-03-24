@@ -8,10 +8,21 @@ function dumpenergy(lx::Float64,ly::Float64,nx::Int,ny::Int,t::Array{Float64,1},
 
     d = Dict("t"=>t,"Et"=>Et,"Etav"=>Etav,"Emt"=>Emt,"Emtav"=>Emtav)
     NPZ.npzwrite(fs*".npz",d)
+    nothing
 
 end
 
-function dumpfields()
+function dumpfields(lx::Float64,ly::Float64,nx::Int,ny::Int,t::Array{Float64,1},u;fs::String)
+
+    E = fourierenergy(lx,ly,nx,ny,u)
+    V = inversefourier(nx,ny,u)
+    U = zonalvelocity(lx,ly,nx,ny,u)
+
+    d = Dict("t"=>t,"E"=>E,"V"=>V,"U"=>U)
+    NPZ.npzwrite(fs*".npz",d)
+
+    nothing
+
 end
 
 function dumpstats()
