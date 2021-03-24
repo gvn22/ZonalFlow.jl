@@ -10,6 +10,10 @@ using LinearAlgebra
 using Random,Distributions
 using NPZ
 
+const DNSField{T} = Array{Complex{T},2} where T
+const DSSField{T} = ArrayPartition{Complex{T},Tuple{Array{Complex{T},1},Array{Complex{T},3}}} where T
+const GSSField{T} = ArrayPartition{Complex{T},Tuple{Array{Complex{T},2},Array{Complex{T},4}}} where T
+
 include("coefficients.jl")
 include("equations.jl")
 include("ics.jl")

@@ -1,32 +1,29 @@
-## Spatial
-function inversefourier(nx::Int,ny::Int,u::Array{ComplexF64,2})
-    umn = zeros(ComplexF64,2*ny-1,2*nx-1)
-    uxy = zeros(Float64,2*ny-1,2*nx-1)
-    for m1 = 0:1:nx-1
-        n1min = m1 == 0 ? 1 : -ny + 1
-        for n1 = n1min:1:ny-1
-            umn[n1 + ny,m1+nx] = u[n1+ny,m1+1]
-            umn[-n1 + ny,-m1+nx] = conj(u[n1+ny,m1+1])
+"""
+    Invert to Cartesian domain from Fourier modes
+"""
+function inversefourier(nx::Int,ny::Int,u::DNSField{T}) where T
+
+    û = zeros(Complex{T},2ny-1,2nx-1)
+    for m=0:nx-1
+        nmin = m==0 ? 1 : -ny+1
+        for n = nmin:ny-1
+            û[n+ny,m+nx] = u[n+ny,m+1]
+            û[-n+ny,-m+nx] = conj(u[n+ny,m+1])
         end
     end
-    real(ifft(ifftshift(umn)))*(2*ny-1)*(2*nx-1)/4.0
+    s = (2ny-1)*(2nx-1)/4.0
+    s*real(ifft(ifftshift(û)))
+
 end
 
-function inversefourier(nx::Int,ny::Int,u::Array{Array{ComplexF64,2},1})
-    umn = zeros(ComplexF64,2*ny-1,2*nx-1,length(u))
-    uxy = zeros(Float64,2*ny-1,2*nx-1,length(u))
-    for i in eachindex(u)
-        for m1 = 0:nx-1
-            n1min = m1 == 0 ? 1 : -ny + 1
-            for n1 = n1min:ny-1
-                umn[n1 + ny,m1+nx,i] = u[i][n1+ny,m1+1]
-                umn[-n1 + ny,-m1+nx,i] = conj(u[i][n1+ny,m1+1])
-            end
-        end
-        # umn[1,1,i] = 0.0 + 0.0im
-        uxy[:,:,i] = real(ifft(ifftshift(umn[:,:,i])))*(2*ny-1)*(2*nx-1)/4.0 # scaling from IFFT
+function inversefourier(nx::Int,ny::Int,u::Array{DNSField{T},1}) where T
+
+    ζ = zeros(T,2nx-1,2ny-1,length(u))
+    for i=1:length(u)
+        @views ζ[:,:,i] .= inversefourier(nx,ny,u[i])
     end
-    uxy
+    ζ
+
 end
 
 function inversefourier(nx::Int,ny::Int,Λ::Int,u::Array{ArrayPartition{Complex{Float64},Tuple{Array{Complex{Float64},2},Array{Complex{Float64},4}}},1})
