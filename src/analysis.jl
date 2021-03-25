@@ -176,6 +176,69 @@ function e_lohi(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,u::Array{ArrayPa
     e_lo,e_hi
 end
 
+"""
+
+    Energy spectrum with conjugate modes included
+    energyspectrum(;Λ) -> DNSField/GSSField with cutoff Λ
+    
+"""
+function energyspectrum(lx::T,ly::T,nx::Int,ny::Int,u::DNSField{T};Λ::Int=nx-1) where T
+
+    Ê = zeros(T,2ny-1,2nx-1)
+    for m=0:Λ
+        nmin = m==0 ? 1 : -ny+1
+        for n = nmin:ny-1
+
+            k = 2π*norm([m/lx,n/ly])
+            Ê[n+ny,m+nx] = abs(u[n+ny,m+1])^2/k^2
+            Ê[-n+ny,-m+nx] = Ê[n+ny,m+nx]
+
+        end
+    end
+    Ê
+
+end
+
+function energyspectrum(lx::T,ly::T,nx::Int,ny::Int,u::Array{DNSField{T},1};Λ::Int=nx-1) where T
+
+    U = [energyspectrum(lx,ly,nx,ny,u[i],Λ=Λ) for i=1:length(u)]
+    reshape(cat(U...,dims=3),2ny-1,2nx-1,length(u))
+
+end
+
+function energyspectrum(lx::T,ly::T,nx::Int,ny::Int,u::GSSField{T};Λ::Int) where T
+
+    Ê = zeros(T,2ny-1,2nx-1)
+    for m=0:Λ
+        nmin = m==0 ? 1 : -ny+1
+        for n = nmin:ny-1
+
+            k = 2π*norm([m/lx,n/ly])
+            Ê[n+ny,m+nx] = abs(u.x[1][n+ny,m+1])^2/k^2
+            Ê[-n+ny,-m+nx] = Ê[n+ny,m+nx]
+
+        end
+    end
+    for m=Λ+1:nx-1
+        for n = -ny+1:ny-1
+
+            k = 2π*norm([m/lx,n/ly])
+            Ê[n+ny,m+nx] = u.x[2][n+ny,m-Λ,n+ny,m-Λ]/k^2
+            Ê[-n+ny,-m+nx] = Ê[n+ny,m+nx]
+
+        end
+    end
+    Ê
+
+end
+
+function energyspectrum(lx::T,ly::T,nx::Int,ny::Int,u::Array{GSSField{T},1};Λ::Int) where T
+
+    U = [energyspectrum(lx,ly,nx,ny,u[i],Λ=Λ) for i=1:length(u)]
+    reshape(cat(U...,dims=3),2ny-1,2nx-1,length(u))
+
+end
+
 function fourierenergy(lx::Float64,ly::Float64,nx::Int,ny::Int,u::Array{Array{ComplexF64,2},1})
     E = zeros(Float64,2*ny-1,2*nx-1,length(u))
     for i in eachindex(u)
