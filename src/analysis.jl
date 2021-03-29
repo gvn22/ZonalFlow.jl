@@ -50,70 +50,57 @@ function inversefourier(nx::Int,ny::Int,u::Array{GSSField{T},1};Λ::Int) where T
 
 end
 
-function zonalvelocity(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,u::Array{Array{ComplexF64,2},1})
-    uk = zeros(ComplexF64,2*ny-1,2*nx-1,length(u))
-    ux = zeros(Float64,2*ny-1,2*nx-1,length(u))
-    for i in eachindex(u)
-        for m1 = 0:Λ
-            n1min = m1 == 0 ? 1 : -(ny-1)
-            for n1 = n1min:ny-1
-                kx = 2.0*Float64(pi)/lx*m1
-                ky = 2.0*Float64(pi)/ly*n1
-                uk[n1 + ny,m1 + nx,i] = -1.0im*ky*u[i][n1 + ny,m1 + 1]/(kx^2+ky^2)
-                uk[-n1 + ny,-m1 + nx,i] = conj(uk[n1 + ny,m1 + nx,i])
-            end
+function zonalvelocity(lx::T,ly::T,nx::Int,ny::Int,u::DNSField{T};Λ::Int=nx-1) where {T <: AbstractFloat}
+
+    U = fill!(similar(u),0)
+    for m = 0:Λ
+        nmin = m==0 ? 1 : -ny+1
+        for n = nmin:ny-1
+
+            ky = 2π*n/ly
+            k = 2π*norm([m/lx,n/ly])
+            U[n+ny,m+1] = -im*ky*u[n+ny,m+1]/k^2
+
         end
-        ux[:,:,i] = real(ifft(ifftshift(uk[:,:,i])))*(2*ny-1)*(2*nx-1)/4.0
     end
-    ux
+    inversefourier(nx,ny,U,Λ=Λ)
+
 end
 
-function zonalvelocity(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,u::Array{ArrayPartition{Complex{Float64},Tuple{Array{Complex{Float64},2},Array{Complex{Float64},4}}},1})
-    uk = zeros(ComplexF64,2*ny-1,2*nx-1,length(u))
-    ux = zeros(Float64,2*ny-1,2*nx-1,length(u))
-    for i in eachindex(u)
-        for m1 = 0:Λ
-            n1min = m1 == 0 ? 1 : -(ny-1)
-            for n1 = n1min:ny-1
-                kx = 2.0*Float64(pi)/lx*m1
-                ky = 2.0*Float64(pi)/ly*n1
-                uk[n1 + ny,m1 + nx,i] = -1.0im*ky*u[i].x[1][n1 + ny,m1 + 1]/(kx^2+ky^2)
-                uk[-n1 + ny,-m1 + nx,i] = conj(uk[n1 + ny,m1 + nx,i])
-            end
-        end
-        ux[:,:,i] = real(ifft(ifftshift(uk[:,:,i])))*(2*ny-1)*(2*nx-1)/4.0
-    end
-    ux
+function zonalvelocity(lx::T,ly::T,nx::Int,ny::Int,u::Array{DNSField{T},1};Λ::Int=nx-1) where T
+
+    U = [zonalvelocity(lx,ly,nx,ny,u[i],Λ=Λ) for i=1:length(u)]
+    # reshape(cat(U...,dims=3),2ny-1,2nx-1,length(u))
+    reshape(cat(U...,dims=3),size(U[1])...,length(U))
 end
 
-function meanzonalvelocity(lx::Float64,ly::Float64,nx::Int,ny::Int,t::Array{Float64,1},u::Array{Array{ComplexF64,2},1};t_begin::Float64=100.0)
-    uk = zeros(ComplexF64,length(u),2*ny-1)
-    ux = zeros(Float64,length(u),2*ny-1)
+function zonalvelocity(lx::T,ly::T,nx::Int,ny::Int,u::Array{GSSField{T},1};Λ::Int) where T
 
-    i_begin = findall(x->x>t_begin,t)[1]
+    U = [velocity(lx,ly,nx,ny,u[i].x[1],Λ=Λ) for i=1:length(u)]
+    reshape(cat(U...,dims=3),2ny-1,2nx-1,length(u))
 
-    for i in eachindex(u)
+end
 
-        for n1 = 1:ny-1
-            ky = 2.0*Float64(pi)/ly*n1
-            if i > i_begin
-                T = 0.0
-                temp = 0.0
-                for j = i_begin:i
-                    dt = t[j] - t[j-1]
-                    temp += -1.0im*ky*u[i][n1 + ny,1]/ky^(2)*dt
-                    T += dt
+function zonalvelocity(lx::T,ly::T,nx::Int,ny::Int,t::Array{T,1},
+                        u;Λ::Int=nx-1,t0::T=100.0) where T
+
+    U = [zonalvelocity(lx,ly,nx,ny,u[i],Λ=Λ) for i=1:length(u)]
+
+    if (t0 < t[end])
+        i0 = max(findfirst(x -> x > t0,t),2)
+        for i=i0:length(u)
+            for m = 0:Λ
+                nmin = m==0 ? 1 : -ny+1
+                for n = nmin:ny-1
+
+                    Uav[i][n+ny,m+1] = mean(U[i0-1:i][n+ny,m+1])
+
                 end
-                uk[i,n1 + ny] = temp/T
-            else
-                uk[i,n1 + ny] = -1.0im*ky*u[i][n1 + ny,1]/ky^2
             end
-            uk[i,-n1 + ny] = conj(uk[i,n1 + ny])
         end
-
-        ux[i,:] = real(ifft(ifftshift(uk[i,:])))*(2*ny-1)/2.0
     end
-    ux
+    U
+
 end
 
 ## Energy for NL/GQL
