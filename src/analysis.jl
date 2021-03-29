@@ -1,7 +1,7 @@
 """
     Invert to Cartesian domain from Fourier modes
 """
-function inversefourier(ny::Int,u::FirstCumulant{T}) where T
+function inversefourier(ny::Int,u::FirstCumulant{T}) where {T <: AbstractFloat}
 
     û = zeros(Complex{T},2ny-1)
     for n = 1:ny-1
@@ -14,7 +14,7 @@ function inversefourier(ny::Int,u::FirstCumulant{T}) where T
 
 end
 
-function inversefourier(nx::Int,ny::Int,u::DNSField{T};Λ::Int=nx-1) where T
+function inversefourier(nx::Int,ny::Int,u::DNSField{T};Λ::Int=nx-1) where {T <: AbstractFloat}
 
     û = zeros(Complex{T},2ny-1,2nx-1)
     for m=0:Λ
@@ -29,32 +29,32 @@ function inversefourier(nx::Int,ny::Int,u::DNSField{T};Λ::Int=nx-1) where T
 
 end
 
-function inversefourier(nx::Int,ny::Int,u::Array{DNSField{T},1};Λ::Int=nx-1) where T
+function inversefourier(nx::Int,ny::Int,u::Array{DNSField{T},1};Λ::Int=nx-1) where {T <: AbstractFloat}
 
     U = [inversefourier(nx,ny,u[i],Λ=Λ) for i=1:length(u)]
     reshape(cat(U...,dims=3),2ny-1,2nx-1,length(u))
 
 end
 
-function inversefourier(nx::Int,ny::Int,Λ::Int,u::Array{GSSField{T},1}) where T
+function inversefourier(nx::Int,ny::Int,Λ::Int,u::Array{GSSField{T},1}) where {T <: AbstractFloat}
 
     U = [inversefourier(nx,ny,u[i].x[1],Λ=Λ) for i=1:length(u)]
     reshape(cat(U...,dims=3),2ny-1,2nx-1,length(u))
 
 end
 
-function inversefourier(nx::Int,ny::Int,u::Array{GSSField{T},1};Λ::Int) where T
+function inversefourier(nx::Int,ny::Int,u::Array{GSSField{T},1};Λ::Int) where {T <: AbstractFloat}
 
     U = [inversefourier(nx,ny,u[i].x[1],Λ=Λ) for i=1:length(u)]
     reshape(cat(U...,dims=3),2ny-1,2nx-1,length(u))
 
 end
 
-function vorticity(nx::Int,ny::Int,u::Array{DNSField{T},1};Λ::Int=nx-1) where T
+function vorticity(nx::Int,ny::Int,u::Array{DNSField{T},1};Λ::Int=nx-1) where {T <: AbstractFloat}
     inversefourier(nx,ny,u,Λ=Λ)
 end
 
-function vorticity(nx::Int,ny::Int,u::Array{GSSField{T},1};Λ::Int=nx-1) where T
+function vorticity(nx::Int,ny::Int,u::Array{GSSField{T},1};Λ::Int=nx-1) where {T <: AbstractFloat}
     inversefourier(nx,ny,u,Λ=Λ)
 end
 
@@ -75,14 +75,14 @@ function zonalvelocity(lx::T,ly::T,nx::Int,ny::Int,u::DNSField{T};Λ::Int=nx-1) 
 
 end
 
-function zonalvelocity(lx::T,ly::T,nx::Int,ny::Int,u::Array{DNSField{T},1};Λ::Int=nx-1) where T
+function zonalvelocity(lx::T,ly::T,nx::Int,ny::Int,u::Array{DNSField{T},1};Λ::Int=nx-1) where {T <: AbstractFloat}
 
     U = [zonalvelocity(lx,ly,nx,ny,u[i],Λ=Λ) for i=1:length(u)]
     # reshape(cat(U...,dims=3),2ny-1,2nx-1,length(u))
     reshape(cat(U...,dims=3),size(U[1])...,length(U))
 end
 
-function zonalvelocity(lx::T,ly::T,nx::Int,ny::Int,u::Array{GSSField{T},1};Λ::Int) where T
+function zonalvelocity(lx::T,ly::T,nx::Int,ny::Int,u::Array{GSSField{T},1};Λ::Int) where {T <: AbstractFloat}
 
     U = [velocity(lx,ly,nx,ny,u[i].x[1],Λ=Λ) for i=1:length(u)]
     reshape(cat(U...,dims=3),2ny-1,2nx-1,length(u))
@@ -90,7 +90,7 @@ function zonalvelocity(lx::T,ly::T,nx::Int,ny::Int,u::Array{GSSField{T},1};Λ::I
 end
 
 function zonalvelocity(lx::T,ly::T,nx::Int,ny::Int,t::Array{T,1},
-                        u;Λ::Int=nx-1,t0::T=100.0) where T
+                        u;Λ::Int=nx-1,t0::T=100.0) where {T <: AbstractFloat}
 
     U = [zonalvelocity(lx,ly,nx,ny,u[i],Λ=Λ) for i=1:length(u)]
 
@@ -166,7 +166,7 @@ end
     energyspectrum(;Λ) -> DNSField/GSSField with cutoff Λ
     
 """
-function energyspectrum(lx::T,ly::T,nx::Int,ny::Int,u::DNSField{T};Λ::Int=nx-1) where T
+function energyspectrum(lx::T,ly::T,nx::Int,ny::Int,u::DNSField{T};Λ::Int=nx-1) where {T <: AbstractFloat}
 
     Ê = zeros(T,2ny-1,2nx-1)
     for m=0:Λ
@@ -183,14 +183,14 @@ function energyspectrum(lx::T,ly::T,nx::Int,ny::Int,u::DNSField{T};Λ::Int=nx-1)
 
 end
 
-function energyspectrum(lx::T,ly::T,nx::Int,ny::Int,u::Array{DNSField{T},1};Λ::Int=nx-1) where T
+function energyspectrum(lx::T,ly::T,nx::Int,ny::Int,u::Array{DNSField{T},1};Λ::Int=nx-1) where {T <: AbstractFloat}
 
     U = [energyspectrum(lx,ly,nx,ny,u[i],Λ=Λ) for i=1:length(u)]
     reshape(cat(U...,dims=3),2ny-1,2nx-1,length(u))
 
 end
 
-function energyspectrum(lx::T,ly::T,nx::Int,ny::Int,u::GSSField{T};Λ::Int) where T
+function energyspectrum(lx::T,ly::T,nx::Int,ny::Int,u::GSSField{T};Λ::Int) where {T <: AbstractFloat}
 
     Ê = zeros(T,2ny-1,2nx-1)
     for m=0:Λ
@@ -216,7 +216,7 @@ function energyspectrum(lx::T,ly::T,nx::Int,ny::Int,u::GSSField{T};Λ::Int) wher
 
 end
 
-function energyspectrum(lx::T,ly::T,nx::Int,ny::Int,u::Array{GSSField{T},1};Λ::Int) where T
+function energyspectrum(lx::T,ly::T,nx::Int,ny::Int,u::Array{GSSField{T},1};Λ::Int) where {T <: AbstractFloat}
 
     U = [energyspectrum(lx,ly,nx,ny,u[i],Λ=Λ) for i=1:length(u)]
     reshape(cat(U...,dims=3),2ny-1,2nx-1,length(u))
@@ -267,10 +267,10 @@ end
 """
 Quadratic invariants for NL/GQL
 """
-function energy(lx::Float64,ly::Float64,nx::Int,ny::Int,u)
+function energy(lx::T,ly::T,nx::Int,ny::Int,u) where {T <: AbstractFloat}
 
-    E = zeros(Float64,length(u))
-    Z = zeros(Float64,length(u))
+    E = zeros(T,length(u))
+    Z = zeros(T,length(u))
 
     Em,Zm = zonalenergy(lx,ly,nx,ny,u)
 
@@ -285,10 +285,10 @@ end
 """
 Time averaged energy and enstrophy for NL/GQL/CE2
 """
-function energy(lx::Float64,ly::Float64,nx::Int,ny::Int,t,u;t0::Float64=200.0)
+function energy(lx::T,ly::T,nx::Int,ny::Int,t,u;t0::T=200.0) where {T <: AbstractFloat}
 
-    E = zeros(Float64,length(u))
-    Z = zeros(Float64,length(u))
+    E = zeros(T,length(u))
+    Z = zeros(T,length(u))
 
     @info "Computing time averaged energy and enstrophy for NL/GQL/CE2/GCE2 fields..."
 
@@ -362,10 +362,10 @@ end
 """
 Zonal quadratic invariants for GCE2
 """
-function zonalenergy(lx::Float64,ly::Float64,nx::Int,ny::Int,u::Array{GSSField{T},1}) where T
+function zonalenergy(lx::T,ly::T,nx::Int,ny::Int,u::Array{GSSField{T},1}) where T
 
-    E = zeros(Float64,length(u),nx)
-    Z = zeros(Float64,length(u),nx)
+    E = zeros(T,length(u),nx)
+    Z = zeros(T,length(u),nx)
 
     Λ = size(u[1].x[1],2)-1
 
@@ -395,7 +395,7 @@ end
 """
 Time averaged zonal quadratic invariants for NL/GQL/CE2/GCE2
 """
-function zonalenergy(lx::Float64,ly::Float64,nx::Int,ny::Int,t::Array{Float64,1},u;t0::Float64=200.0)
+function zonalenergy(lx::T,ly::T,nx::Int,ny::Int,t::Array{T,1},u;t0::T=200.0) where {T <: AbstractFloat}
 
     E,Z = zonalenergy(lx,ly,nx,ny,u)
     Eav,Zav = copy(E),copy(Z)
@@ -421,25 +421,25 @@ end
     meanvorticity(...,u) -> instantaneous
     meanvorticity(...,t,u) -> time-averaged
 """
-function meanvorticity(nx::Int,ny::Int,u::DNSField{T}) where T
+function meanvorticity(nx::Int,ny::Int,u::DNSField{T}) where {T <: AbstractFloat}
     inversefourier(nx,ny,u[:,1])
 end
 
-function meanvorticity(nx::Int,ny::Int,u::Array{DNSField{T},1}) where T
+function meanvorticity(nx::Int,ny::Int,u::Array{DNSField{T},1}) where {T <: AbstractFloat}
     [meanvorticity(nx,ny,u[i]) for i=1:length(u)]
     # reshape(cat(U...,dims=2),2ny-1,length(u))
 end
 
-function meanvorticity(nx::Int,ny::Int,u::GSSField{T}) where T
+function meanvorticity(nx::Int,ny::Int,u::GSSField{T}) where {T <: AbstractFloat}
     inversefourier(nx,ny,u.x[1][:,1])
 end
 
-function meanvorticity(nx::Int,ny::Int,u::Array{GSSField{T},1}) where T
+function meanvorticity(nx::Int,ny::Int,u::Array{GSSField{T},1}) where {T <: AbstractFloat}
     [meanvorticity(nx,ny,u[i]) for i=1:length(u)]
     # reshape(cat(U...,dims=2),2ny-1,length(u))
 end
 
-function meanvorticity(nx::Int,ny::Int,t::Array{T,1},u;t0::T) where T
+function meanvorticity(nx::Int,ny::Int,t::Array{T,1},u;t0::T) where {T <: AbstractFloat}
 
     U = meanvorticity(nx,ny,u)
     Uav = copy(U)
@@ -456,7 +456,7 @@ function meanvorticity(nx::Int,ny::Int,t::Array{T,1},u;t0::T) where T
     Uav
 end
 
-function zonostrophy(lx::Float64,ly::Float64,nx::Int,ny::Int,β::Float64,μ::Float64,u::Array{DNSField{T},1}) where T
+function zonostrophy(lx::T,ly::T,nx::Int,ny::Int,β::T,μ::T,u::Array{DNSField{T},1}) where {T <: AbstractFloat}
 
     E = energyspectrum(lx,ly,nx,ny,u)
     U = (2 .* E ./ (4.0π)) .^ 0.5
@@ -467,7 +467,7 @@ function zonostrophy(lx::Float64,ly::Float64,nx::Int,ny::Int,β::Float64,μ::Flo
 
 end
 
-function energyinjectionrate(lx::Float64,ly::Float64,nx::Int,ny::Int,kf::Int,dk::Int,ε::Float64,sol;dt::Float64=0.005)
+function energyinjectionrate(lx::T,ly::T,nx::Int,ny::Int,kf::Int,dk::Int,ε::T,sol;dt::T=0.005) where {T <: AbstractFloat}
 
     F = fcoeffs(nx,ny,kf,dk,ε)
     W = fill!(similar(sol.u[1]),0)
@@ -496,7 +496,7 @@ function energyinjectionrate(lx::Float64,ly::Float64,nx::Int,ny::Int,kf::Int,dk:
     sum(E)/length(E)
 end
 
-function adjacency(lx::T,ly::T,nx::Int,ny::Int;Λ=nx-1) where T
+function adjacency(lx::T,ly::T,nx::Int,ny::Int;Λ=nx-1) where {T <: AbstractFloat}
 
     B = bcoeffs(lx,ly,nx,ny,10.0,0.01,0.0,1.0) # set unity linear coefficients
     B̂ = zeros(Complex{T},2ny-1,2nx-1)
@@ -546,7 +546,7 @@ function adjacency(lx::T,ly::T,nx::Int,ny::Int;Λ=nx-1) where T
     Bij,Cij
 end
 
-function adjacency(lx::T,ly::T,nx::Int,ny::Int,u::Array{DNSField{T},1}) where T
+function adjacency(lx::T,ly::T,nx::Int,ny::Int,u::Array{DNSField{T},1}) where {T <: AbstractFloat}
 
     M = 2nx-1
     N = 2ny-1
