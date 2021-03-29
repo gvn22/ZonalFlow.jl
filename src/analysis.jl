@@ -111,55 +111,6 @@ function zonalvelocity(lx::T,ly::T,nx::Int,ny::Int,t::Array{T,1},
 
 end
 
-## Energy for NL/GQL
-function e_lohi(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,u::Array{Array{ComplexF64,2},1})
-    e_lo = zeros(Float64,length(u))
-    e_hi = fill!(similar(e_lo),0)
-    for i in eachindex(u)
-        for m1 = 0:1:Λ
-            n1min = m1 == 0 ? 1 : -(ny-1)
-            for n1 = n1min:1:ny-1
-
-                kx = 2.0*Float64(pi)/lx*m1
-                ky = 2.0*Float64(pi)/ly*n1
-                e_lo[i] += abs(u[i][n1 + ny,m1 + 1])^2/(kx^2 + ky^2)
-            end
-        end
-        for m1 = Λ+1:1:nx-1
-            for n1 = -(ny-1):1:ny-1
-                kx = 2.0*Float64(pi)/lx*m1
-                ky = 2.0*Float64(pi)/ly*n1
-                e_hi[i] += abs(u[i][n1 + ny,m1 + 1])^2/(kx^2 + ky^2)
-            end
-        end
-    end
-    e_lo,e_hi
-end
-
-function e_lohi(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,u::Array{ArrayPartition{Complex{Float64},Tuple{Array{Complex{Float64},2},Array{Complex{Float64},4}}},1})
-    e_lo = zeros(Float64,length(u))
-    e_hi = fill!(similar(e_lo),0)
-    for i in eachindex(u)
-        for m1 = 0:1:Λ
-            n1min = m1 == 0 ? 1 : -(ny-1)
-            for n1 = n1min:1:ny-1
-
-                kx = 2.0*Float64(pi)/lx*m1
-                ky = 2.0*Float64(pi)/ly*n1
-                e_lo[i] += abs(u[i].x[1][n1 + ny,m1 + 1])^2/(kx^2 + ky^2)
-            end
-        end
-        for m1 = Λ+1:1:nx-1
-            for n1 = -(ny-1):1:ny-1
-                kx = 2.0*Float64(pi)/lx*m1
-                ky = 2.0*Float64(pi)/ly*n1
-                e_hi[i] += abs(u[i].x[2][n1 + ny,m1 - Λ,n1 + ny,m1 - Λ])/(kx^2 + ky^2)
-            end
-        end
-    end
-    e_lo,e_hi
-end
-
 """
 
     Energy spectrum with conjugate modes included
