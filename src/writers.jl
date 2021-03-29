@@ -1,4 +1,4 @@
-function dumpenergy(lx::Float64,ly::Float64,nx::Int,ny::Int,t::Array{Float64,1},u;fs::String,t0::Float64=200.0)
+function dumpenergy(lx::T,ly::T,nx::Int,ny::Int,t::Array{T,1},u;fs::String,t0::Float64=200.0) where {T <: AbstractFloat}
 
     Et,Zt = energy(lx,ly,nx,ny,u)
     Etav,Ztav = energy(lx,ly,nx,ny,t,u,t0=t0)
@@ -12,7 +12,7 @@ function dumpenergy(lx::Float64,ly::Float64,nx::Int,ny::Int,t::Array{Float64,1},
 
 end
 
-function dumpfields(lx::Float64,ly::Float64,nx::Int,ny::Int,t::Array{Float64,1},u::Array{DNSField{T},1};fs::String,Λ::Int=nx-1) where T
+function dumpfields(lx::T,ly::T,nx::Int,ny::Int,t::Array{Float64,1},u::Array{DNSField{T},1};fs::String,Λ::Int=nx-1) where {T <: AbstractFloat}
 
     E = fourierenergy(lx,ly,nx,ny,u)
     E2 = energyspectrum(lx,ly,nx,ny,u,Λ=Λ)
@@ -36,7 +36,7 @@ function dumpfields(lx::Float64,ly::Float64,nx::Int,ny::Int,t::Array{Float64,1},
 
 end
 
-function dumpfields(lx::Float64,ly::Float64,nx::Int,ny::Int,t::Array{Float64,1},u::Array{GSSField{T},1};fs::String,Λ::Int) where T
+function dumpfields(lx::T,ly::T,nx::Int,ny::Int,t::Array{Float64,1},u::Array{GSSField{T},1};fs::String,Λ::Int) where {T <: AbstractFloat}
 
     E = fourierenergy(lx,ly,nx,ny,Λ,u)
     E2 = energyspectrum(lx,ly,nx,ny,u,Λ=Λ)
@@ -58,7 +58,7 @@ end
 function dumpstats()
 end
 
-function dumpadjacency(lx::T,ly::T,nx::Int,ny::Int;fs::String,Λ::Int=nx-1) where T
+function dumpadjacency(lx::T,ly::T,nx::Int,ny::Int;fs::String,Λ::Int=nx-1) where {T <: AbstractFloat}
     A,C = adjacency(lx,ly,nx,ny,Λ=Λ)
     d = Dict("A"=>A,"C"=>C)
     NPZ.npzwrite(fs*".npz",d)
