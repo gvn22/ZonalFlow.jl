@@ -297,10 +297,10 @@ end
 """
 Zonal quadratic invariants for NL/GQL
 """
-function zonalenergy(lx::Float64,ly::Float64,nx::Int,ny::Int,u::Array{Array{ComplexF64,2},1})
+function zonalenergy(lx::T,ly::T,nx::Int,ny::Int,u::Array{DNSField{T},1}) where T
 
-    E = zeros(Float64,length(u),nx)
-    Z = zeros(Float64,length(u),nx)
+    E = zeros(T,length(u),nx)
+    Z = zeros(T,length(u),nx)
 
     @info "Computing zonal energy and enstrophy for NL/GQL fields..."
     for i=1:length(u)
@@ -323,10 +323,10 @@ end
 """
 Zonal quadratic invariants for CE2
 """
-function zonalenergy(lx::Float64,ly::Float64,nx::Int,ny::Int,u::Array{ArrayPartition{Complex{Float64},Tuple{Array{Complex{Float64},1},Array{Complex{Float64},3}}},1})
+function zonalenergy(lx::T,ly::T,nx::Int,ny::Int,u::Array{DSSField{T},1}) where T
 
-    E = zeros(Float64,length(u),nx)
-    Z = zeros(Float64,length(u),nx)
+    E = zeros(T,length(u),nx)
+    Z = zeros(T,length(u),nx)
 
     @info "Computing zonal energy and enstrophy for CE2 fields..."
     for i=1:length(u)
@@ -354,7 +354,7 @@ end
 """
 Zonal quadratic invariants for GCE2
 """
-function zonalenergy(lx::Float64,ly::Float64,nx::Int,ny::Int,u::Array{ArrayPartition{Complex{Float64},Tuple{Array{Complex{Float64},2},Array{Complex{Float64},4}}},1})
+function zonalenergy(lx::Float64,ly::Float64,nx::Int,ny::Int,u::Array{GSSField{T},1}) where T
 
     E = zeros(Float64,length(u),nx)
     Z = zeros(Float64,length(u),nx)
