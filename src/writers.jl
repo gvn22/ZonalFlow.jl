@@ -57,3 +57,10 @@ end
 
 function dumpstats()
 end
+
+function dumpadjacency(lx::T,ly::T,nx::Int,ny::Int;fs::String,Λ::Int=nx-1) where T
+    A,C = adjacency(lx,ly,nx,ny,Λ=Λ)
+    d = Dict("A"=>A,"C"=>C)
+    NPZ.npzwrite(fs*".npz",d)
+    nothing
+end

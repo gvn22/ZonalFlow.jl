@@ -495,3 +495,65 @@ function energyinjectionrate(lx::Float64,ly::Float64,nx::Int,ny::Int,kf::Int,dk:
 
     sum(E)/length(E)
 end
+
+function adjacency(lx::T,ly::T,nx::Int,ny::Int;Λ=nx-1) where T
+
+    B = bcoeffs(lx,ly,nx,ny,10.0,0.01,0.0,1.0) # set unity linear coefficients
+    B̂ = zeros(Complex{T},2ny-1,2nx-1)
+    for m=0:nx-1
+        nmin = m==0 ? 1 : -ny+1
+        for n = nmin:ny-1
+            B̂[n+ny,m+nx] = B[n+ny,m+1]
+            B̂[-n+ny,-m+nx] = conj(B[n+ny,m+1])
+        end
+    end
+
+    M = 2nx-1
+    N = 2ny-1
+    Bij = zeros(Complex{T},M*N,M*N)
+
+    for i=1:length(vec(B̂))
+        Bij[i,i] = vec(B̂)[i]
+    end
+
+    Cij = zeros(Complex{T},M*N,M*N)
+    Cp,Cm = ccoeffs(lx,ly,nx,ny,Λ)
+
+    Ĉ = zeros(Complex{T},2ny-1,2nx-1,2ny-1,2nx-1)
+    for m1=0:nx-1
+        for n1=-ny+1:ny-1
+            for m2=0:nx-1
+                for n2=-ny+1:ny-1
+
+                    Ĉ[n2+ny,m2+nx,n1+ny,m1+nx] = Cp[n2+ny,m2+1,n1+ny,m1+1]
+                    Ĉ[-n2+ny,-m2+nx,-n1+ny,-m1+nx] = conj(Ĉ[n2+ny,m2+nx,n1+ny,m1+nx])
+
+                    Ĉ[-n2+ny,-m2+nx,n1+ny,m1+nx] = Cm[n2+ny,m2+1,n1+ny,m1+1]
+                    Ĉ[n2+ny,m2+nx,-n1+ny,-m1+nx] = conj(Ĉ[-n2+ny,-m2+nx,n1+ny,m1+nx])
+
+                end
+            end
+        end
+    end
+
+
+    Cij = reshape(Ĉ,M*N,M*N)
+    # for i=1:
+    #     Bij[i,i] = vec(B̂)[i]
+    # end
+
+
+    Bij,Cij
+end
+
+function adjacency(lx::T,ly::T,nx::Int,ny::Int,u::Array{DNSField{T},1}) where T
+
+    M = 2nx-1
+    N = 2ny-1
+    U = zeros(Complex{T},M*N,M*N,1)
+    for i=1:1
+        @views U[:,:,i] .= adjacency(lx,ly,nx,ny,u[i])
+    end
+    U
+
+end
