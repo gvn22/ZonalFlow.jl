@@ -1,10 +1,23 @@
 """
     Invert to Cartesian domain from Fourier modes
 """
-function inversefourier(nx::Int,ny::Int,u::DNSField{T}) where T
+function inversefourier(ny::Int,u::FirstCumulant{T}) where T
+
+    û = zeros(Complex{T},2ny-1)
+    for n = 1:ny-1
+        û[n+ny] = u[n+ny]
+        û[-n+ny] = conj(u[n+ny])
+    end
+
+    s = (2ny-1)/2.0
+    s*real(ifft(ifftshift(û)))
+
+end
+
+function inversefourier(nx::Int,ny::Int,u::DNSField{T};Λ::Int=nx-1) where T
 
     û = zeros(Complex{T},2ny-1,2nx-1)
-    for m=0:nx-1
+    for m=0:Λ
         nmin = m==0 ? 1 : -ny+1
         for n = nmin:ny-1
             û[n+ny,m+nx] = u[n+ny,m+1]
@@ -16,49 +29,25 @@ function inversefourier(nx::Int,ny::Int,u::DNSField{T}) where T
 
 end
 
-function inversefourier(nx::Int,ny::Int,u::Array{DNSField{T},1}) where T
+function inversefourier(nx::Int,ny::Int,u::Array{DNSField{T},1};Λ::Int=nx-1) where T
 
-    ζ = zeros(T,2nx-1,2ny-1,length(u))
-    for i=1:length(u)
-        @views ζ[:,:,i] .= inversefourier(nx,ny,u[i])
-    end
-    ζ
+    U = [inversefourier(nx,ny,u[i],Λ=Λ) for i=1:length(u)]
+    reshape(cat(U...,dims=3),2ny-1,2nx-1,length(u))
 
 end
 
-function inversefourier(nx::Int,ny::Int,Λ::Int,u::Array{ArrayPartition{Complex{Float64},Tuple{Array{Complex{Float64},2},Array{Complex{Float64},4}}},1})
-    umn = zeros(ComplexF64,2*ny-1,2*nx-1,length(u))
-    uxy = zeros(Float64,2*ny-1,2*nx-1,length(u))
-    for i in eachindex(u)
-        for m1 = 0:1:Λ
-            n1min = m1 == 0 ? 1 : -ny + 1
-            for n1 = n1min:1:ny-1
-                umn[n1 + ny,m1+nx,i] = u[i].x[1][n1+ny,m1+1]
-                umn[-n1 + ny,-m1+nx,i] = conj(u[i].x[1][n1+ny,m1+1])
-            end
-        end
-        uxy[:,:,i] = real(ifft(ifftshift(umn[:,:,i])))*(2*ny-1)*(2*nx-1)/4.0
-    end
-    uxy
+function inversefourier(nx::Int,ny::Int,Λ::Int,u::Array{GSSField{T},1}) where T
+
+    U = [inversefourier(nx,ny,u[i].x[1],Λ=Λ) for i=1:length(u)]
+    reshape(cat(U...,dims=3),2ny-1,2nx-1,length(u))
+
 end
 
-## Velocity
-function zonalvelocity(lx::Float64,ly::Float64,nx::Int,ny::Int,u::Array{Array{ComplexF64,2},1})
-    uk = zeros(ComplexF64,2*ny-1,2*nx-1,length(u))
-    ux = zeros(Float64,2*ny-1,2*nx-1,length(u))
-    for i in eachindex(u)
-        for m1 = 0:nx-1
-            n1min = m1 == 0 ? 1 : -(ny-1)
-            for n1 = n1min:ny-1
-                kx = 2.0*Float64(pi)/lx*m1
-                ky = 2.0*Float64(pi)/ly*n1
-                uk[n1 + ny,m1 + nx,i] = -1.0im*ky*u[i][n1 + ny,m1 + 1]/(kx^2+ky^2)
-                uk[-n1 + ny,-m1 + nx,i] = conj(uk[n1 + ny,m1 + nx,i])
-            end
-        end
-        ux[:,:,i] = real(ifft(ifftshift(uk[:,:,i])))*(2*ny-1)*(2*nx-1)/4.0
-    end
-    ux
+function inversefourier(nx::Int,ny::Int,u::Array{GSSField{T},1};Λ::Int) where T
+
+    U = [inversefourier(nx,ny,u[i].x[1],Λ=Λ) for i=1:length(u)]
+    reshape(cat(U...,dims=3),2ny-1,2nx-1,length(u))
+
 end
 
 function zonalvelocity(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,u::Array{Array{ComplexF64,2},1})
