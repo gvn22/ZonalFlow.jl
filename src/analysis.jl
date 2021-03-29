@@ -50,6 +50,14 @@ function inversefourier(nx::Int,ny::Int,u::Array{GSSField{T},1};Λ::Int) where T
 
 end
 
+function vorticity(nx::Int,ny::Int,u::Array{DNSField{T},1};Λ::Int=nx-1) where T
+    inversefourier(nx,ny,u,Λ=Λ)
+end
+
+function vorticity(nx::Int,ny::Int,u::Array{GSSField{T},1};Λ::Int=nx-1) where T
+    inversefourier(nx,ny,u,Λ=Λ)
+end
+
 function zonalvelocity(lx::T,ly::T,nx::Int,ny::Int,u::DNSField{T};Λ::Int=nx-1) where {T <: AbstractFloat}
 
     U = fill!(similar(u),0)
