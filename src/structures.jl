@@ -18,23 +18,23 @@ Coefficients(;Ω,θ,μ,ν,ν₄,linear=false) = Coefficients(Ω,θ,μ,ν,ν₄,l
 Forcing types
 """
 
-abstract type AbstractForcing end
+abstract type AbstractForcing{T <: AbstractFloat} end
 
-struct PointJet{T} <:AbstractForcing where {T <: AbstractFloat}
+struct PointJet{T} <: AbstractForcing{T}
     Ξ::T
     Δθ::T
     τ::T
 end
 PointJet(;Ξ,Δθ,τ) = PointJet(Ξ,Δθ,τ)
 
-struct Stochastic{T}  <: AbstractForcing where {T <: AbstractFloat}
+struct Stochastic{T}  <: AbstractForcing{T}
     kf::Int
     dk::Int
     ε::T
 end
 Stochastic(;kf,dk,ε) = Stochastic(kf,dk,ε)
 
-struct Kolmogorov{T} <: AbstractForcing where {T <: AbstractFloat}
+struct Kolmogorov{T} <: AbstractForcing{T}
     A₁::T
     A₄::T
 end
@@ -44,9 +44,9 @@ Kolmogorov(;A₁,A₄) = Kolmogorov(A₁,A₄)
 Domain and Model types
 """
 
-abstract type AbstractDomain end
+abstract type AbstractDomain{T <: AbstractFloat} end
 
-struct Domain{T} <: AbstractDomain where {T <: AbstractFloat}
+struct Domain{T} <: AbstractDomain{T}
     lx::T
     ly::T
     nx::Int
@@ -56,15 +56,20 @@ Domain(;extent,res) = Domain(extent[1],extent[2],res[1],res[2])
 Base.length(d::Domain) = ((d.lx,d.ly))
 Base.size(d::Domain) = ((d.nx,d.ny))
 
-abstract type AbstractProblem end
+abstract type AbstractProblem{T<:AbstractFloat,F<:AbstractForcing} end
 
-struct BetaPlane <: AbstractProblem
-    d::Domain
-    c::Coefficients
-    f::AbstractForcing
+struct BetaPlane{T,F} <: AbstractProblem{T,F}
+    d::Domain{T}
+    c::Coefficients{T}
+    f::F
 end
-BetaPlane(dom::Domain,coeffs::AbstractCoefficients,forcing::AbstractForcing) = BetaPlane(dom,coeffs,forcing)
-BetaPlane(coeffs::AbstractCoefficients,forcing::AbstractForcing;extent,res) = BetaPlane(Domain(extent=extent,res=res),coeffs,forcing)
+# BetaPlane(dom,coeffs,forcing::PointJet) = BetaPlane(dom,coeffs,forcing)
+# BetaPlane(dom,coeffs,forcing::Kolmogorov) = BetaPlane(dom,coeffs,forcing)
+# BetaPlane(dom,coeffs,forcing::Stochastic) = BetaPlane(dom,coeffs,forcing)
+BetaPlane(coeffs,forcing;extent,res) = BetaPlane(Domain(extent=extent,res=res),coeffs,forcing)
+
+Base.eltype(::Type{<:AbstractProblem{T,F}}) where {T<:AbstractFloat,F<:AbstractForcing} = T
+eftype(::Type{<:AbstractProblem{T,F}}) where {T,F} = F
 
 """
 Solver types
