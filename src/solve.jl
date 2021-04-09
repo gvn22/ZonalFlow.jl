@@ -1,12 +1,12 @@
 """
     Solve method for DiffEq solution
 """
-# overload Base and Random methods for ICs
-# Base.zeros(::NL,dims) = zeros(Field,dims)
+get_de_ic(d::Domain{T}) where T<:AbstractFloat = zeros(Complex{T},size(d)...)
+get_de_ic(d::Domain{T},eqs) where T<:AbstractFloat = zeros(Complex{T},2d.ny-1,d.nx)
+get_de_ic(d::Domain{T},eqs::CE2) where T<:AbstractFloat = ArrayPartition(zeros(Complex{T},2d.ny-1),zeros(Complex{T},2d.ny-1,2d.ny-1,d.nx-1))
+get_de_ic(d::Domain{T},eqs::GCE2) where T<:AbstractFloat = ArrayPartition(zeros(Complex{T},2d.ny-1,eqs.Λ+1),zeros(Complex{T},2d.ny-1,d.nx-eqs.Λ,2d.ny-1,d.nx-eqs.Λ))
+# overload rand method for ICs
 # Random.rand(::NL,dims) = rand(Field,dims)...
-# Base.show(::p) create a structure of type p
-
-get_de_ic(d::Domain{T},eqs) where T<:AbstractFloat = zeros(T,size(d)...)
 
 function get_de_params(prob,eqs)
     A = acoeffs(prob)
