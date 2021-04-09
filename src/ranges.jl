@@ -6,6 +6,8 @@ function tworange(nx,ny)
     n=1:2ny-1
     Iterators.filter(((n1,m1),)->!((n1-ny<=0)&&(m1-1==0)),Iterators.product(n,m))
 end
+lowrange(nx,ny,Λ) = Iterators.filter(((n1,m1,))->(0<=m1-1<=Λ),tworange(nx,ny))
+highrange(nx,ny,Λ) = Iterators.filter(((n1,m1,))->(Λ+1<=m1-1<=nx-1),tworange(nx,ny))
 fourrange(nx,ny) = Iterators.product(tworange(nx,ny),tworange(nx,ny))
 
 arange(ny) = ny+1:2ny-1
