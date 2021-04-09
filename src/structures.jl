@@ -93,6 +93,7 @@ struct GCE2 <: GSS
     poscheck::Bool
     poscheckat::Int
 end
+GCE2(Λ) = GCE2(Λ,false,1)
 GCE2(;Λ,poscheckat=20,poscheck=false) = GCE2(Λ,poscheck,poscheckat)
 
 """
@@ -105,3 +106,13 @@ const FieldBilinear{T} = Array{Complex{T},4} where {T <: AbstractFloat}
 const DNSField{T} = Field{T} where {T <: AbstractFloat}
 const DSSField{T} = ArrayPartition{Complex{T},Tuple{FirstCumulant{T},SecondCumulant{T}}} where {T <: AbstractFloat}
 const GSSField{T} = ArrayPartition{Complex{T},Tuple{Field{T},FieldBilinear{T}}} where {T <: AbstractFloat}
+
+function Base.getproperty(f::Union{DSSField{T},GSSField{T}},v::Symbol) where {T<:AbstractFloat}
+    if v == :l
+        return getfield(f,:x)[1]
+    elseif v == :h
+        return getfield(f,:x)[2]
+    else
+        return getfield(f,v)
+    end
+end
