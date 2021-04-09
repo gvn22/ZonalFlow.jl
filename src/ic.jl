@@ -15,5 +15,5 @@ Base.similar(eqs::CE2,d::Domain{T}) where T = similar(DSSField{T},d)
 Base.similar(eqs::GCE2,d::Domain{T}) where T = similar(GSSField{T},d,Λ=eqs.Λ)
 
 Base.zeros(eqs::AbstractEquations,d) = fill!(similar(eqs,d),0)
+Random.rand(eqs::Union{NL,GQL},d::Domain{T}) where T =  exp.(im*rand!(Uniform(0,2π),similar(eqs,d)))
 # Base.oftype(eqs::CE2,obj::DNSField) = ArrayParition(obj[:,1],conj(obj[:,2:].*obj[:,2:]))
-# Random.rand(eqs::Union{NL,GQL},d::Domain{T}) where T =  exp.(im*rand!(Uniform(0,2π),similar(eqs,d)))
