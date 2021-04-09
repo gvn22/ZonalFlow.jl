@@ -1,9 +1,8 @@
 """
 
 """
-Base.zeros(::NL,dims) = zeros(Field,dims)
-Base.zeros(::GQL,dims) = zeros(DSSField,dims)
-Base.zeros(::GCE2,dims) = zeros(GSSField,dims)
+# overload Base and Random methods for ICs
+# Base.zeros(::NL,dims) = zeros(Field,dims)
 # Random.rand(::NL,dims) = rand(Field,dims)...
 # Base.show(::p) create a structure of type p
 
@@ -42,11 +41,3 @@ function solve(prob,eqs;tspan,kwargs...)
     _prob,_alg = get_de_probalg(prob,eqs,u0,p,tspan)
     solve(_prob,_alg,kwargs...)
 end
-
-# function get_de_params(prob,eqs)
-#     A,arange = acoeffs(prob.f,eqs)
-#     B,brange = bcoeffs(prob.c,eqs)
-#     C⁺,cprange,C⁻,cmrange = ccoeffs(prob.c,eqs)
-#     F,frange = fcoeffs(prob.f,eqs)
-#     [A,B,C⁺,C⁻,F,arange,brange,cprange,cmrange,frange]
-# end
