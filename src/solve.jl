@@ -6,6 +6,8 @@
 # Random.rand(::NL,dims) = rand(Field,dims)...
 # Base.show(::p) create a structure of type p
 
+get_de_ic(d::Domain{T},eqs) where T<:AbstractFloat = zeros(T,size(d)...)
+
 function get_de_params(prob,eqs)
     A = acoeffs(prob)
     B = bcoeffs(prob)
@@ -21,7 +23,7 @@ get_de_eqs(::CE2) = ce2_eqs!
 
 function get_de_probalg(prob,eqs,u0,p,t)
     f,g = get_de_eqs(eqs)
-    ODEProblem(f,u0,p,t), RK4()
+    ODEProblem(f,u0,t,p), RK4()
 end
 
 function get_de_probalg(prob::BetaPlane{Stochastic},eqs,u0,p,t)
@@ -36,7 +38,7 @@ function get_de_probalg(prob::BetaPlane{Stochastic},eqs::CE2,u0,p,t)
 end
 
 function solve(prob,eqs;tspan,kwargs...)
-    u0 = zeros(eqs,size(prob.d))
+    u0 = get_de_ic(prob.d,eqs)
     p = get_de_params(prob,eqs)
     _prob,_alg = get_de_probalg(prob,eqs,u0,p,tspan)
     solve(_prob,_alg,kwargs...)
