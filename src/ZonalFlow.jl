@@ -11,9 +11,11 @@ using Random,Distributions
 using NPZ
 
 include("structures.jl")
-include("ranges.jl")
-include("coeffs.jl")
+# include("ranges.jl")
 include("coefficients.jl")
+include("ic.jl")
+include("coeffs.jl")
+include("solve.jl")
 # include("equations.jl")
 # include("ics.jl")
 # include("noise.jl")
