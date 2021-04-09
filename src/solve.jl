@@ -1,12 +1,15 @@
 """
     Solve method for DiffEq solution
 """
-get_de_ic(d::Domain{T}) where T<:AbstractFloat = zeros(Complex{T},size(d)...)
-get_de_ic(d::Domain{T},eqs) where T<:AbstractFloat = zeros(Complex{T},2d.ny-1,d.nx)
-get_de_ic(d::Domain{T},eqs::CE2) where T<:AbstractFloat = ArrayPartition(zeros(Complex{T},2d.ny-1),zeros(Complex{T},2d.ny-1,2d.ny-1,d.nx-1))
-get_de_ic(d::Domain{T},eqs::GCE2) where T<:AbstractFloat = ArrayPartition(zeros(Complex{T},2d.ny-1,eqs.Λ+1),zeros(Complex{T},2d.ny-1,d.nx-eqs.Λ,2d.ny-1,d.nx-eqs.Λ))
-# overload rand method for ICs
-# Random.rand(::NL,dims) = rand(Field,dims)...
+Base.zeros(::Field{T},nx,ny) where T<:AbstractFloat = zeros(Complex{T},2ny-1,nx)
+Base.zeros(::FirstCumulant{T},nx,ny) where T<:AbstractFloat = zeros(Complex{T},2ny-1)
+Base.zeros(::SecondCumulant{T},nx,ny) where T<:AbstractFloat = zeros(Complex{T},2ny-1,2ny-1,nx-1)
+Base.zeros(::FieldBilinear{T},nx,ny,Λ) where T<:AbstractFloat = zeros(Complex{T},2ny-1,nx-Λ,2ny-1,nx-Λ)
+# Random.rand(::Field{T},dims) = rand(Field,dims)...
+
+get_de_ic(d::Domain{T},eqs) where T<:AbstractFloat = zeros(Field{T},size(d)...)
+get_de_ic(d::Domain{T},eqs::CE2) where T<:AbstractFloat = ArrayPartition(zeros(::FirstCumulant{T},size(d)...),zeros(::SecondCumulant{T},size(d)...))
+get_de_ic(d::Domain{T},eqs::GCE2) where T<:AbstractFloat = ArrayPartition(zeros(::Field{T},eqs.Λ+1,d.ny),zeros(::FieldBilinear{T},size(d)...,eqs.Λ)
 
 function get_de_params(prob,eqs)
     A = acoeffs(prob)
