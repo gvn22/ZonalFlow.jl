@@ -2,9 +2,9 @@
 Coefficient type
 """
 
-abstract type AbstractCoefficients end
+abstract type AbstractCoefficients{T <: AbstractFloat} end
 
-struct Coefficients{T} <: AbstractCoefficients where {T <: AbstractFloat}
+struct Coefficients{T} <: AbstractCoefficients{T}
     Ω::T
     θ::T
     μ::T
@@ -13,6 +13,7 @@ struct Coefficients{T} <: AbstractCoefficients where {T <: AbstractFloat}
     linear::Bool
 end
 Coefficients(;Ω,θ,μ,ν,ν₄,linear=false) = Coefficients(Ω,θ,μ,ν,ν₄,linear)
+Base.eltype(::Type{<:AbstractCoefficients{T}}) where {T <: AbstractFloat} = T
 
 """
 Forcing types
@@ -63,9 +64,6 @@ struct BetaPlane{T,F} <: AbstractProblem{T,F}
     c::Coefficients{T}
     f::F
 end
-# BetaPlane(dom,coeffs,forcing::PointJet) = BetaPlane(dom,coeffs,forcing)
-# BetaPlane(dom,coeffs,forcing::Kolmogorov) = BetaPlane(dom,coeffs,forcing)
-# BetaPlane(dom,coeffs,forcing::Stochastic) = BetaPlane(dom,coeffs,forcing)
 BetaPlane(coeffs,forcing;extent,res) = BetaPlane(Domain(extent=extent,res=res),coeffs,forcing)
 
 Base.eltype(::Type{<:AbstractProblem{T,F}}) where {T<:AbstractFloat,F<:AbstractForcing} = T

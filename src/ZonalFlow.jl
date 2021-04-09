@@ -11,14 +11,16 @@ using Random,Distributions
 using NPZ
 
 include("structures.jl")
+include("ranges.jl")
+include("coeffs.jl")
 include("coefficients.jl")
-include("equations.jl")
-include("ics.jl")
-include("noise.jl")
-include("tools.jl")
-include("solvers.jl")
-include("analysis.jl")
-include("writers.jl")
+# include("equations.jl")
+# include("ics.jl")
+# include("noise.jl")
+# include("tools.jl")
+# include("solvers.jl")
+# include("analysis.jl")
+# include("writers.jl")
 
 export Coefficients,
     Domain,
@@ -29,8 +31,22 @@ export Coefficients,
     NL,
     GQL,
     GCE2,
-    CE2
-    
+    CE2,
+    Field,
+    FirstCumulant
+
+export acoeffs,
+    bcoeffs,
+    ccoeffs,
+    arange,
+    brange,
+    brange2,
+    crange,
+    cprange,
+    cmrange,
+    cprange2,
+    cmrange2
+
 # Solvers
 export nl,gql,gce2,ce2
 
