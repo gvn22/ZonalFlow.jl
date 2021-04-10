@@ -69,6 +69,14 @@ BetaPlane(coeffs,forcing;extent,res) = BetaPlane(Domain(extent=extent,res=res),c
 Base.eltype(::Type{<:AbstractProblem{T,F}}) where {T<:AbstractFloat,F<:AbstractForcing} = T
 eftype(::Type{<:AbstractProblem{T,F}}) where {T,F} = F
 
+struct Range
+    rstart::Array{Int}
+    rend::Array{Int}
+end
+
+abstract type Ranges{N2 :: Int} <: NTuple{Range, N2 * 2} end
+abstract type RangeProd{N2 :: Int} <: NTuple{Array{Tuple{Int, Int}}, N2 * 2} end
+
 """
 Solver types
 """
