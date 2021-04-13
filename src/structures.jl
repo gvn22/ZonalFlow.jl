@@ -1,7 +1,6 @@
 """
 Coefficient type
 """
-
 abstract type AbstractCoefficients{T <: AbstractFloat} end
 
 struct Coefficients{T} <: AbstractCoefficients{T}
@@ -18,7 +17,6 @@ Base.eltype(::Type{<:AbstractCoefficients{T}}) where {T <: AbstractFloat} = T
 """
 Forcing types
 """
-
 abstract type AbstractForcing{T <: AbstractFloat} end
 
 struct PointJet{T} <: AbstractForcing{T}
@@ -42,9 +40,8 @@ end
 Kolmogorov(;A₁,A₄) = Kolmogorov(A₁,A₄)
 
 """
-Domain and Model types
+    Domain and problem types
 """
-
 abstract type AbstractDomain{T <: AbstractFloat} end
 
 struct Domain{T} <: AbstractDomain{T}
@@ -69,18 +66,9 @@ BetaPlane(coeffs,forcing;extent,res) = BetaPlane(Domain(extent=extent,res=res),c
 Base.eltype(::Type{<:AbstractProblem{T,F}}) where {T<:AbstractFloat,F<:AbstractForcing} = T
 eftype(::Type{<:AbstractProblem{T,F}}) where {T,F} = F
 
-struct Range
-    rstart::Array{Int}
-    rend::Array{Int}
-end
-
-abstract type Ranges{N2 :: Int} <: NTuple{Range, N2 * 2} end
-abstract type RangeProd{N2 :: Int} <: NTuple{Array{Tuple{Int, Int}}, N2 * 2} end
-
 """
-Solver types
+    Fields and equations types
 """
-
 abstract type AbstractEquations end
 
 abstract type DNS <: AbstractEquations end
@@ -104,8 +92,6 @@ end
 GCE2(Λ) = GCE2(Λ,false,1)
 GCE2(;Λ,poscheckat=20,poscheck=false) = GCE2(Λ,poscheck,poscheckat)
 
-"""
-"""
 const Field{T} = Array{Complex{T},2} where {T <: AbstractFloat}
 const FirstCumulant{T} = Array{Complex{T},1} where {T <: AbstractFloat}
 const SecondCumulant{T} = Array{Complex{T},3} where {T <: AbstractFloat}
@@ -116,11 +102,7 @@ const DSSField{T} = ArrayPartition{Complex{T},Tuple{FirstCumulant{T},SecondCumul
 const GSSField{T} = ArrayPartition{Complex{T},Tuple{Field{T},FieldBilinear{T}}} where {T <: AbstractFloat}
 
 function Base.getproperty(f::Union{DSSField{T},GSSField{T}},v::Symbol) where {T<:AbstractFloat}
-    if v == :l
-        return getfield(f,:x)[1]
-    elseif v == :h
-        return getfield(f,:x)[2]
-    else
-        return getfield(f,v)
-    end
+    v == :l && return getfield(f,:x)[1]
+    v == :h && return getfield(f,:x)[2]
+    return getfield(f,v)
 end

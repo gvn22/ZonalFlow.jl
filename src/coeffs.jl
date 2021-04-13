@@ -27,9 +27,9 @@ function bcoeffs(d::Domain{T},c::Coefficients{T}) where T<:AbstractFloat
     β = convert(Complex{T},2*c.Ω*cos(deg2rad(c.θ)))
     k₄ = norm([wavenumber(nx-1,ny-1,d)])
     α₄ = 4
-    for m = 0:nx-1
+    @inbounds for m = 0:nx-1
         nmin = m == 0 ? 1 : -ny+1
-        for n=nmin:ny-1
+        @inbounds for n=nmin:ny-1
             kx,ky = wavenumber(m,n,d)
             k = (kx^2+ky^2)^0.5
             B[n+d.ny,m+1] += im*β*kx/k^2 - c.μ - c.ν*k^2 - c.ν₄*(k^2/k₄^2)^α₄
@@ -42,11 +42,11 @@ function ccoeffs(d::Domain{T},eqs::NL) where T<:AbstractFloat
     (nx,ny) = size(d)
     Cp = zeros(T,2ny-1,nx,2ny-1,nx)
     # ++ interactions note: +0 has only (0,+n)
-    for m1=1:nx-1
-        for n1=-ny+1:ny-1
-            for m2=0:min(m1,nx-1-m1)
+    @inbounds for m1=1:nx-1
+        @inbounds for n1=-ny+1:ny-1
+            @inbounds for m2=0:min(m1,nx-1-m1)
                 n2min = m2 == 0 ? 1 : -ny+1
-                for n2=max(n2min,-ny+1-n1):min(ny-1,ny-1-n1)
+                @inbounds for n2=max(n2min,-ny+1-n1):min(ny-1,ny-1-n1)
                     px,py = wavenumber(m1,n1,d)
                     qx,qy = wavenumber(m2,n2,d)
                     if m1 == m2
@@ -60,12 +60,12 @@ function ccoeffs(d::Domain{T},eqs::NL) where T<:AbstractFloat
     end
     Cm = zeros(T,2ny-1,nx,2ny-1,nx)
     # +- interactions note: - includes (0,-n) because it is conj(0,n)
-    for m1=1:nx-1
-        for n1=-ny+1:ny-1
-            for m2=0:m1
+    @inbounds for m1=1:nx-1
+        @inbounds for n1=-ny+1:ny-1
+            @inbounds for m2=0:m1
                 n2min = m2 == 0 ? 1 : -ny+1
                 n2max = m2 == m1 ? n1 - 1 : ny-1
-                for n2=max(n2min,n1-ny+1):1:min(n2max,n1+ny-1)
+                @inbounds for n2=max(n2min,n1-ny+1):1:min(n2max,n1+ny-1)
                     px,py = wavenumber(m1,n1,d)
                     qx,qy = wavenumber(m2,n2,d)
                     Cm[n2+ny,m2+1,n1+ny,m1+1] = (px*qy - qx*py)*(1.0/(px^2 + py^2) - 1.0/(qx^2 + qy^2))
@@ -82,12 +82,12 @@ function ccoeffs(d::Domain{T},eqs::GQL) where T<:AbstractFloat
     Cp = zeros(T,2ny-1,nx,2ny-1,nx)
     Cm = zeros(T,2ny-1,nx,2ny-1,nx)
     # L + L = L
-    for m1=0:Λ
+    @inbounds for m1=0:Λ
         n1min = m1 == 0 ? 1 : -ny+1
-        for n1=n1min:ny-1
-            for m2=0:min(m1,Λ-m1)
+        @inbounds for n1=n1min:ny-1
+            @inbounds for m2=0:min(m1,Λ-m1)
                 n2min = m2 == 0 ? 1 : -ny+1
-                for n2=max(n2min,-ny+1-n1):min(ny-1,ny-1-n1)
+                @inbounds for n2=max(n2min,-ny+1-n1):min(ny-1,ny-1-n1)
                     px,py = wavenumber(m1,n1,d)
                     qx,qy = wavenumber(m2,n2,d)
                     if m1 == m2
@@ -101,13 +101,13 @@ function ccoeffs(d::Domain{T},eqs::GQL) where T<:AbstractFloat
     end
     # L - L = L
     # note: -L should always include (0,-n)
-    for m1=0:Λ
+    @inbounds for m1=0:Λ
         n1min = m1 == 0 ? 1 : -ny+1
-        for n1=n1min:ny-1
-            for m2=0:m1
+        @inbounds for n1=n1min:ny-1
+            @inbounds for m2=0:m1
                 n2min = m2 == 0 ? 1 : -ny+1
                 n2max = m2 == m1 ? n1 - 1 : ny-1
-                for n2=max(n2min,n1-ny+1):1:min(n2max,n1+ny-1)
+                @inbounds for n2=max(n2min,n1-ny+1):1:min(n2max,n1+ny-1)
                     px,py = wavenumber(m1,n1,d)
                     qx,qy = wavenumber(m2,n2,d)
                     Cm[n2+ny,m2+1,n1+ny,m1+1] = (px*qy - qx*py)*(1.0/(px^2 + py^2) - 1.0/(qx^2 + qy^2))
@@ -116,11 +116,11 @@ function ccoeffs(d::Domain{T},eqs::GQL) where T<:AbstractFloat
         end
     end
     # H - H = L
-    for m1=Λ+1:nx-1
-        for n1=-ny+1:ny-1
-            for m2=max(Λ+1,m1-Λ):m1
+    @inbounds for m1=Λ+1:nx-1
+        @inbounds for n1=-ny+1:ny-1
+            @inbounds for m2=max(Λ+1,m1-Λ):m1
                 n2max = m2 == m1 ? n1 - 1 : ny-1
-                for n2=max(-ny+1,n1-ny+1):min(n2max,n1+ny-1)
+                @inbounds for n2=max(-ny+1,n1-ny+1):min(n2max,n1+ny-1)
                     px,py = wavenumber(m1,n1,d)
                     qx,qy = wavenumber(m2,n2,d)
                     Cm[n2+ny,m2+1,n1+ny,m1+1] = (px*qy - qx*py)*(1.0/(px^2 + py^2) - 1.0/(qx^2 + qy^2))
@@ -129,11 +129,11 @@ function ccoeffs(d::Domain{T},eqs::GQL) where T<:AbstractFloat
         end
     end
     # H + L = H
-    for m1=Λ+1:nx-1
-        for n1=-ny+1:ny-1
-            for m2=0:min(nx-1-m1,Λ)
+    @inbounds for m1=Λ+1:nx-1
+        @inbounds for n1=-ny+1:ny-1
+            @inbounds for m2=0:min(nx-1-m1,Λ)
                 n2min = m2 == 0 ? 1 : -ny+1
-                for n2=max(n2min,-ny+1-n1):1:min(ny-1,ny-1-n1)
+                @inbounds for n2=max(n2min,-ny+1-n1):1:min(ny-1,ny-1-n1)
                     px,py = wavenumber(m1,n1,d)
                     qx,qy = wavenumber(m2,n2,d)
                     Cp[n2+ny,m2+1,n1+ny,m1+1] = -(px*qy - qx*py)*(1.0/(px^2 + py^2) - 1.0/(qx^2 + qy^2))
@@ -143,11 +143,11 @@ function ccoeffs(d::Domain{T},eqs::GQL) where T<:AbstractFloat
     end
     # H - L = H
     # note: -L should always include (0,-n)
-    for m1=Λ+1:nx-1
-        for n1=-ny+1:ny-1
-            for m2=0:min(Λ,m1 - Λ - 1)
+    @inbounds for m1=Λ+1:nx-1
+        @inbounds for n1=-ny+1:ny-1
+            @inbounds for m2=0:min(Λ,m1 - Λ - 1)
                 n2min = m2 == 0 ? 1 : -ny+1
-                for n2=max(n2min,n1-ny+1):min(ny-1,n1+ny-1)
+                @inbounds for n2=max(n2min,n1-ny+1):min(ny-1,n1+ny-1)
                     px,py = wavenumber(m1,n1,d)
                     qx,qy = wavenumber(m2,n2,d)
                     Cm[n2+ny,m2+1,n1+ny,m1+1] = (px*qy - qx*py)*(1.0/(px^2 + py^2) - 1.0/(qx^2 + qy^2))
