@@ -14,8 +14,8 @@ end
 function acoeffs(prob::BetaPlane{T,Kolmogorov{T}}) where T<:AbstractFloat
     d,f = prob.d,prob.f
     A = zeros(Complex{T},2d.ny-1)
-    A[ny+1] = f.A₁
-    A[ny+4] = f.A₄
+    A[d.ny+1] = A[d.ny-1] = f.A₁
+    A[d.ny+4] = A[d.ny-4] = 4*f.A₄
     A
 end
 
