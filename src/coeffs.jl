@@ -19,12 +19,13 @@ function acoeffs(prob::BetaPlane{T,Kolmogorov{T}}) where T<:AbstractFloat
     A
 end
 
-acoeffs(prob::BetaPlane{T,Stochastic{T}}) where T<:AbstractFloat = zeros(Complex{T},2prob.d.ny-1)
+acoeffs(prob) = zeros(Complex{eltype(prob)},2prob.d.ny-1)
 
-function bcoeffs(d::Domain{T},c::Coefficients{T}) where T<:AbstractFloat
+function bcoeffs(prob)
+    d,c = prob.d,prob.c
     (nx,ny) = size(d)
-    B = zeros(Complex{T},2ny-1,nx)
-    β = convert(Complex{T},2*c.Ω*cos(deg2rad(c.θ)))
+    B = zeros(Complex{eltype(prob)},2ny-1,nx)
+    β = convert(Complex{eltype(prob)},2*c.Ω*cos(deg2rad(c.θ)))
     k₄ = norm([wavenumber(nx-1,ny-1,d)])
     α₄ = 4
     @inbounds for m = 0:nx-1
@@ -38,9 +39,14 @@ function bcoeffs(d::Domain{T},c::Coefficients{T}) where T<:AbstractFloat
     B
 end
 
-function ccoeffs(d::Domain{T},eqs::NL) where T<:AbstractFloat
+function ccoeffs(prob,eqs::NL)
+    d,c = prob.d,prob.c
     (nx,ny) = size(d)
-    Cp = zeros(T,2ny-1,nx,2ny-1,nx)
+    Cp = zeros(eltype(prob),2ny-1,nx,2ny-1,nx)
+    Cm = zeros(eltype(prob),2ny-1,nx,2ny-1,nx)
+
+    (c.linear == true) && return Cp,Cm
+
     # ++ interactions note: +0 has only (0,+n)
     @inbounds for m1=1:nx-1
         @inbounds for n1=-ny+1:ny-1
@@ -58,7 +64,6 @@ function ccoeffs(d::Domain{T},eqs::NL) where T<:AbstractFloat
             end
         end
     end
-    Cm = zeros(T,2ny-1,nx,2ny-1,nx)
     # +- interactions note: - includes (0,-n) because it is conj(0,n)
     @inbounds for m1=1:nx-1
         @inbounds for n1=-ny+1:ny-1
@@ -76,11 +81,15 @@ function ccoeffs(d::Domain{T},eqs::NL) where T<:AbstractFloat
     Cp,Cm
 end
 
-function ccoeffs(d::Domain{T},eqs::GQL) where T<:AbstractFloat
+function ccoeffs(prob,eqs::Union{GQL,CE2,GCE2})
+    d,c = prob.d,prob.c
     (nx,ny) = size(d)
-    Λ = eqs.Λ
-    Cp = zeros(T,2ny-1,nx,2ny-1,nx)
-    Cm = zeros(T,2ny-1,nx,2ny-1,nx)
+    Λ = typeof(eqs) == CE2 ? 0 : eqs.Λ
+    Cp = zeros(eltype(prob),2ny-1,nx,2ny-1,nx)
+    Cm = zeros(eltype(prob),2ny-1,nx,2ny-1,nx)
+
+    (c.linear == true) && return Cp,Cm
+
     # L + L = L
     @inbounds for m1=0:Λ
         n1min = m1 == 0 ? 1 : -ny+1
@@ -156,4 +165,45 @@ function ccoeffs(d::Domain{T},eqs::GQL) where T<:AbstractFloat
         end
     end
     Cp,Cm
+end
+
+fcoeffs(prob,eqs::Union{NL,GQL}) = zeros(eltype(prob),2prob.d.ny-1,prob.d.nx)
+fcoeffs(prob::BetaPlane{T,PointJet{T}},eqs::GCE2) where T = ArrayPartition(zeros(eltype(prob),2prob.d.ny-1,eqs.Λ+1),zeros(eltype(prob),2prob.d.ny-1,prob.d.nx-eqs.Λ,2prob.d.ny-1,prob.d.nx-eqs.Λ))
+fcoeffs(prob::BetaPlane{T,Kolmogorov{T}},eqs::GCE2) where T = ArrayPartition(zeros(eltype(prob),2prob.d.ny-1,eqs.Λ+1),zeros(eltype(prob),2prob.d.ny-1,prob.d.nx-eqs.Λ,2prob.d.ny-1,prob.d.nx-eqs.Λ))
+fcoeffs(prob::BetaPlane{T,PointJet{T}},eqs::CE2) where T = fcoeffs(prob,GCE2(0))
+fcoeffs(prob::BetaPlane{T,Kolmogorov{T}},eqs::CE2) where T = fcoeffs(prob,GCE2(0))
+
+stochamp(ε::T,kf::Int,N::T) where T<:AbstractFloat = convert(T,sqrt(2ε*kf^2)/sqrt(N))
+stochcorr(ε::T,kf::Int,dk::Int) where T<:AbstractFloat = convert(T,2π*ε*kf/(32.0dk))
+
+function fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs::Union{NL,GQL}) where T
+    d,f = prob.d,prob.f
+    (nx,ny) = size(d)
+    F = zeros(T,2ny-1,nx)
+    for m=1:nx-1 # should 0 be included?
+        for n=-ny+1:ny-1
+            k = (m^2 + n^2)^0.5
+            if (f.kf - f.dk < k < f.kf + f.dk) F[n+ny,m+1] = 1.0 end
+        end
+    end
+    (sum(F) ≥ 1.0) && F .= F.* stochamp(f.ε,f.kf,sum(F)) # this is dt unaware - dist contains dt
+    return F
+end
+
+function fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs::Union{CE2,GCE2}) where T
+    d,f = prob.d,prob.f
+    (nx,ny) = size(d)
+    Λ = typeof(eqs) == CE2 ? 0 : eqs.Λ
+    F = ArrayPartition(zeros(T,2ny-1,Λ+1),zeros(T,2ny-1,nx-Λ,2ny-1,nx-Λ))
+    for m=1:nx-1 # should 0 be included?
+        for n=-ny+1:ny-1
+            k = (m^2 + n^2)^0.5
+            if(f.kf - f.dk < k < f.kf + f.dk)
+                m ≤ Λ ? F.x[1][n+ny,m+1] = one(T) : F.x[2][n+ny,m-Λ,n+ny,m-Λ] = one(T)
+            end
+        end
+    end
+    if (sum(F.x[1]) ≥ 1.0) F.x[1] .= F.x[1] * stochamp(f.ε,f.kf,sum(F.x[1])) end
+    F.x[2] .= F.x[2] * stochcorr(f.ε,f.kf,f.dk) # this is dt unaware - dist contains dt
+    return F
 end
