@@ -64,7 +64,7 @@ end
 BetaPlane(coeffs,forcing;extent,res) = BetaPlane(Domain(extent=extent,res=res),coeffs,forcing)
 
 Base.eltype(::Type{<:AbstractProblem{T,F}}) where {T<:AbstractFloat,F<:AbstractForcing} = T
-eftype(::Type{<:AbstractProblem{T,F}}) where {T,F} = F
+eftype(::Type{<:AbstractProblem{T,F}}) where {T<:AbstractFloat,F<:AbstractForcing} = F
 
 """
     Fields and equations types
