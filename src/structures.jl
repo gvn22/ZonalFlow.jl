@@ -90,7 +90,7 @@ struct GCE2 <: GSS
     poscheckat::Int
 end
 GCE2(Λ) = GCE2(Λ,false,1)
-GCE2(;Λ,poscheckat=20,poscheck=false) = GCE2(Λ,poscheck,poscheckat)
+GCE2(;Λ,poscheck=false,poscheckat=20) = GCE2(Λ,poscheck,poscheckat)
 
 const Field{T} = Array{Complex{T},2} where {T <: AbstractFloat}
 const FirstCumulant{T} = Array{Complex{T},1} where {T <: AbstractFloat}
