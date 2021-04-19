@@ -1,3 +1,30 @@
+lambda(prob,eqs::NL) = prob.d.nx-1
+lambda(prob,eqs::GQL) = eqs.Λ
+lambda(prob,eqs::GCE2) = eqs.Λ
+lambda(prob,eqs::CE2) = 0
+
+function Base.write(prob,eqs,sol;dn::String,fn::String)
+
+    (lx,ly),(nx,ny),Λ = length(prob.d),size(prob.d),lambda(prob,eqs)
+    t,u = sol.t,sol.u
+
+    Et,Zt = energy(lx,ly,nx,ny,u)
+    Etav,Ztav = energy(lx,ly,nx,ny,t,u)
+    Emt,Zmt = zonalenergy(lx,ly,nx,ny,u)
+    Emtav,Zmtav = zonalenergy(lx,ly,nx,ny,t,u)
+
+    Emn = fourierenergy(lx,ly,nx,ny,u)
+    # Vxy = inversefourier(nx,ny,u)
+    # Emn2 = energyspectrum(lx,ly,nx,ny,u,Λ=Λ)
+    # Vxy2 = vorticity(nx,ny,u,Λ=Λ)
+    # Uxy = zonalvelocity(lx,ly,nx,ny,u)
+    # Uxy2 = zonalvelocity(lx,ly,nx,ny,u,Λ=Λ)
+
+    d = Dict("t"=>t,"Zt"=>Zt,"Ztav"=>Ztav,"Et"=>Et,"Etav"=>Etav,"Emt"=>Emt,"Emtav"=>Emtav,"Emn"=>Emn)
+    NPZ.npzwrite(dn*fn*".npz",d)
+    nothing
+end
+
 function dumpenergy(lx::T,ly::T,nx::Int,ny::Int,t::Array{T,1},u;fs::String,t0::Float64=200.0) where {T <: AbstractFloat}
 
     Et,Zt = energy(lx,ly,nx,ny,u)
@@ -22,7 +49,7 @@ function dumpfields(lx::T,ly::T,nx::Int,ny::Int,t::Array{Float64,1},u::Array{DNS
 
     U = zonalvelocity(lx,ly,nx,ny,u)
     U2 = zonalvelocity(lx,ly,nx,ny,u,Λ=Λ)
-    #
+
     # W = zonalvorticity(lx,ly,nx,ny,u)
     # W2 = meanvorticity(lx,ly,nx,ny,u,Λ=Λ)
 
@@ -55,8 +82,7 @@ function dumpfields(lx::T,ly::T,nx::Int,ny::Int,t::Array{Float64,1},u::Array{GSS
 
 end
 
-function dumpstats()
-end
+function dumpstats() end
 
 function dumpadjacency(lx::T,ly::T,nx::Int,ny::Int;fs::String,Λ::Int=nx-1) where {T <: AbstractFloat}
     A,C = adjacency(lx,ly,nx,ny,Λ=Λ)

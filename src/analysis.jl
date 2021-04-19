@@ -115,7 +115,7 @@ end
 
     Energy spectrum with conjugate modes included
     energyspectrum(;Λ) -> DNSField/GSSField with cutoff Λ
-    
+
 """
 function energyspectrum(lx::T,ly::T,nx::Int,ny::Int,u::DNSField{T};Λ::Int=nx-1) where {T <: AbstractFloat}
 
@@ -137,6 +137,33 @@ end
 function energyspectrum(lx::T,ly::T,nx::Int,ny::Int,u::Array{DNSField{T},1};Λ::Int=nx-1) where {T <: AbstractFloat}
 
     U = [energyspectrum(lx,ly,nx,ny,u[i],Λ=Λ) for i=1:length(u)]
+    reshape(cat(U...,dims=3),2ny-1,2nx-1,length(u))
+
+end
+
+function energyspectrum(lx::T,ly::T,nx::Int,ny::Int,u::DSSField{T}) where T<:AbstractFloat
+    E = zeros(T,2ny-1,2nx-1,length(u))
+    for i in eachindex(u)
+        for n1 = 1:ny-1
+            ky = 2.0*Float64(pi)/ly*n1
+            E[n1 + ny,nx,i] += abs(u[i].x[1][n1 + ny])^2/ky^2
+            E[-n1 + ny,nx,i] = E[n1 + ny,nx,i]
+        end
+        for m1 = 1:nx-1
+            for n1 = -(ny-1):ny-1
+                kx = 2.0*Float64(pi)/lx*m1
+                ky = 2.0*Float64(pi)/ly*n1
+                E[n1 + ny,m1+nx,i] += abs(u[i].x[2][n1 + ny,n1 + ny,m1])/(kx^2 + ky^2)
+                E[-n1 + ny,-m1+nx,i] = E[n1 + ny,m1+nx,i]
+            end
+        end
+    end
+    E
+end
+
+function energyspectrum(lx::T,ly::T,nx::Int,ny::Int,u::Array{DSSField{T},1}) where {T <: AbstractFloat}
+
+    U = [energyspectrum(lx,ly,nx,ny,u[i]) for i=1:length(u)]
     reshape(cat(U...,dims=3),2ny-1,2nx-1,length(u))
 
 end
@@ -183,6 +210,26 @@ function fourierenergy(lx::Float64,ly::Float64,nx::Int,ny::Int,u::Array{Array{Co
                 kx = 2.0*Float64(pi)*m1/lx
                 ky = 2.0*Float64(pi)*n1/ly
                 E[n1 + ny,m1+nx,i] = abs(u[i][n1+ny,m1+1])^2/(kx^2 + ky^2)
+                E[-n1 + ny,-m1+nx,i] = E[n1 + ny,m1+nx,i]
+            end
+        end
+    end
+    E
+end
+
+function fourierenergy(lx::T,ly::T,nx::Int,ny::Int,u::Array{DSSField{T},1}) where T<:AbstractFloat
+    E = zeros(T,2ny-1,2nx-1,length(u))
+    for i in eachindex(u)
+        for n1 = 1:ny-1
+            ky = 2.0*Float64(pi)/ly*n1
+            E[n1 + ny,nx,i] += abs(u[i].x[1][n1 + ny])^2/ky^2
+            E[-n1 + ny,nx,i] = E[n1 + ny,nx,i]
+        end
+        for m1 = 1:nx-1
+            for n1 = -(ny-1):ny-1
+                kx = 2.0*Float64(pi)/lx*m1
+                ky = 2.0*Float64(pi)/ly*n1
+                E[n1 + ny,m1+nx,i] += abs(u[i].x[2][n1 + ny,n1 + ny,m1])/(kx^2 + ky^2)
                 E[-n1 + ny,-m1+nx,i] = E[n1 + ny,m1+nx,i]
             end
         end
