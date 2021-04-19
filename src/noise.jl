@@ -16,7 +16,7 @@ end
 
 function sy_gce2_dist!(dW,W,dt,u,p,t,rng)
 
-    nx,ny,Λ,F = p[1],p[2],p[3],p[end]
+    nx,ny,Λ,F = p[1],p[2],p[3],p[8]
 
     d = Uniform(0.0,2.0*Float64(π))
     for m=1:Λ # should 0 be included?
@@ -52,3 +52,6 @@ function sy_bridge!(dW,W,W0,Wh,q,h,u,p,t,rng)
     nothing
 
 end
+
+noise!(t0,W0::DNSField,Z0=nothing;kwargs...) = NoiseProcess(t0,W0,Z0,sy_dist!,sy_bridge!;kwargs...)
+noise!(t0,W0::GSSField,Z0=nothing;kwargs...) = NoiseProcess(t0,W0,Z0,sy_gce2_dist!,sy_bridge!;kwargs...)

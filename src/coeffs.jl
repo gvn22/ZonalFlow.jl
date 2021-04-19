@@ -6,7 +6,8 @@ wavenumber(i,j,d) = oftype(d.lx,(2π/d.lx)*i),oftype(d.ly,(2π/d.ly)*j)
 function acoeffs(prob::BetaPlane{T,PointJet{T}}) where T<:AbstractFloat
     d,c,f = prob.d,prob.c,prob.f
     y = LinRange(-d.ly/2,d.ly/2,2d.ny-1)
-    u = -(f.Ξ*c.Ω/f.τ)*tanh.(y/f.Δθ)
+    if(f.τ ≠ 1/c.μ) @warn "Relxation time τ is not equal to 1/μ" end
+    u = f.τ > 0.0 ? -(f.Ξ*c.Ω/f.τ)*tanh.(y/f.Δθ) : zeros(Complex{T},2d.ny-1)
     s = convert(eltype(u),2/(2*d.ny-1))
     s*fftshift(fft(u))
 end

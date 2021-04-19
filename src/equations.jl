@@ -1,4 +1,4 @@
-function g!(du,u,p,t)
+function g!(du::DNSField,u,p,t)
 
     F::Array{Float64,2} = p[end]
     du .= ComplexF64.(F)
@@ -6,9 +6,9 @@ function g!(du,u,p,t)
 
 end
 
-function g2!(du,u,p,t)
+function g!(du::GSSField,u,p,t)
 
-    F = p[end]
+    F = p[8]
     du.x[1] .= ComplexF64.(F.x[1])
     du.x[2] .= ComplexF64(0)
     nothing
@@ -16,13 +16,13 @@ function g2!(du,u,p,t)
 end
 
 function unit_eqs!(du,u,p,t)
-    du .= 1.0
+    du .= oneunit(ComplexF64)
     nothing
 end
 
 function unit_gce2_eqs!(du,u,p,t)
-    du.x[1] .= 1.0
-    du.x[2] .= 1.0
+    du.x[1] .= oneunit(ComplexF64)
+    du.x[2] .= oneunit(ComplexF64)
     nothing
 end
 
@@ -200,7 +200,7 @@ end
 
 function gce2_eqs!(du,u,p,t)
 
-    nx::Int,ny::Int,Λ::Int,A::Array{ComplexF64,1},B::Array{ComplexF64,2},Cp::Array{Float64,4},Cm::Array{Float64,4},dx::Array{ComplexF64,2},dy::Array{ComplexF64,4},temp::Array{ComplexF64,4},F::ArrayPartition{Float64,Tuple{Array{Float64,2},Array{Float64,4}}} = p
+    nx::Int,ny::Int,Λ::Int,A::Array{ComplexF64,1},B::Array{ComplexF64,2},Cp::Array{Float64,4},Cm::Array{Float64,4},F::ArrayPartition{Float64,Tuple{Array{Float64,2},Array{Float64,4}}},dx::Array{ComplexF64,2},dy::Array{ComplexF64,4},temp::Array{ComplexF64,4} = p
 
     # low mode equations
     # du.x[1] .= 0.0 + 0.0im
@@ -351,7 +351,7 @@ end
 
 function ce2_eqs!(du,u,p,t)
 
-    nx::Int,ny::Int,A::Array{ComplexF64,1},B::Array{ComplexF64,2},Cp::Array{Float64,4},Cm::Array{Float64,4},F::Array{ComplexF64,4},dx::Array{ComplexF64,1},dy::Array{ComplexF64,3},temp::Array{ComplexF64,3} = p
+    nx::Int,ny::Int,A::Array{ComplexF64,1},B::Array{ComplexF64,2},Cp::Array{Float64,4},Cm::Array{Float64,4},F::ArrayPartition{Float64,Tuple{Array{Float64,2},Array{Float64,4}}},dx::Array{ComplexF64,1},dy::Array{ComplexF64,3},temp::Array{ComplexF64,3} = p
 
     # first cumulant equations
     dx .= 0.0 + 0.0im
@@ -408,7 +408,7 @@ function ce2_eqs!(du,u,p,t)
             @inbounds for n=-(ny-1):ny-1
 
                 dy[n+ny,n3+ny,m3] = B[n+ny,m3+1]*u.x[2][n+ny,n3+ny,m3]
-                dy[n+ny,n3+ny,m3] += F[n+ny,m3,n3+ny,m3]
+                dy[n+ny,n3+ny,m3] += F.x[2][n+ny,m3,n3+ny,m3]
 
                 accumulator::ComplexF64 = 0.0 + 0.0im
                 @inbounds for n1=max(-(ny-1),n-(ny-1)):min(n-1,ny-1)
