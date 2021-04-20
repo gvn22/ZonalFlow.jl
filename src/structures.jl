@@ -118,7 +118,19 @@ function Base.getproperty(f::Union{DSSField{T},GSSField{T}},v::Symbol) where {T<
     return getfield(f,v)
 end
 
-struct DEParams{T} <: AbstractCoefficients{T}
+abstract type AbstractParams{T <: AbstractFloat} end
+
+struct NLParams{T} <: AbstractParams{T}
+    nx::Int
+    ny::Int
+    A::Array{Complex{T},1}
+    B::Array{Complex{T},2}
+    C⁺::Array{T,4}
+    C⁻::Array{T,4}
+    F::Array{T,2}
+end
+
+struct GQLParams{T} <: AbstractParams{T}
     nx::Int
     ny::Int
     Λ::Int

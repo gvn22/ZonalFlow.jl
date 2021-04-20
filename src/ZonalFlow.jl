@@ -39,8 +39,7 @@ export  integrate,
         get_de_ic,
         get_de_params,
         get_de_probalg,
-        nl!,
-        gql!,
+        f!,g!,
         ce2_eqs!,
         gce2_eqs!
 

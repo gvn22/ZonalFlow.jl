@@ -1,6 +1,6 @@
 g!(du,u,p,t) = du .= one(ComplexF64)
 
-function nl!(du::DNSField{T},u::DNSField{T},p::DEParams,t) where T<:AbstractFloat
+function f!(du::DNSField{T},u::DNSField{T},p::NLParams{T},t) where T<:AbstractFloat
     nx,ny,A,B,Cp,Cm = p.nx,p.ny,p.A,p.B,p.C⁺,p.C⁻
     # zonal constant and linear terms
     @inbounds for n1=1:ny-1
@@ -36,7 +36,7 @@ function nl!(du::DNSField{T},u::DNSField{T},p::DEParams,t) where T<:AbstractFloa
     nothing
 end
 
-function gql!(du::DNSField{T},u::DNSField{T},p::DEParams,t) where T<:AbstractFloat
+function f!(du::DNSField{T},u::DNSField{T},p::GQLParams{T},t) where T<:AbstractFloat
     nx,ny,Λ,A,B,Cp,Cm = p.nx,p.ny,p.Λ,p.A,p.B,p.C⁺,p.C⁻
     # zonal constant and linear terms
     @inbounds for n1=1:ny-1
