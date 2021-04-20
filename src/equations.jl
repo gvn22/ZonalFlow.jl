@@ -1,30 +1,4 @@
-function g!(du::DNSField,u,p,t)
-
-    F::Array{Float64,2} = p[end]
-    du .= ComplexF64.(F)
-    nothing
-
-end
-
-function g!(du::GSSField,u,p,t)
-
-    F = p[8]
-    du.x[1] .= ComplexF64.(F.x[1])
-    du.x[2] .= ComplexF64(0)
-    nothing
-
-end
-
-function unit_eqs!(du,u,p,t)
-    du .= oneunit(ComplexF64)
-    nothing
-end
-
-function unit_gce2_eqs!(du,u,p,t)
-    du.x[1] .= oneunit(ComplexF64)
-    du.x[2] .= oneunit(ComplexF64)
-    nothing
-end
+g!(du,u,p,t) = du .= one(ComplexF64)
 
 function nl_eqs!(du,u,p,t)
 

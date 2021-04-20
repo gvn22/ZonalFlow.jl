@@ -7,56 +7,36 @@ using DiffEqCallbacks
 using RecursiveArrayTools
 using FFTW
 using LinearAlgebra
-using Random,Distributions
+using Random
+using Distributions
 using NPZ
 
 include("structures.jl")
-# include("ranges.jl")
 include("coefficients.jl")
 include("ic.jl")
 include("coeffs.jl")
 include("solve.jl")
 include("equations.jl")
-# include("ics.jl")
 include("noise.jl")
 include("tools.jl")
-# include("solvers.jl")
 include("analysis.jl")
 include("writers.jl")
 
-export Coefficients,
-    Domain,
-    PointJet,
-    Kolmogorov,
-    Stochastic,
-    BetaPlane,
-    NL,
-    GQL,
-    GCE2,
-    CE2,
-    Field,
-    FirstCumulant
+export  Domain,
+        Coefficients,
+        PointJet,
+        Kolmogorov,
+        Stochastic,
+        BetaPlane
 
-export acoeffs,
-    bcoeffs,
-    ccoeffs,
-    fcoeffs,
-    integrate
+export  NL,
+        GQL,
+        GCE2,
+        CE2
 
-# Solvers
-export nl,gql,gce2,ce2
+export  integrate
 
-# ICs
-export ic_pert_eqm,ic_eqm,ic_rand
-
-# Analysis
-export inversefourier
-export energy,zonalenergy,fourierenergy,energyspectrum
-export meanvorticity,zonalvelocity,meanzonalvelocity
-export zonostrophy,energyinjectionrate
-export adjacency
-
-# Writers
-export dumpenergy,dumpfields,dumpstats,dumpadjacency
+export  energy,
+        adjacency
 
 end

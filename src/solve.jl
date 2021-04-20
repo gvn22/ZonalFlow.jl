@@ -16,9 +16,9 @@ set_p(d,eqs::GQL,p) = [d.nx,d.ny,eqs.Λ,p...]
 set_p(d::Domain{T},eqs::CE2,p) where T = [d.nx,d.ny,p...,similar(FirstCumulant{T},d),similar(SecondCumulant{T},d),similar(SecondCumulant{T},d)]
 set_p(d::Domain{T},eqs::GCE2,p) where T = [d.nx,d.ny,eqs.Λ,p...,similar(Field{T},d,Λ=eqs.Λ),similar(FieldBilinear{T},d,Λ=eqs.Λ),similar(FieldBilinear{T},d,Λ=eqs.Λ)]
 
-get_de_eqs(::NL) = nl_eqs!,unit_eqs!
-get_de_eqs(::GQL) = gql_eqs!,unit_eqs!
-get_de_eqs(::GCE2) = gce2_eqs!,unit_gce2_eqs!
+get_de_eqs(::NL) = nl_eqs!,g!
+get_de_eqs(::GQL) = gql_eqs!,g!
+get_de_eqs(::GCE2) = gce2_eqs!,g!
 get_de_eqs(::CE2) = ce2_eqs!
 
 function get_de_probalg(prob,eqs,u0,t,p)
@@ -38,9 +38,11 @@ function get_de_probalg(prob::BetaPlane{T,Stochastic{T}},eqs::CE2,u0,t,p) where 
     ODEProblem(f,u0,t,p), Heun()
 end
 
-function integrate(prob,eqs,tspan;kwargs...)
+function integrate(prob,eqs::AbstractEquations,tspan;kwargs...)
     u0 = get_de_ic(prob,eqs)
     p  = get_de_params(prob,eqs)
     _prob,_alg = get_de_probalg(prob,eqs,u0,tspan,p)
-    solve(_prob,_alg;kwargs...)
+    @time solve(_prob,_alg;kwargs...)
 end
+
+integrate(prob,eqs::Vector{AbstractEquations},tspan;kwargs...) = [integrate(prob,eq,tspan;kwargs...) for eq in eqs]
