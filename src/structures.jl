@@ -92,6 +92,12 @@ end
 GCE2(Λ) = GCE2(Λ,false,1)
 GCE2(;Λ,poscheck=false,poscheckat=20) = GCE2(Λ,poscheck,poscheckat)
 
+label(eqs::NL) = "nl"
+label(eqs::GQL) = "gql_$(eqs.Λ)"
+label(eqs::CE2) = "ce2"
+label(eqs::GCE2) = "gce2_$(eqs.Λ)"
+label(eqs::Vector{AbstractEquations}) = [label(eq) for eq in eqs]
+
 lambda(prob,eqs::NL)::Int = prob.d.nx-1
 lambda(prob,eqs::GQL)::Int = eqs.Λ
 lambda(prob,eqs::GCE2)::Int = eqs.Λ
@@ -112,8 +118,14 @@ function Base.getproperty(f::Union{DSSField{T},GSSField{T}},v::Symbol) where {T<
     return getfield(f,v)
 end
 
-label(eqs::NL) = "nl"
-label(eqs::GQL) = "gql_$(eqs.Λ)"
-label(eqs::CE2) = "ce2"
-label(eqs::GCE2) = "gce2_$(eqs.Λ)"
-label(eqs::Vector{AbstractEquations}) = [label(eq) for eq in eqs]
+struct DEParams{T} <: AbstractCoefficients{T}
+    nx::Int
+    ny::Int
+    # Λ::Int
+    A::Array{Complex{T},1}
+    B::Array{Complex{T},2}
+    C⁺::Array{T,4}
+    C⁻::Array{T,4}
+    F::Array{T,2}
+end
+# DEParams(nx,ny,A,B,C⁺,C⁻) = DEParams(nx,ny,nothing,A,B,C⁺,C⁻,nothing)

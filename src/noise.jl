@@ -1,5 +1,5 @@
 function dist!(dW::DNSField{T},W,dt,u,p,t,rng) where T
-    nx::Int,ny::Int,F::Array{T,2} = p[1],p[2],p[end]
+    nx,ny,F = p.nx,p.ny,p.F
     @inbounds for m=1:nx-1
         @inbounds for n=-ny+1:ny-1
             ϕ = rand(Uniform(0,2π))
