@@ -2,40 +2,32 @@ g!(du,u,p,t) = du .= one(ComplexF64)
 
 function nl!(du::DNSField{T},u::DNSField{T},p::DEParams,t) where T<:AbstractFloat
     nx,ny,A,B,Cp,Cm = p.nx,p.ny,p.A,p.B,p.C⁺,p.C⁻
-    du .= zero(Complex{T})
-    # constants
-    @inbounds for n=1:ny-1
-        du[n+ny,1] += A[n+ny]
+    # zonal constant and linear terms
+    @inbounds for n1=1:ny-1
+        m1 = 0
+        du[n1+ny,m1+1] = A[n1+ny]
+        du[n1+ny,m1+1] += B[n1+ny,m1+1]*u[n1+ny,m1+1]
     end
-    # linear terms
-    @inbounds for m = 0:nx-1
-        nmin = m == 0 ? 1 : -(ny-1)
-        @inbounds for n=nmin:ny-1
-            du[n+ny,m+1] += B[n+ny,m+1]*u[n+ny,m+1]
-        end
-    end
-    # ++ interactions
     @inbounds for m1=1:nx-1
-        @inbounds for n1=-(ny-1):ny-1
+        @inbounds for n1=-ny+1:ny-1
+            # non-zonal linear terms
+            du[n1+ny,m1+1] = B[n1+ny,m1+1]*u[n1+ny,m1+1]
+            # ++ interactions
             @inbounds for m2=0:min(m1,nx-1-m1)
-                n2min = m2 == 0 ? 1 : -(ny-1)
-                @inbounds for n2=max(n2min,-(ny-1)-n1):min(ny-1,ny-1-n1)
-                    m::Int = m1 + m2
-                    n::Int = n1 + n2
+                n2min = m2 == 0 ? 1 : -ny+1
+                @inbounds for n2=max(n2min,-ny+1-n1):min(ny-1,ny-1-n1)
+                    m = m1 + m2
+                    n = n1 + n2
                     du[n+ny,m+1] += Cp[n2+ny,m2+1,n1+ny,m1+1]*u[n1+ny,m1+1]*u[n2+ny,m2+1]
                 end
             end
-        end
-    end
-    # +- interactions
-    @inbounds for m1=1:nx-1
-        @inbounds for n1=-(ny-1):ny-1
+            # +- interactions
             @inbounds for m2=0:m1
-                n2min = m2 == 0 ? 1 : -(ny-1)
+                n2min = m2 == 0 ? 1 : -ny+1
                 n2max = m2 == m1 ? n1 - 1 : ny-1
-                @inbounds for n2=max(n2min,n1-(ny-1)):min(n2max,n1+ny-1)
-                    m::Int = m1 - m2
-                    n::Int = n1 - n2
+                @inbounds for n2=max(n2min,n1-ny+1):min(n2max,n1+ny-1)
+                    m = m1 - m2
+                    n = n1 - n2
                     du[n+ny,m+1] += Cm[n2+ny,m2+1,n1+ny,m1+1]*u[n1+ny,m1+1]*conj(u[n2+ny,m2+1])
                 end
             end
