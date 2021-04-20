@@ -1,10 +1,8 @@
-lambda(prob,eqs::NL) = prob.d.nx-1
-lambda(prob,eqs::GQL) = eqs.Λ
-lambda(prob,eqs::GCE2) = eqs.Λ
-lambda(prob,eqs::CE2) = 0
+function Base.write(prob,eqs::Vector{AbstractEquations},sols;dn::String,labels::Vector{String}=label(eqs))
+    foreach(x->write(prob,x[1],x[2],dn=dn,fn=x[3]),zip(eqs,sols,labels))
+end
 
 function Base.write(prob,eqs,sol;dn::String,fn::String)
-
     (lx,ly),(nx,ny),Λ = length(prob.d),size(prob.d),lambda(prob,eqs)
     t,u = sol.t,sol.u
 
@@ -21,6 +19,7 @@ function Base.write(prob,eqs,sol;dn::String,fn::String)
     # Uxy2 = zonalvelocity(lx,ly,nx,ny,u,Λ=Λ)
 
     d = Dict("t"=>t,"Zt"=>Zt,"Ztav"=>Ztav,"Et"=>Et,"Etav"=>Etav,"Emt"=>Emt,"Emtav"=>Emtav,"Emn"=>Emn)
+    mkpath(dn)
     NPZ.npzwrite(dn*fn*".npz",d)
     nothing
 end
