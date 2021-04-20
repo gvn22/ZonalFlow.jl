@@ -10,6 +10,7 @@ using LinearAlgebra
 using Random
 using Distributions
 using NPZ
+using Reexport
 
 include("structures.jl")
 include("coefficients.jl")
@@ -34,7 +35,18 @@ export  NL,
         GCE2,
         CE2
 
-export  integrate
+export  integrate,
+        get_de_ic,
+        get_de_params,
+        get_de_probalg,
+        nl!,
+        gql_eqs!,
+        ce2_eqs!,
+        gce2_eqs!
+
+@reexport using OrdinaryDiffEq: solve
+@reexport using StochasticDiffEq: solve
+
 
 export  energy,
         adjacency
