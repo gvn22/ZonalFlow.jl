@@ -12,13 +12,13 @@ function get_de_params(prob,eqs)::DEParams
 end
 
 # set_p(d,eqs::NL,p) = [d.nx,d.ny,p...]
-set_p(d,eqs::NL,p)::DEParams = DEParams(d.nx,d.ny,p...)
-set_p(d,eqs::GQL,p) = [d.nx,d.ny,eqs.Λ,p...]
+set_p(d,eqs::NL,p)::DEParams = DEParams(d.nx,d.ny,d.nx-1,p...)
+set_p(d,eqs::GQL,p)::DEParams  = DEParams(d.nx,d.ny,eqs.Λ,p...)
 set_p(d::Domain{T},eqs::CE2,p) where T = [d.nx,d.ny,p...,similar(FirstCumulant{T},d),similar(SecondCumulant{T},d),similar(SecondCumulant{T},d)]
 set_p(d::Domain{T},eqs::GCE2,p) where T = [d.nx,d.ny,eqs.Λ,p...,similar(Field{T},d,Λ=eqs.Λ),similar(FieldBilinear{T},d,Λ=eqs.Λ),similar(FieldBilinear{T},d,Λ=eqs.Λ)]
 
 get_de_eqs(::NL) = nl!,g!
-get_de_eqs(::GQL) = gql_eqs!,g!
+get_de_eqs(::GQL) = gql!,g!
 get_de_eqs(::GCE2) = gce2_eqs!,g!
 get_de_eqs(::CE2) = ce2_eqs!
 

@@ -40,7 +40,7 @@ export  integrate,
         get_de_params,
         get_de_probalg,
         nl!,
-        gql_eqs!,
+        gql!,
         ce2_eqs!,
         gce2_eqs!
 

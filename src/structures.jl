@@ -121,11 +121,11 @@ end
 struct DEParams{T} <: AbstractCoefficients{T}
     nx::Int
     ny::Int
-    # Λ::Int
+    Λ::Int
     A::Array{Complex{T},1}
     B::Array{Complex{T},2}
     C⁺::Array{T,4}
     C⁻::Array{T,4}
     F::Array{T,2}
 end
-# DEParams(nx,ny,A,B,C⁺,C⁻) = DEParams(nx,ny,nothing,A,B,C⁺,C⁻,nothing)
+# DEParams(nx::Int,ny::Int,Λ::Int,A::Array{Complex{T},1},B::Array{Complex{T},2},C⁺::Array{T,4},C⁻::Array{T,4},F::Array{T,2}) where T<:AbstractFloat = DEParams(nx,ny,Λ,A,B,C⁺,C⁻,F)
