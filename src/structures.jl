@@ -92,6 +92,11 @@ end
 GCE2(Λ) = GCE2(Λ,false,1)
 GCE2(;Λ,poscheck=false,poscheckat=20) = GCE2(Λ,poscheck,poscheckat)
 
+lambda(prob,eqs::NL)::Int = prob.d.nx-1
+lambda(prob,eqs::GQL)::Int = eqs.Λ
+lambda(prob,eqs::GCE2)::Int = eqs.Λ
+lambda(prob,eqs::CE2)::Int = 0
+
 const Field{T} = Array{Complex{T},2} where {T <: AbstractFloat}
 const FirstCumulant{T} = Array{Complex{T},1} where {T <: AbstractFloat}
 const SecondCumulant{T} = Array{Complex{T},3} where {T <: AbstractFloat}
@@ -106,3 +111,9 @@ function Base.getproperty(f::Union{DSSField{T},GSSField{T}},v::Symbol) where {T<
     v == :h && return getfield(f,:x)[2]
     return getfield(f,v)
 end
+
+label(eqs::NL) = "nl"
+label(eqs::GQL) = "gql_$(eqs.Λ)"
+label(eqs::CE2) = "ce2"
+label(eqs::GCE2) = "gce2_$(eqs.Λ)"
+label(eqs::Vector{AbstractEquations}) = [label(eq) for eq in eqs]
