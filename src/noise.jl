@@ -21,5 +21,6 @@ function dist!(dW::GSSField{T},W,dt,u,p,t,rng) where T<:AbstractFloat
     nothing
 end
 
+# bridge!(dW,W,W0,Wh,q,h,u,p,t,rng) = dW .= W0 .+ h .* (Wh .- W0)
 bridge!(dW,W,W0,Wh,q,h,u,p,t,rng) = @. dW = W0 + h * (Wh - W0)
 noise!(t0,W0,Z0=nothing;kwargs...) = NoiseProcess(t0,W0,Z0,dist!,bridge!;kwargs...)
