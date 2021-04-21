@@ -191,10 +191,26 @@ function fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs::Union{NL,GQL}) where T
     return F
 end
 
-function fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs::Union{CE2,GCE2}) where T
+function fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs::CE2) where T
     d,f = prob.d,prob.f
     (nx,ny) = size(d)
-    Λ = typeof(eqs) == CE2 ? 0 : eqs.Λ
+    F = zeros(T,2ny-1,2ny-1,nx-1)
+    for m=1:nx-1 # should 0 be included?
+        for n=-ny+1:ny-1
+            k = (m^2 + n^2)^0.5
+            if(f.kf - f.dk < k < f.kf + f.dk)
+                F[n+ny,n+ny,m] = one(T)
+            end
+        end
+    end
+    F .= F * stochcorr(f.ε,f.kf,f.dk) # this is dt unaware - dist contains dt
+    return F
+end
+
+function fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs::GCE2) where T
+    d,f = prob.d,prob.f
+    (nx,ny) = size(d)
+    Λ = eqs.Λ
     F = ArrayPartition(zeros(T,2ny-1,Λ+1),zeros(T,2ny-1,nx-Λ,2ny-1,nx-Λ))
     for m=1:nx-1 # should 0 be included?
         for n=-ny+1:ny-1

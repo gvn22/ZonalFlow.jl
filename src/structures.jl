@@ -140,4 +140,16 @@ struct GQLParams{T} <: AbstractParams{T}
     C⁻::Array{T,4}
     F::Array{T,2}
 end
-# DEParams(nx::Int,ny::Int,Λ::Int,A::Array{Complex{T},1},B::Array{Complex{T},2},C⁺::Array{T,4},C⁻::Array{T,4},F::Array{T,2}) where T<:AbstractFloat = DEParams(nx,ny,Λ,A,B,C⁺,C⁻,F)
+
+struct CE2Params{T} <: AbstractParams{T}
+    nx::Int
+    ny::Int
+    A::Array{Complex{T},1}
+    B::Array{Complex{T},2}
+    C⁺::Array{T,4}
+    C⁻::Array{T,4}
+    F::Array{T,3}
+    dy::SecondCumulant{T}
+    temp::SecondCumulant{T}
+end
+CE2Params(nx,ny,A::Array{Complex{T},1},B::Array{Complex{T},2},C⁺::Array{T,4},C⁻::Array{T,4},F::Array{T,3}) where T = CE2Params(nx,ny,A,B,C⁺,C⁻,F,similar(SecondCumulant{T},2ny-1,2ny-1,nx-1),similar(SecondCumulant{T},2ny-1,2ny-1,nx-1))
