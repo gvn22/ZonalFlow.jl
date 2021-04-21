@@ -17,7 +17,7 @@ function dist!(dW::GSSField{T},W,dt,u,p,t,rng) where T<:AbstractFloat
             dW.x[1][n+ny,m+1] = abs(sqrt(dt))*F.x[1][n+ny,m+1]*exp(im*ϕ)
         end
     end
-    # dW.x[2] .= zero(Complex{T})
+    dW.x[2] .= zero(Complex{T})
     nothing
 end
 

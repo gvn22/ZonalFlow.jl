@@ -108,146 +108,107 @@ end
 
 function f!(du::GSSField{T},u::GSSField{T},p::GCE2Params,t) where T<:AbstractFloat
     nx,ny,Λ,A,B,Cp,Cm,F,dx,dy,temp = p.nx,p.ny,p.Λ,p.A,p.B,p.C⁺,p.C⁻,p.F,p.dx,p.dy,p.temp
-    # low mode equations
-    # du.x[1] .= 0.0 + 0.0im
-    dx .= 0.0 + 0.0im
-    # constant terms
-    @inbounds for n=1:ny-1
-
-        dx[n+ny,1] += A[n+ny]
-
+    # zonal terms
+    dx .= zero(Complex{T})
+    @inbounds for n1=1:ny-1
+        m1 = 0
+        dx[n1+ny,1] = A[n1+ny]
+        dx[n1+ny,m1+1] += B[n1+ny,m1+1]*u.x[1][n1+ny,m1+1]
     end
-
-    # linear terms: L
-    @inbounds for m = 0:Λ
-        nmin = m == 0 ? 1 : -(ny-1)
-        @inbounds for n=nmin:ny-1
-
-            dx[n+ny,m+1] += B[n+ny,m+1]*u.x[1][n+ny,m+1]
-
-        end
-    end
-
+    # low modes
     @inbounds for m1=1:Λ
-        n1min = m1 == 0 ? 1 : -(ny-1)
-        @inbounds for n1=n1min:ny-1
+        @inbounds for n1=-ny+1:ny-1
+            dx[n1+ny,m1+1] = B[n1+ny,m1+1]*u.x[1][n1+ny,m1+1]
             # L + L = L
-            @inbounds for m2=0:1:min(m1,Λ-m1)
-                n2min = m2 == 0 ? 1 : -(ny-1)
-                @inbounds for n2=max(n2min,-(ny-1)-n1):min(ny-1,ny-1-n1)
-
-                    m::Int = m1 + m2
-                    n::Int = n1 + n2
+            @inbounds for m2=0:min(m1,Λ-m1)
+                n2min = m2 == 0 ? 1 : -ny+1
+                @inbounds for n2=max(n2min,-ny+1-n1):min(ny-1,ny-1-n1)
+                    m = m1 + m2
+                    n = n1 + n2
                     dx[n+ny,m+1] += Cp[n2+ny,m2+1,n1+ny,m1+1]*u.x[1][n1+ny,m1+1]*u.x[1][n2+ny,m2+1]
-
                 end
             end
             # L - L = L
             @inbounds for m2=0:m1
-                n2min = m2 == 0 ? 1 : -(ny-1)
+                n2min = m2 == 0 ? 1 : -ny+1
                 n2max = m2 == m1 ? n1 - 1 : ny-1
-                @inbounds for n2=max(n2min,n1-(ny-1)):min(n2max,n1+ny-1)
-
-                    m::Int = m1 - m2
-                    n::Int = n1 - n2
+                @inbounds for n2=max(n2min,n1-ny+1):min(n2max,n1+ny-1)
+                    m = m1 - m2
+                    n = n1 - n2
                     dx[n+ny,m+1] += Cm[n2+ny,m2+1,n1+ny,m1+1]*u.x[1][n1+ny,m1+1]*conj(u.x[1][n2+ny,m2+1])
-
                 end
             end
         end
     end
-
-    # field bilinear equations
-    dy .= 0.0 + 0.0im
-    temp .= 0.0 + 0.0im
-
+    # high modes
+    temp .= zero(Complex{T})
     @inbounds for m1=Λ+1:nx-1
-        @inbounds for n1=-(ny-1):ny-1
+        @inbounds for n1=-ny+1:ny-1
             # H - H = L
             @inbounds for m2=max(Λ+1,m1-Λ):m1
                 n2max = m2 == m1 ? n1 - 1 : ny-1
-                @inbounds for n2=max(-(ny-1),n1-(ny-1)):min(n2max,n1+ny-1)
-
-                    m::Int = m1 - m2
-                    n::Int = n1 - n2
+                @inbounds for n2=max(-ny+1,n1-ny+1):min(n2max,n1+ny-1)
+                    m = m1 - m2
+                    n = n1 - n2
                     # note: u.x[2] contains H2*conj(H1) so H-H is conj(H2)*H1
                     dx[n+ny,m+1] += Cm[n2+ny,m2+1,n1+ny,m1+1]*conj(u.x[2][n2+ny,m2-Λ,n1+ny,m1-Λ])
-
                 end
             end
             # H + L = H
-            @inbounds for m2=0:1:min(nx-1-m1,Λ)
-                n2min = m2 == 0 ? 1 : -(ny-1)
-                @inbounds for n2=max(n2min,-(ny-1)-n1):min(ny-1,ny-1-n1)
-
-                    m::Int = m1 + m2
-                    n::Int = n1 + n2
+            @inbounds for m2=0:min(nx-1-m1,Λ)
+                n2min = m2 == 0 ? 1 : -ny+1
+                @inbounds for n2=max(n2min,-ny+1-n1):min(ny-1,ny-1-n1)
+                    m = m1 + m2
+                    n = n1 + n2
                     temp[n1+ny,m1-Λ,n+ny,m-Λ] += Cp[n2+ny,m2+1,n1+ny,m1+1]*u.x[1][n2+ny,m2+1]
-
                 end
             end
             # H - L = H
-            @inbounds for m2=0:1:min(Λ,m1 - Λ - 1)
-                n2min = m2 == 0 ? 1 : -(ny-1)
-                @inbounds for n2=max(n2min,n1-(ny-1)):min(ny-1,n1+ny-1)
-
-                    m::Int = m1 - m2
-                    n::Int = n1 - n2
+            @inbounds for m2=0:min(Λ,m1 - Λ - 1)
+                n2min = m2 == 0 ? 1 : -ny+1
+                @inbounds for n2=max(n2min,n1-ny+1):min(ny-1,n1+ny-1)
+                    m = m1 - m2
+                    n = n1 - n2
                     temp[n1+ny,m1-Λ,n+ny,m-Λ] += Cm[n2+ny,m2+1,n1+ny,m1+1]*conj(u.x[1][n2+ny,m2+1])
-
                 end
             end
         end
     end
-
-    du.x[1] .= dx
-
+    copyto!(du.x[1],dx)
+    # du.x[1] .= dx
     # H'*H
     @inbounds for m3=Λ+1:nx-1
-        @inbounds for n3=-(ny-1):ny-1
-
+        @inbounds for n3=-ny+1:ny-1
             @inbounds for m=Λ+1:nx-1
-                @inbounds for n=-(ny-1):ny-1
-
-                    dy[n+ny,m-Λ,n3+ny,m3-Λ] += B[n+ny,m+1]*u.x[2][n+ny,m-Λ,n3+ny,m3-Λ]
-                    dy[n+ny,m-Λ,n3+ny,m3-Λ] += F.x[2][n+ny,m-Λ,n3+ny,m3-Λ]
-
-                    accumulator::ComplexF64 = 0.0 + 0.0im
+                @inbounds for n=-ny+1:ny-1
+                    # accumulator = zero(Complex{T})
+                    accumulator::Complex{T} = B[n+ny,m+1]*u.x[2][n+ny,m-Λ,n3+ny,m3-Λ]
+                    accumulator += F.x[2][n+ny,m-Λ,n3+ny,m3-Λ]
                     # from H+L
                     @inbounds for m1=max(Λ+1,m-Λ):min(nx-1,m)
-                        n2min = m1 == m ? 1 : -(ny-1)
-                        @inbounds for n1=max(-(ny-1),n-(ny-1)):min(n-n2min,ny-1)
-
+                        n2min = m1 == m ? 1 : -ny+1
+                        @inbounds for n1=max(-ny+1,n-ny+1):min(n-n2min,ny-1)
                             accumulator += temp[n1+ny,m1-Λ,n+ny,m-Λ]*u.x[2][n1+ny,m1-Λ,n3+ny,m3-Λ]
-
                         end
                     end
                     # from H-L
                     @inbounds for m1=max(Λ+1,m):min(nx-1,m+Λ)
                         n2max = m1 == m ? -1 : ny-1
-                        @inbounds for n1=max(-(ny-1),n-n2max):min(n+ny-1,ny-1)
-
+                        @inbounds for n1=max(-ny+1,n-n2max):min(n+ny-1,ny-1)
                             accumulator += temp[n1+ny,m1-Λ,n+ny,m-Λ]*u.x[2][n1+ny,m1-Λ,n3+ny,m3-Λ]
-
                         end
                     end
-
-                    dy[n+ny,m-Λ,n3+ny,m3-Λ] += accumulator
-
+                    dy[n+ny,m-Λ,n3+ny,m3-Λ] = accumulator
                 end
             end
         end
     end
-
     # permutedims!(temp,du.x[2],[3,4,1,2])
-
     @inbounds for m3=Λ+1:nx-1
-        @inbounds for n3=-(ny-1):ny-1
+        @inbounds for n3=-ny+1:ny-1
             @inbounds for m=Λ+1:nx-1
-                @inbounds for n=-(ny-1):ny-1
-
+                @inbounds for n=-ny+1:ny-1
                     du.x[2][n+ny,m-Λ,n3+ny,m3-Λ] = dy[n+ny,m-Λ,n3+ny,m3-Λ] + conj(dy[n3+ny,m3-Λ,n+ny,m-Λ])
-
                 end
             end
         end

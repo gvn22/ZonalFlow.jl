@@ -13,8 +13,8 @@ end
 
 get_de_p(d,eqs::NL,p) = NLParams(d.nx,d.ny,p...)
 get_de_p(d,eqs::GQL,p) = GQLParams(d.nx,d.ny,eqs.Λ,p...)
-get_de_p(d::Domain{T},eqs::CE2,p) where T = CE2Params(d.nx,d.ny,p...)
-get_de_p(d::Domain{T},eqs::GCE2,p) where T = GCE2Params(d.nx,d.ny,eqs.Λ,p...)
+get_de_p(d,eqs::CE2,p) = CE2Params(d.nx,d.ny,p...)
+get_de_p(d,eqs::GCE2,p) = GCE2Params(d.nx,d.ny,eqs.Λ,p...)
 
 get_de_probalg(prob,eqs,u0,t,p) = ODEProblem(f!,u0,t,p), RK4()
 get_de_probalg(prob::BetaPlane{T,Stochastic{T}},eqs::CE2,u0,t,p) where T = ODEProblem(f!,u0,t,p), Heun()
