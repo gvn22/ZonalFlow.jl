@@ -1,4 +1,5 @@
-g!(du,u,p,t) = du .= one(ComplexF64)
+g!(du::DNSField{T},u,p,t) where T = du .= one(Complex{T})
+g!(du::GSSField{T},u,p,t) where T = du.x[1] .= one(Complex{T})
 
 function f!(du::DNSField{T},u::DNSField{T},p::NLParams{T},t) where T<:AbstractFloat
     nx,ny,A,B,Cp,Cm = p.nx,p.ny,p.A,p.B,p.C⁺,p.C⁻
@@ -105,10 +106,8 @@ function f!(du::DNSField{T},u::DNSField{T},p::GQLParams{T},t) where T<:AbstractF
     nothing
 end
 
-function gce2_eqs!(du,u,p,t)
-
-    nx::Int,ny::Int,Λ::Int,A::Array{ComplexF64,1},B::Array{ComplexF64,2},Cp::Array{Float64,4},Cm::Array{Float64,4},F::ArrayPartition{Float64,Tuple{Array{Float64,2},Array{Float64,4}}},dx::Array{ComplexF64,2},dy::Array{ComplexF64,4},temp::Array{ComplexF64,4} = p
-
+function f!(du::GSSField{T},u::GSSField{T},p::GCE2Params,t) where T<:AbstractFloat
+    nx,ny,Λ,A,B,Cp,Cm,F,dx,dy,temp = p.nx,p.ny,p.Λ,p.A,p.B,p.C⁺,p.C⁻,p.F,p.dx,p.dy,p.temp
     # low mode equations
     # du.x[1] .= 0.0 + 0.0im
     dx .= 0.0 + 0.0im
