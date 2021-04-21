@@ -152,7 +152,7 @@ struct CE2Params{T} <: AbstractParams{T}
     dy::SecondCumulant{T}
     temp::SecondCumulant{T}
 end
-CE2Params(nx,ny,A::Array{Complex{T},1},B::Array{Complex{T},2},C⁺::Array{T,4},C⁻::Array{T,4},F::Array{T,3}) where T = CE2Params(nx,ny,A,B,C⁺,C⁻,F,similar(SecondCumulant{T},2ny-1,2ny-1,nx-1),similar(SecondCumulant{T},2ny-1,2ny-1,nx-1))
+CE2Params(nx,ny,A::Array{Complex{T},1},B::Array{Complex{T},2},C⁺::Array{T,4},C⁻::Array{T,4},F::Array{T,3}) where T = CE2Params(nx,ny,A,B,C⁺,C⁻,F,zeros(Complex{T},2ny-1,2ny-1,nx-1),zeros(Complex{T},2ny-1,2ny-1,nx-1))
 
 struct GCE2Params{T} <: AbstractParams{T}
     nx::Int
@@ -167,4 +167,4 @@ struct GCE2Params{T} <: AbstractParams{T}
     dy::FieldBilinear{T}
     temp::FieldBilinear{T}
 end
-GCE2Params(nx,ny,Λ,A::Array{Complex{T},1},B::Array{Complex{T},2},C⁺::Array{T,4},C⁻::Array{T,4},F::ArrayPartition{T,Tuple{Array{T,2},Array{T,4}}}) where T = GCE2Params(nx,ny,Λ,A,B,C⁺,C⁻,F,similar(Field{T},2ny-1,Λ+1),similar(FieldBilinear{T},2ny-1,nx-Λ,2ny-1,nx-Λ),similar(FieldBilinear{T},2ny-1,nx-Λ,2ny-1,nx-Λ))
+GCE2Params(nx,ny,Λ,A::Array{Complex{T},1},B::Array{Complex{T},2},C⁺::Array{T,4},C⁻::Array{T,4},F::ArrayPartition{T,Tuple{Array{T,2},Array{T,4}}}) where T = GCE2Params(nx,ny,Λ,A,B,C⁺,C⁻,F,zeros(Complex{T},2ny-1,Λ+1),zeros(Complex{T},2ny-1,nx-Λ,2ny-1,nx-Λ),zeros(Complex{T},2ny-1,nx-Λ,2ny-1,nx-Λ))

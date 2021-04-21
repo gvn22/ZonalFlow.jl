@@ -23,6 +23,11 @@ include("tools.jl")
 include("analysis.jl")
 include("writers.jl")
 
+export  acoeffs,
+        bcoeffs,
+        ccoeffs,
+        fcoeffs
+
 export  Domain,
         Coefficients,
         PointJet,

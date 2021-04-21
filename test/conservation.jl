@@ -1,7 +1,7 @@
 using ZonalFlow
 using Test
 
-domain  = Domain(extent=(2π,2π),res=(4,4));
+domain  = Domain(extent=(2π,2π),res=(5,5));
 coeffs  = Coefficients(Ω=2π,θ=0.0,μ=0.0,ν=0.0,ν₄=1.0,linear=true);
 forcing = Stochastic(kf=3,dk=1,ε=0.0);
 prob    = BetaPlane(domain,coeffs,forcing);

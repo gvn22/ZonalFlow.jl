@@ -11,14 +11,14 @@ function Base.write(prob,eqs,sol;dn::String,fn::String)
     Emt,Zmt = zonalenergy(lx,ly,nx,ny,u)
     Emtav,Zmtav = zonalenergy(lx,ly,nx,ny,t,u)
 
-    Emn = fourierenergy(lx,ly,nx,ny,u)
+    # Emn = fourierenergy(lx,ly,nx,ny,u)
     # Vxy = inversefourier(nx,ny,u)
     # Emn2 = energyspectrum(lx,ly,nx,ny,u,Λ=Λ)
     # Vxy2 = vorticity(nx,ny,u,Λ=Λ)
     # Uxy = zonalvelocity(lx,ly,nx,ny,u)
     # Uxy2 = zonalvelocity(lx,ly,nx,ny,u,Λ=Λ)
 
-    d = Dict("t"=>t,"Zt"=>Zt,"Ztav"=>Ztav,"Et"=>Et,"Etav"=>Etav,"Emt"=>Emt,"Emtav"=>Emtav,"Emn"=>Emn)
+    d = Dict("t"=>t,"Zt"=>Zt,"Ztav"=>Ztav,"Et"=>Et,"Etav"=>Etav,"Emt"=>Emt,"Emtav"=>Emtav)
     mkpath(dn)
     NPZ.npzwrite(dn*fn*".npz",d)
     nothing

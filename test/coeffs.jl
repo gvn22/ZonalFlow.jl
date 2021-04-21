@@ -182,8 +182,8 @@ end
     F0 = fcoeffs(nx,ny,Λ,kf,dk,ε)
     @test isapprox(F,F0)
 
-    F = fcoeffs(prob,CE2())
-    F0 = fcoeffs(nx,ny,0,kf,dk,ε)
-    @test isapprox(F,F0)
-
+    # F = fcoeffs(prob,CE2())
+    # F0 = fcoeffs(nx,ny,0,kf,dk,ε)
+    # @test isapprox(F,F0.x[])
+    #
 end

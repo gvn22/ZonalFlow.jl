@@ -3,16 +3,17 @@ g!(du::GSSField{T},u,p,t) where T = du.x[1] .= one(Complex{T})
 
 function f!(du::DNSField{T},u::DNSField{T},p::NLParams{T},t) where T<:AbstractFloat
     nx,ny,A,B,Cp,Cm = p.nx,p.ny,p.A,p.B,p.C⁺,p.C⁻
+    du .= zero(Complex{T})
     # zonal constant and linear terms
     @inbounds for n1=1:ny-1
         m1 = 0
-        du[n1+ny,m1+1] = A[n1+ny]
+        du[n1+ny,m1+1] += A[n1+ny]
         du[n1+ny,m1+1] += B[n1+ny,m1+1]*u[n1+ny,m1+1]
     end
     @inbounds for m1=1:nx-1
         @inbounds for n1=-ny+1:ny-1
             # non-zonal linear terms
-            du[n1+ny,m1+1] = B[n1+ny,m1+1]*u[n1+ny,m1+1]
+            du[n1+ny,m1+1] += B[n1+ny,m1+1]*u[n1+ny,m1+1]
             # ++ interactions
             @inbounds for m2=0:min(m1,nx-1-m1)
                 n2min = m2 == 0 ? 1 : -ny+1
@@ -39,16 +40,17 @@ end
 
 function f!(du::DNSField{T},u::DNSField{T},p::GQLParams{T},t) where T<:AbstractFloat
     nx,ny,Λ,A,B,Cp,Cm = p.nx,p.ny,p.Λ,p.A,p.B,p.C⁺,p.C⁻
+    du .= zero(Complex{T})
     # zonal constant and linear terms
     @inbounds for n1=1:ny-1
         m1 = 0
-        du[n1+ny,m1+1] = A[n1+ny]
+        du[n1+ny,m1+1] += A[n1+ny]
         du[n1+ny,m1+1] += B[n1+ny,m1+1]*u[n1+ny,m1+1]
     end
     @inbounds for m1=1:Λ
         @inbounds for n1=-ny+1:ny-1
             # low mode linears
-            du[n1+ny,m1+1] = B[n1+ny,m1+1]*u[n1+ny,m1+1]
+            du[n1+ny,m1+1] += B[n1+ny,m1+1]*u[n1+ny,m1+1]
             # L + L = L
             @inbounds for m2=0:min(m1,Λ-m1)
                 n2min = m2 == 0 ? 1 : -ny+1
@@ -73,7 +75,7 @@ function f!(du::DNSField{T},u::DNSField{T},p::GQLParams{T},t) where T<:AbstractF
     @inbounds for m1=Λ+1:nx-1
         @inbounds for n1=-ny+1:ny-1
             # high mode linears
-            du[n1+ny,m1+1] = B[n1+ny,m1+1]*u[n1+ny,m1+1]
+            du[n1+ny,m1+1] += B[n1+ny,m1+1]*u[n1+ny,m1+1]
             # H - H = L
             @inbounds for m2=max(Λ+1,m1-Λ):m1
                 n2max = m2 == m1 ? n1 - 1 : ny-1
@@ -108,17 +110,18 @@ end
 
 function f!(du::GSSField{T},u::GSSField{T},p::GCE2Params,t) where T<:AbstractFloat
     nx,ny,Λ,A,B,Cp,Cm,F,dx,dy,temp = p.nx,p.ny,p.Λ,p.A,p.B,p.C⁺,p.C⁻,p.F,p.dx,p.dy,p.temp
+    du .= zero(Complex{T})
     # zonal terms
     dx .= zero(Complex{T})
     @inbounds for n1=1:ny-1
         m1 = 0
-        dx[n1+ny,1] = A[n1+ny]
+        dx[n1+ny,1] += A[n1+ny]
         dx[n1+ny,m1+1] += B[n1+ny,m1+1]*u.x[1][n1+ny,m1+1]
     end
     # low modes
     @inbounds for m1=1:Λ
         @inbounds for n1=-ny+1:ny-1
-            dx[n1+ny,m1+1] = B[n1+ny,m1+1]*u.x[1][n1+ny,m1+1]
+            dx[n1+ny,m1+1] += B[n1+ny,m1+1]*u.x[1][n1+ny,m1+1]
             # L + L = L
             @inbounds for m2=0:min(m1,Λ-m1)
                 n2min = m2 == 0 ? 1 : -ny+1
@@ -218,8 +221,9 @@ end
 
 function f!(du::DSSField{T},u::DSSField{T},p::CE2Params,t) where T<:AbstractFloat
     nx,ny,A,B,Cp,Cm,F,dy,temp = p.nx,p.ny,p.A,p.B,p.C⁺,p.C⁻,p.F,p.dy,p.temp
+    du .= zero(Complex{T})
     @inbounds for n1=1:ny-1
-        du.x[1][n1+ny] = A[n1+ny]
+        du.x[1][n1+ny] += A[n1+ny]
         du.x[1][n1+ny] += B[n1+ny,1]*u.x[1][n1+ny]
         # M + M = M
         @inbounds for n2=max(1,-ny+1-n1):min(ny-1,ny-1-n1)
@@ -252,7 +256,7 @@ function f!(du::DSSField{T},u::DSSField{T},p::CE2Params,t) where T<:AbstractFloa
     @inbounds for m3=1:nx-1
         @inbounds for n3=-ny+1:ny-1
             @inbounds for n=-ny+1:ny-1
-                du.x[2][n+ny,n3+ny,m3] = B[n+ny,m3+1]*u.x[2][n+ny,n3+ny,m3]
+                du.x[2][n+ny,n3+ny,m3] += B[n+ny,m3+1]*u.x[2][n+ny,n3+ny,m3]
                 du.x[2][n+ny,n3+ny,m3] += F[n+ny,n3+ny,m3]
 
                 accumulator = zero(Complex{T})
