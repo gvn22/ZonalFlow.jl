@@ -1,7 +1,11 @@
 """
     Solve method for DiffEq solution
 """
-get_de_ic(prob,eqs) = zeros(eqs,prob.d)
+# get_de_ic(prob,eqs) = zeros(eqs,prob.d)
+function get_de_ic(prob,eqs,u0=nothing)
+    Random.seed!(123)
+    u0 == nothing ? zeros(eqs,prob.d) : convert(eqs,u0,prob.d)
+end
 
 function get_de_params(prob,eqs)::AbstractParams
     A = acoeffs(prob)
@@ -25,8 +29,8 @@ function get_de_probalg(prob::BetaPlane{T,Stochastic{T}},eqs,u0,t,p) where T
     SDEProblem(f!,g!,u0,t,p,noise=noise!(t[1],W0)), EulerHeun()
 end
 
-function integrate(prob,eqs::AbstractEquations,tspan;kwargs...)
-    u0 = get_de_ic(prob,eqs)
+function integrate(prob,eqs::AbstractEquations,tspan;u0=nothing,kwargs...)
+    u0 = get_de_ic(prob,eqs,u0)
     p  = get_de_params(prob,eqs)
     _prob,_alg = get_de_probalg(prob,eqs,u0,tspan,p)
     @time solve(_prob,_alg;kwargs...)
