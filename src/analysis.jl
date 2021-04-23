@@ -29,9 +29,29 @@ function inversefourier(nx::Int,ny::Int,u::DNSField{T};Λ::Int=nx-1) where {T <:
 
 end
 
+function inversefourier(nx::Int,ny::Int,u::DSSField{T}) where {T <: AbstractFloat}
+
+    û = zeros(Complex{T},2ny-1,2nx-1)
+    m1 = 0
+    for n1 = 1:ny-1
+        û[n1+ny,m1+nx] = u.x[1][n1+ny]
+        û[-n1+ny,-m1+nx] = conj(u.x[1][n1+ny])
+    end
+    s = (2ny-1)*(2nx-1)/4.0
+    s*real(ifft(ifftshift(û)))
+
+end
+
 function inversefourier(nx::Int,ny::Int,u::Array{DNSField{T},1};Λ::Int=nx-1) where {T <: AbstractFloat}
 
     U = [inversefourier(nx,ny,u[i],Λ=Λ) for i=1:length(u)]
+    reshape(cat(U...,dims=3),2ny-1,2nx-1,length(u))
+
+end
+
+function inversefourier(nx::Int,ny::Int,u::Array{DSSField{T},1}) where {T <: AbstractFloat}
+
+    U = [inversefourier(nx,ny,u[i]) for i=1:length(u)]
     reshape(cat(U...,dims=3),2ny-1,2nx-1,length(u))
 
 end
@@ -50,13 +70,9 @@ function inversefourier(nx::Int,ny::Int,u::Array{GSSField{T},1};Λ::Int) where {
 
 end
 
-function vorticity(nx::Int,ny::Int,u::Array{DNSField{T},1};Λ::Int=nx-1) where {T <: AbstractFloat}
-    inversefourier(nx,ny,u,Λ=Λ)
-end
-
-function vorticity(nx::Int,ny::Int,u::Array{GSSField{T},1};Λ::Int=nx-1) where {T <: AbstractFloat}
-    inversefourier(nx,ny,u,Λ=Λ)
-end
+vorticity(nx::Int,ny::Int,u::Array{DNSField{T},1};Λ::Int=nx-1) where {T <: AbstractFloat} = inversefourier(nx,ny,u,Λ=Λ)
+vorticity(nx::Int,ny::Int,u::Array{DSSField{T},1}) where {T <: AbstractFloat} = inversefourier(nx,ny,u)
+vorticity(nx::Int,ny::Int,u::Array{GSSField{T},1};Λ::Int=nx-1) where {T <: AbstractFloat} = inversefourier(nx,ny,u.x[1],Λ=Λ)
 
 function zonalvelocity(lx::T,ly::T,nx::Int,ny::Int,u::DNSField{T};Λ::Int=nx-1) where {T <: AbstractFloat}
 
@@ -65,8 +81,9 @@ function zonalvelocity(lx::T,ly::T,nx::Int,ny::Int,u::DNSField{T};Λ::Int=nx-1) 
         nmin = m==0 ? 1 : -ny+1
         for n = nmin:ny-1
 
+            kx = 2π*m/lx
             ky = 2π*n/ly
-            k = 2π*norm([m/lx,n/ly])
+            k = (kx^2 + ky^2)^0.5
             U[n+ny,m+1] = -im*ky*u[n+ny,m+1]/k^2
 
         end
@@ -75,11 +92,29 @@ function zonalvelocity(lx::T,ly::T,nx::Int,ny::Int,u::DNSField{T};Λ::Int=nx-1) 
 
 end
 
+function zonalvelocity(lx::T,ly::T,nx::Int,ny::Int,u::DSSField{T}) where {T <: AbstractFloat}
+
+    U = zeros(Complex{T},2ny-1,2nx-1)
+    for n = 1:ny-1
+        ky = 2π*n/ly
+        U[n+ny,1] = -im*ky*u.x[1][n+ny]/ky^2
+    end
+    inversefourier(nx,ny,U)
+
+end
+
 function zonalvelocity(lx::T,ly::T,nx::Int,ny::Int,u::Array{DNSField{T},1};Λ::Int=nx-1) where {T <: AbstractFloat}
 
     U = [zonalvelocity(lx,ly,nx,ny,u[i],Λ=Λ) for i=1:length(u)]
     # reshape(cat(U...,dims=3),2ny-1,2nx-1,length(u))
     reshape(cat(U...,dims=3),size(U[1])...,length(U))
+end
+
+function zonalvelocity(lx::T,ly::T,nx::Int,ny::Int,u::Array{DSSField{T},1}) where {T <: AbstractFloat}
+
+    U = [zonalvelocity(lx,ly,nx,ny,u[i]) for i=1:length(u)]
+    reshape(cat(U...,dims=3),2ny-1,2nx-1,length(u))
+
 end
 
 function zonalvelocity(lx::T,ly::T,nx::Int,ny::Int,u::Array{GSSField{T},1};Λ::Int) where {T <: AbstractFloat}
@@ -142,20 +177,18 @@ function energyspectrum(lx::T,ly::T,nx::Int,ny::Int,u::Array{DNSField{T},1};Λ::
 end
 
 function energyspectrum(lx::T,ly::T,nx::Int,ny::Int,u::DSSField{T}) where T<:AbstractFloat
-    E = zeros(T,2ny-1,2nx-1,length(u))
-    for i in eachindex(u)
-        for n1 = 1:ny-1
-            ky = 2.0*Float64(pi)/ly*n1
-            E[n1 + ny,nx,i] += abs(u[i].x[1][n1 + ny])^2/ky^2
-            E[-n1 + ny,nx,i] = E[n1 + ny,nx,i]
-        end
-        for m1 = 1:nx-1
-            for n1 = -(ny-1):ny-1
-                kx = 2.0*Float64(pi)/lx*m1
-                ky = 2.0*Float64(pi)/ly*n1
-                E[n1 + ny,m1+nx,i] += abs(u[i].x[2][n1 + ny,n1 + ny,m1])/(kx^2 + ky^2)
-                E[-n1 + ny,-m1+nx,i] = E[n1 + ny,m1+nx,i]
-            end
+    E = zeros(T,2ny-1,2nx-1)
+    for n1 = 1:ny-1
+        ky = (2π/ly)*n1
+        E[n1 + ny,nx] += abs(u.x[1][n1 + ny])^2/ky^2
+        E[-n1 + ny,nx] = E[n1 + ny,nx]
+    end
+    for m1 = 1:nx-1
+        for n1 = -ny+1:ny-1
+            kx = (2π/lx)*m1
+            ky = (2π/ly)*n1
+            E[n1 + ny,m1+nx] += abs(u.x[2][n1 + ny,n1 + ny,m1])/(kx^2 + ky^2)
+            E[-n1 + ny,-m1+nx] = E[n1 + ny,m1+nx]
         end
     end
     E
