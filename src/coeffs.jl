@@ -169,10 +169,10 @@ function ccoeffs(prob,eqs::Union{GQL,CE2,GCE2})
 end
 
 fcoeffs(prob,eqs::Union{NL,GQL}) = zeros(eltype(prob),2prob.d.ny-1,prob.d.nx)
-fcoeffs(prob::BetaPlane{T,PointJet{T}},eqs::GCE2) where T = ArrayPartition(zeros(eltype(prob),2prob.d.ny-1,eqs.Λ+1),zeros(eltype(prob),2prob.d.ny-1,prob.d.nx-eqs.Λ,2prob.d.ny-1,prob.d.nx-eqs.Λ))
-fcoeffs(prob::BetaPlane{T,Kolmogorov{T}},eqs::GCE2) where T = ArrayPartition(zeros(eltype(prob),2prob.d.ny-1,eqs.Λ+1),zeros(eltype(prob),2prob.d.ny-1,prob.d.nx-eqs.Λ,2prob.d.ny-1,prob.d.nx-eqs.Λ))
-fcoeffs(prob::BetaPlane{T,PointJet{T}},eqs::CE2) where T = fcoeffs(prob,GCE2(0))
-fcoeffs(prob::BetaPlane{T,Kolmogorov{T}},eqs::CE2) where T = fcoeffs(prob,GCE2(0))
+fcoeffs(prob::BetaPlane{T,PointJet{T}},eqs::GCE2) where T = ArrayPartition(zeros(T,2prob.d.ny-1,eqs.Λ+1),zeros(T,2prob.d.ny-1,prob.d.nx-eqs.Λ,2prob.d.ny-1,prob.d.nx-eqs.Λ))
+fcoeffs(prob::BetaPlane{T,Kolmogorov{T}},eqs::GCE2) where T = ArrayPartition(zeros(T,2prob.d.ny-1,eqs.Λ+1),zeros(T,2prob.d.ny-1,prob.d.nx-eqs.Λ,2prob.d.ny-1,prob.d.nx-eqs.Λ))
+fcoeffs(prob::BetaPlane{T,PointJet{T}},eqs::CE2) where T = zeros(T,2prob.d.ny-1,2prob.d.ny-1,prob.d.nx-1)
+fcoeffs(prob::BetaPlane{T,Kolmogorov{T}},eqs::CE2) where T = zeros(T,2prob.d.ny-1,2prob.d.ny-1,prob.d.nx-1)
 
 stochamp(ε::T,kf::Int,N::T) where T<:AbstractFloat = convert(T,sqrt(2ε*kf^2)/sqrt(N))
 stochcorr(ε::T,kf::Int,dk::Int) where T<:AbstractFloat = convert(T,2π*ε*kf/(32.0dk))

@@ -4,7 +4,7 @@
 # get_de_ic(prob,eqs) = zeros(eqs,prob.d)
 function get_de_ic(prob,eqs,u0=nothing)
     Random.seed!(123)
-    u0 == nothing ? zeros(eqs,prob.d) : convert(eqs,u0,prob.d)
+    u0 == nothing ? rand(eqs,prob.d) : convert(eqs,u0,prob.d)
 end
 
 function get_de_params(prob,eqs)::AbstractParams
