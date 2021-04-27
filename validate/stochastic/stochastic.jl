@@ -2,7 +2,7 @@ using Revise
 using ZonalFlow
 using JLD2
 
-tspan   = (0.0,2000.0);
+tspan   = (0.0,500.0);
 tsargs  = (
             dt=0.001,
             adaptive=false,
@@ -24,8 +24,8 @@ prob    = BetaPlane(domain,coeffs,forcing);
 
 dn      = "validate/stochastic/8x8/"
 
-eqs     = [NL(),GQL(Λ=0),CE2()];
-labels  = ["nl","ql","ce2"];
+eqs     = [NL(),GQL(Λ=0),CE2(),GCE2(0)];
+labels  = ["nl","ql","ce2","gce2_0"];
 
 nl      = integrate(prob,eqs[1],tspan;tsargs...)
 write(prob,eqs[1],nl,dn=dn,fn=labels[1])
@@ -36,17 +36,21 @@ write(prob,eqs[2],ql,dn=dn,fn=labels[2])
 ce2      = integrate(prob,eqs[3],tspan;u0=ql.u[end],tsargs...)
 write(prob,eqs[3],ce2,dn=dn,fn=labels[3])
 
+gce2      = integrate(prob,eqs[4],tspan;u0=ql.u[end],tsargs...)
+write(prob,eqs[4],gce2,dn=dn,fn=labels[4])
+
 # sols    = integrate(prob,eqs,tspan;tsargs...)
 # write(prob,eqs,sols,dn=dn,labels=labels)
 
 eqs     = [GQL(Λ=1),GCE2(Λ=1)];
-labels  = ["gql_1","gce2_1"];
+labels  = ["gql_1","gce2_1_short"];
 
-gql      = integrate(prob,eqs[1],tspan;tsargs...)
+gql     = integrate(prob,eqs[1],tspan;tsargs...)
 write(prob,eqs[1],gql,dn=dn,fn=labels[1])
 
-gce2      = integrate(prob,eqs[2],tspan;tsargs...)
-write(prob,eqs[1],gql,dn=dn,fn=labels[1])
+gce2    = integrate(prob,eqs[2],tspan;u0=gql.u[end],tsargs...)
+write(prob,eqs[2],gce2,dn=dn,fn=labels[2])
+@save dn*labels[2]*".jld2" gce2
 
 # sols    = integrate(prob,eqs,tspan;tsargs...)
 # write(prob,eqs,sols,dn=dn,labels=labels)
