@@ -20,6 +20,7 @@ Random.rand(eqs::Union{CE2,GCE2},d::Domain{T}) where T = convert(eqs,rand(NL(),d
 
 function Base.convert(::CE2,x::DNSField{T},d::Domain{T}) where T
     (nx,ny) = size(d) #
+    c1 = @views x[:,1]
     c2 = zeros(Complex{T},2ny-1,2ny-1,nx-1)
     @inbounds for m1=1:nx-1
         @inbounds for n1=-ny+1:ny-1
@@ -28,11 +29,12 @@ function Base.convert(::CE2,x::DNSField{T},d::Domain{T}) where T
             end
         end
     end
-    ArrayPartition(x[:,1],c2)
+    ArrayPartition(c1,c2)
 end
 
 function Base.convert(eqs::GCE2,x::DNSField{T},d::Domain{T}) where T
     (nx,ny),Λ = size(d),eqs.Λ
+    c1 = @views x[:,1:Λ+1]
     c2 = zeros(Complex{T},2ny-1,nx-Λ,2ny-1,nx-Λ)
     @inbounds for m1=Λ+1:nx-1
         @inbounds for n1=-ny+1:ny-1
@@ -43,7 +45,7 @@ function Base.convert(eqs::GCE2,x::DNSField{T},d::Domain{T}) where T
             end
         end
     end
-    ArrayPartition(x[:,1:Λ+1],c2)
+    ArrayPartition(c1,c2)
 end
 
 # Base.oftype(eqs::CE2,obj::DNSField) = ArrayParition(obj[:,1],conj(obj[:,2:].*obj[:,2:]))
