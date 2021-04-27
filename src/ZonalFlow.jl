@@ -35,20 +35,22 @@ export  NL,
         GCE2,
         CE2
 
-export  integrate,
-        get_de_ic,
-        get_de_params,
-        get_de_probalg,
-        nl!,
-        gql_eqs!,
-        ce2_eqs!,
-        gce2_eqs!
+export  integrate
 
 @reexport using OrdinaryDiffEq: solve
 @reexport using StochasticDiffEq: solve
 
-
 export  energy,
         adjacency
+
+# for optimization
+export  acoeffs,
+        bcoeffs,
+        ccoeffs,
+        fcoeffs,
+        get_de_ic,
+        get_de_params,
+        get_de_probalg,
+        f!,g!
 
 end
