@@ -72,7 +72,7 @@ end
 
 vorticity(nx::Int,ny::Int,u::Array{DNSField{T},1};Λ::Int=nx-1) where {T <: AbstractFloat} = inversefourier(nx,ny,u,Λ=Λ)
 vorticity(nx::Int,ny::Int,u::Array{DSSField{T},1}) where {T <: AbstractFloat} = inversefourier(nx,ny,u)
-vorticity(nx::Int,ny::Int,u::Array{GSSField{T},1};Λ::Int=nx-1) where {T <: AbstractFloat} = inversefourier(nx,ny,u.x[1],Λ=Λ)
+vorticity(nx::Int,ny::Int,u::Array{GSSField{T},1};Λ::Int=nx-1) where {T <: AbstractFloat} = inversefourier(nx,ny,u,Λ=Λ)
 
 function zonalvelocity(lx::T,ly::T,nx::Int,ny::Int,u::DNSField{T};Λ::Int=nx-1) where {T <: AbstractFloat}
 
@@ -119,7 +119,7 @@ end
 
 function zonalvelocity(lx::T,ly::T,nx::Int,ny::Int,u::Array{GSSField{T},1};Λ::Int) where {T <: AbstractFloat}
 
-    U = [velocity(lx,ly,nx,ny,u[i].x[1],Λ=Λ) for i=1:length(u)]
+    U = [zonalvelocity(lx,ly,nx,ny,u[i].x[1],Λ=Λ) for i=1:length(u)]
     reshape(cat(U...,dims=3),2ny-1,2nx-1,length(u))
 
 end
@@ -369,20 +369,19 @@ function zonalenergy(lx::T,ly::T,nx::Int,ny::Int,u::Array{DSSField{T},1}) where 
 
     @info "Computing zonal energy and enstrophy for CE2 fields..."
     for i=1:length(u)
-        for m = 0:nx-1
-            nmin = m==0 ? 1 : -(ny-1)
-            for n = nmin:ny-1
-
-                k = 2π*norm([m/lx,n/ly])
-
-                if(m == 0)
-                    E[i,m+1] += abs(u[i].x[1][n+ny])^2/k^2
-                    Z[i,m+1] += abs(u[i].x[1][n+ny])^2
-                else
-                    E[i,m+1] += abs(u[i].x[2][n+ny,n+ny,m])/k^2
-                    Z[i,m+1] += abs(u[i].x[2][n+ny,n+ny,m])
-                end
-
+        m = 0
+        for n = 1:ny-1
+            ky = 2π*n/ly
+            E[i,m+1] += abs(u[i].x[1][n+ny])^2/ky^2
+            Z[i,m+1] += abs(u[i].x[1][n+ny])^2
+        end
+        for m = 1:nx-1
+            for n = -ny+1:ny-1
+                kx = 2π*m/lx
+                ky = 2π*n/ly
+                k = (kx^2 + ky^2)^0.5
+                E[i,m+1] += abs(u[i].x[2][n+ny,n+ny,m])/k^2
+                Z[i,m+1] += abs(u[i].x[2][n+ny,n+ny,m])
             end
         end
     end
@@ -426,7 +425,7 @@ end
 """
 Time averaged zonal quadratic invariants for NL/GQL/CE2/GCE2
 """
-function zonalenergy(lx::T,ly::T,nx::Int,ny::Int,t::Array{T,1},u;t0::T=200.0) where {T <: AbstractFloat}
+function zonalenergy(lx::T,ly::T,nx::Int,ny::Int,t::Array{T,1},u;t0::T=500.0) where {T <: AbstractFloat}
 
     E,Z = zonalenergy(lx,ly,nx,ny,u)
     Eav,Zav = copy(E),copy(Z)

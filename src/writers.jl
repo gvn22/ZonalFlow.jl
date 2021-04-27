@@ -9,7 +9,7 @@ function Base.write(prob,eqs,sol;dn::String,fn::String)
     t,u = sol.t,sol.u
 
     Et,Zt,Etav,Ztav,Emt,Zmt,Emtav,Zmtav = dumpenergy(lx,ly,nx,ny,t,u)
-    Emn,Vxy,Uxy = dumpfields(lx,ly,nx,ny,t,u)
+    Emn,Vxy,Uxy = typeof(eqs) == GCE2 ? dumpfields(lx,ly,nx,ny,t,u,Λ=Λ) : dumpfields(lx,ly,nx,ny,t,u)
 
     d = Dict(   "t"=>t,
                 "Zt"=>Zt,"Ztav"=>Ztav,
@@ -58,48 +58,25 @@ function dumpfields(lx::T,ly::T,nx::Int,ny::Int,t::Array{Float64,1},u::Array{DNS
 end
 
 function dumpfields(lx::T,ly::T,nx::Int,ny::Int,t::Array{Float64,1},u::Array{DSSField{T},1}) where {T <: AbstractFloat}
-
     Emn = energyspectrum(lx,ly,nx,ny,u)
     Vxy = vorticity(nx,ny,u)
     Uxy = zonalvelocity(lx,ly,nx,ny,u)
     return Emn,Vxy,Uxy
     # E = fourierenergy(lx,ly,nx,ny,u)
-    # E2 = energyspectrum(lx,ly,nx,ny,u,Λ=Λ)
-    #
     # V = inversefourier(nx,ny,u)
-    # V2 = vorticity(nx,ny,u,Λ=Λ)
-    #
     # U = zonalvelocity(lx,ly,nx,ny,u)
     # U2 = zonalvelocity(lx,ly,nx,ny,u,Λ=Λ)
-    #
     # W = zonalvorticity(lx,ly,nx,ny,u)
     # W2 = meanvorticity(lx,ly,nx,ny,u,Λ=Λ)
-
-    # u1 = velocity(lx,ly,nx,ny,u)
-    # u2 = inversefourier(nx,ny,u1)
-
-    # d = Dict("t"=>t,"E"=>E,"E2"=>E2,"V"=>V,"V2"=>V2)
-    # NPZ.npzwrite(fs*".npz",d)
-    #
-    # nothing
-
 end
 
 function dumpfields(lx::T,ly::T,nx::Int,ny::Int,t::Array{Float64,1},u::Array{GSSField{T},1};Λ::Int) where {T <: AbstractFloat}
-
     # E = fourierenergy(lx,ly,nx,ny,Λ,u)
-    Emn = energyspectrum(lx,ly,nx,ny,u,Λ=Λ)
     # V = inversefourier(nx,ny,Λ,u)
+    Emn = energyspectrum(lx,ly,nx,ny,u,Λ=Λ)
     Vxy = vorticity(nx,ny,u,Λ=Λ)
-    Uxy = zonalvelocity(lx,ly,nx,ny,u)
+    Uxy = zonalvelocity(lx,ly,nx,ny,u,Λ=Λ)
     return Emn,Vxy,Uxy
-
-    # u1 = velocity(lx,ly,nx,ny,u)
-    # u2 = inversefourier(nx,ny,u1)
-    # d = Dict("t"=>t,"E"=>E,"E2"=>E2,"V"=>V,"V2"=>V2)
-    # NPZ.npzwrite(fs*".npz",d)
-    #
-    # nothing
 end
 
 function dumpstats() end
