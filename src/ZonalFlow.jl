@@ -13,7 +13,6 @@ using NPZ
 using Reexport
 
 include("structures.jl")
-include("coefficients.jl")
 include("ic.jl")
 include("coeffs.jl")
 include("solve.jl")
@@ -37,20 +36,19 @@ export  NL,
 
 export  integrate
 
-@reexport using OrdinaryDiffEq: solve
-@reexport using StochasticDiffEq: solve
-
 export  energy,
         adjacency
 
 # for optimization
-export  acoeffs,
-        bcoeffs,
-        ccoeffs,
-        fcoeffs,
-        get_de_ic,
-        get_de_params,
-        get_de_probalg,
-        f!,g!
+# @reexport using OrdinaryDiffEq: solve
+# @reexport using StochasticDiffEq: solve
+# export  acoeffs,
+#         bcoeffs,
+#         ccoeffs,
+#         fcoeffs,
+#         get_de_ic,
+#         get_de_params,
+#         get_de_probalg,
+#         f!,g!
 
 end
