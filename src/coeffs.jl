@@ -181,7 +181,7 @@ function fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs::Union{NL,GQL}) where T
     d,f = prob.d,prob.f
     (nx,ny) = size(d)
     F = zeros(T,2ny-1,nx)
-    for m=1:nx-1 # should 0 be included?
+    for m=2:nx-1 # should 0 be included?
         for n=-ny+1:ny-1
             k = (m^2 + n^2)^0.5
             if (f.kf - f.dk < k < f.kf + f.dk) F[n+ny,m+1] = 1.0 end
@@ -212,7 +212,7 @@ function fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs::GCE2) where T
     (nx,ny) = size(d)
     Λ = eqs.Λ
     F = ArrayPartition(zeros(T,2ny-1,Λ+1),zeros(T,2ny-1,nx-Λ,2ny-1,nx-Λ))
-    for m=1:nx-1 # should 0 be included?
+    for m=2:nx-1 # should 0 be included?
         for n=-ny+1:ny-1
             k = (m^2 + n^2)^0.5
             if(f.kf - f.dk < k < f.kf + f.dk)

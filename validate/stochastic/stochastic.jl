@@ -43,7 +43,7 @@ write(prob,eqs[4],gce2,dn=dn,fn=labels[4])
 # write(prob,eqs,sols,dn=dn,labels=labels)
 
 eqs     = [GQL(Λ=1),GCE2(Λ=1)];
-labels  = ["gql_1","gce2_1_short"];
+labels  = ["gql_1_short","gce2_1_short"];
 
 gql     = integrate(prob,eqs[1],tspan;tsargs...)
 write(prob,eqs[1],gql,dn=dn,fn=labels[1])

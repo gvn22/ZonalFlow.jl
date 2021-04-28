@@ -47,5 +47,3 @@ function Base.convert(eqs::GCE2,x::DNSField{T},d::Domain{T}) where T
     end
     ArrayPartition(c1,c2)
 end
-
-# Base.oftype(eqs::CE2,obj::DNSField) = ArrayParition(obj[:,1],conj(obj[:,2:].*obj[:,2:]))
