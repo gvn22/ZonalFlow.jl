@@ -179,9 +179,9 @@ stochcorr(ε::T,kf::Int,dk::Int) where T<:AbstractFloat = convert(T,2π*ε*kf/(3
 
 function fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs::Union{NL,GQL}) where T
     d,f = prob.d,prob.f
-    (nx,ny) = size(d)
+    (nx,ny),Λ = size(d),lambda(prob,eqs)
     F = zeros(T,2ny-1,nx)
-    for m=2:nx-1 # should 0 be included?
+    for m=Λ+1:nx-1 # should 0 be included?
         for n=-ny+1:ny-1
             k = (m^2 + n^2)^0.5
             if (f.kf - f.dk < k < f.kf + f.dk) F[n+ny,m+1] = 1.0 end
@@ -209,10 +209,9 @@ end
 
 function fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs::GCE2) where T
     d,f = prob.d,prob.f
-    (nx,ny) = size(d)
-    Λ = eqs.Λ
+    (nx,ny),Λ = size(d),lambda(prob,eqs)
     F = ArrayPartition(zeros(T,2ny-1,Λ+1),zeros(T,2ny-1,nx-Λ,2ny-1,nx-Λ))
-    for m=2:nx-1 # should 0 be included?
+    for m=Λ+1:nx-1 # should 0 be included?
         for n=-ny+1:ny-1
             k = (m^2 + n^2)^0.5
             if(f.kf - f.dk < k < f.kf + f.dk)
