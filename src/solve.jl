@@ -25,8 +25,9 @@ get_de_probalg(prob::BetaPlane{T,Stochastic{T}},eqs::CE2,u0,t,p) where T = ODEPr
 
 function get_de_probalg(prob::BetaPlane{T,Stochastic{T}},eqs,u0,t,p) where T
     W0 = zeros(eqs,prob.d)
-    Random.seed!(123)
-    SDEProblem(f!,g!,u0,t,p,noise=noise!(t[1],W0)), EulerHeun()
+    # Random.seed!(123)
+    # SDEProblem(f!,g!,u0,t,p,noise=noise!(t[1],W0)), EulerHeun()
+     SDEProblem(f!,g!,u0,t,p), EulerHeun()
 end
 
 function integrate(prob,eqs::AbstractEquations,tspan;u0=nothing,kwargs...)

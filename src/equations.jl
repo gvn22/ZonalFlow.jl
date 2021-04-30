@@ -1,5 +1,5 @@
-g!(du::DNSField{T},u,p,t) where T = du .= one(Complex{T})
-g!(du::GSSField{T},u,p,t) where T = du.x[1] .= one(Complex{T})
+g!(du::DNSField{T},u,p,t) where T = du .= p.F
+g!(du::GSSField{T},u,p,t) where T = du.x[1] .= p.F.x[1]
 
 function f!(du::DNSField{T},u::DNSField{T},p::NLParams{T},t) where T<:AbstractFloat
     nx,ny,A,B,Cp,Cm = p.nx,p.ny,p.A,p.B,p.C⁺,p.C⁻

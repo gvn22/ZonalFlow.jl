@@ -30,8 +30,10 @@ struct Stochastic{T}  <: AbstractForcing{T}
     kf::Int
     dk::Int
     ε::T
+    τ::T
+    isotropic::Bool
 end
-Stochastic(;kf,dk,ε) = Stochastic(kf,dk,ε)
+Stochastic(;kf,dk,ε,τ=0.0,isotropic=true) = Stochastic(kf,dk,ε,τ,isotropic)
 
 struct Kolmogorov{T} <: AbstractForcing{T}
     A₁::T
