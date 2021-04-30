@@ -176,18 +176,19 @@ fcoeffs(prob::BetaPlane{T,Kolmogorov{T}},eqs::CE2) where T = zeros(T,2prob.d.ny-
 
 stochamp(ε::T,kf::Int,N::T) where T<:AbstractFloat = convert(T,sqrt(2ε*kf^2)/sqrt(N))
 stochcorr(ε::T,kf::Int,dk::Int) where T<:AbstractFloat = convert(T,2π*ε*kf/(32.0dk))
+stochcorr(ε::T,kf::Int,N::T) where T<:AbstractFloat = convert(T,4*π*π*ε*kf/N/8.0)
 
 function fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs::Union{NL,GQL}) where T
     d,f = prob.d,prob.f
     (nx,ny),Λ = size(d),lambda(prob,eqs)
     F = zeros(T,2ny-1,nx)
-    for m=Λ+1:nx-1 # should 0 be included?
+    for m=1:nx-1 # should 0 be included?
         for n=-ny+1:ny-1
-            k = (m^2 + n^2)^0.5
+            k = f.isotropic == true ? (m^2 + n^2)^0.5 : m
             if (f.kf - f.dk < k < f.kf + f.dk) F[n+ny,m+1] = 1.0 end
         end
     end
-    (sum(F) ≥ 1.0) && F .= F.* stochamp(f.ε,f.kf,sum(F)) # this is dt unaware - dist contains dt
+    if (sum(F) ≥ 1.0) F .= F.* stochamp(f.ε,f.kf,sum(F)) end # this is dt unaware - dist contains dt
     return F
 end
 
@@ -197,13 +198,15 @@ function fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs::CE2) where T
     F = zeros(T,2ny-1,2ny-1,nx-1)
     for m=1:nx-1 # should 0 be included?
         for n=-ny+1:ny-1
-            k = (m^2 + n^2)^0.5
+            k = f.isotropic == true ? (m^2 + n^2)^0.5 : m
             if(f.kf - f.dk < k < f.kf + f.dk)
                 F[n+ny,n+ny,m] = one(T)
             end
         end
     end
-    F .= F * stochcorr(f.ε,f.kf,f.dk) # this is dt unaware - dist contains dt
+    Nf = sum(F)
+    @show Nf
+    F .= F * stochcorr(f.ε,f.kf,Nf) # this is dt unaware - dist contains dt
     return F
 end
 
@@ -213,13 +216,14 @@ function fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs::GCE2) where T
     F = ArrayPartition(zeros(T,2ny-1,Λ+1),zeros(T,2ny-1,nx-Λ,2ny-1,nx-Λ))
     for m=Λ+1:nx-1 # should 0 be included?
         for n=-ny+1:ny-1
-            k = (m^2 + n^2)^0.5
+            k = f.isotropic == true ? (m^2 + n^2)^0.5 : m
             if(f.kf - f.dk < k < f.kf + f.dk)
                 m ≤ Λ ? F.x[1][n+ny,m+1] = one(T) : F.x[2][n+ny,m-Λ,n+ny,m-Λ] = one(T)
             end
         end
     end
     if (sum(F.x[1]) ≥ 1.0) F.x[1] .= F.x[1] * stochamp(f.ε,f.kf,sum(F.x[1])) end
-    F.x[2] .= F.x[2] * stochcorr(f.ε,f.kf,f.dk) # this is dt unaware - dist contains dt
+    Nf = sum(F.x[2])
+    F.x[2] .= F.x[2] * stochcorr(f.ε,f.kf,Nf) # this is dt unaware - dist contains dt
     return F
 end
