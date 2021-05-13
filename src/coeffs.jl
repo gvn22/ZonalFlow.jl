@@ -214,7 +214,7 @@ function fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs::GCE2) where T
     d,f = prob.d,prob.f
     (nx,ny),Λ = size(d),lambda(prob,eqs)
     F = ArrayPartition(zeros(T,2ny-1,Λ+1),zeros(T,2ny-1,nx-Λ,2ny-1,nx-Λ))
-    for m=Λ+1:nx-1 # should 0 be included?
+    for m=1:nx-1 # should 0 be included?
         for n=-ny+1:ny-1
             k = f.isotropic == true ? (m^2 + n^2)^0.5 : m
             if(f.kf - f.dk < k < f.kf + f.dk)
