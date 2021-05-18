@@ -1,7 +1,6 @@
 """
     Solve method for DiffEq solution
 """
-# get_de_ic(prob,eqs) = zeros(eqs,prob.d)
 function get_de_ic(prob,eqs,u0=nothing)
     Random.seed!(123)
     u0 == nothing ? rand(eqs,prob.d) : convert(eqs,u0,prob.d)
@@ -22,19 +21,31 @@ get_de_p(d,eqs::GCE2,p) = GCE2Params(d.nx,d.ny,eqs.Λ,p...)
 
 get_de_probalg(prob,eqs,u0,t,p) = ODEProblem(f!,u0,t,p), RK4()
 get_de_probalg(prob::BetaPlane{T,Stochastic{T}},eqs::CE2,u0,t,p) where T = ODEProblem(f!,u0,t,p), Heun()
-
-function get_de_probalg(prob::BetaPlane{T,Stochastic{T}},eqs,u0,t,p) where T
-    W0 = zeros(eqs,prob.d)
+get_de_probalg(prob::BetaPlane{T,Stochastic{T}},eqs,u0,t,p) where T =  SDEProblem(f!,g!,u0,t,p), EulerHeun()
+# function get_de_probalg(prob::BetaPlane{T,Stochastic{T}},eqs,u0,t,p) where T
+    # W0 = zeros(eqs,prob.d)
     # Random.seed!(123)
     # SDEProblem(f!,g!,u0,t,p,noise=noise!(t[1],W0)), EulerHeun()
-     SDEProblem(f!,g!,u0,t,p), EulerHeun()
+     # SDEProblem(f!,g!,u0,t,p), EulerHeun()
+# end
+
+get_de_kwargs(prob,eqs::AbstractEquations,tspan;kwargs...) = kwargs
+function get_de_kwargs(prob,eqs::GCE2,tspan;kwargs...)
+    if(!eqs.poscheck) return kwargs end
+    @info "Setting positivity check callback..."
+    poschecktimes = [tt for tt=tspan[1]:eqs.poscheckat:tspan[2]]
+    condition(u,t,integrator) = t ∈ poschecktimes && !ispositive(u.x[2],prob.d.nx,prob.d.ny,eqs.Λ)
+    affect!(integrator) = positivity!(integrator.u.x[2],prob.d.nx,prob.d.ny,eqs.Λ)
+    poscheckcb = DiscreteCallback(condition,affect!,save_positions=(false,false))
+    merge((callback=poscheckcb,tstops=poschecktimes),kwargs)
 end
 
 function integrate(prob,eqs::AbstractEquations,tspan;u0=nothing,kwargs...)
     u0 = get_de_ic(prob,eqs,u0)
     p  = get_de_params(prob,eqs)
     _prob,_alg = get_de_probalg(prob,eqs,u0,tspan,p)
-    @time solve(_prob,_alg;kwargs...)
+    _kwargs = get_de_kwargs(prob,eqs,tspan;kwargs...)
+    @time solve(_prob,_alg;_kwargs...)
 end
 
 integrate(prob,eqs::Vector{AbstractEquations},tspan;kwargs...) = [integrate(prob,eq,tspan;kwargs...) for eq in eqs]
