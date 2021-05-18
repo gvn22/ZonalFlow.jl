@@ -21,14 +21,13 @@ dn      = "validate/pointjet/12x12/"
 eqs     = [NL(),GQL(Λ=prob.d.nx-1),GCE2(Λ=prob.d.nx-1),GQL(0),CE2()];
 labels  = ["nl","gql","gce2","ql","ce2"];
 sols    = integrate(prob,eqs,tspan;tsargs...);
-
 write(prob,eqs,sols,dn=dn,labels=labels)
 
 gce2_0    = integrate(prob,GCE2(0),tspan;tsargs...);
 write(prob,GCE2(0),gce2_0,dn=dn,fn="gce2_0")
 
-gql    = integrate(prob,GQL(1),tspan;tsargs...);
-write(prob,GQL(1),gql,dn=dn,fn="gql_1")
+gql    = integrate(prob,GQL(3),tspan;tsargs...);
+write(prob,GQL(3),gql,dn=dn,fn="gql_3")
 
-gce2    = integrate(prob,GCE2(1),tspan;tsargs...);
-write(prob,GCE2(1),gce2,dn=dn,fn="gce2_1")
+gce2    = integrate(prob,GCE2(Λ=3,poscheck=true,poscheckat=20),tspan;tsargs...);
+write(prob,GCE2(3),gce2,dn=dn,fn="gce2_3")
