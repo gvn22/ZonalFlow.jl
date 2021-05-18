@@ -28,20 +28,24 @@ get_de_probalg(prob::BetaPlane{T,Stochastic{T}},eqs,u0,t,p) where T =  SDEProble
     # SDEProblem(f!,g!,u0,t,p,noise=noise!(t[1],W0)), EulerHeun()
      # SDEProblem(f!,g!,u0,t,p), EulerHeun()
 # end
+
+get_de_kwargs(prob,eqs::AbstractEquations,tspan;kwargs...) = kwargs
+function get_de_kwargs(prob,eqs::GCE2,tspan;kwargs...)
+    if(!eqs.poscheck) return kwargs end
+    @info "Setting positivity check callback..."
+    poschecktimes = [tt for tt=tspan[1]:eqs.poscheckat:tspan[2]]
+    condition(u,t,integrator) = t ∈ poschecktimes && !ispositive(u.x[2],prob.d.nx,prob.d.ny,eqs.Λ)
+    affect!(integrator) = positivity!(integrator.u.x[2],prob.d.nx,prob.d.ny,eqs.Λ)
+    poscheckcb = DiscreteCallback(condition,affect!,save_positions=(false,false))
+    merge((callback=poscheckcb,tstops=poschecktimes),kwargs)
+end
+
 function integrate(prob,eqs::AbstractEquations,tspan;u0=nothing,kwargs...)
     u0 = get_de_ic(prob,eqs,u0)
     p  = get_de_params(prob,eqs)
     _prob,_alg = get_de_probalg(prob,eqs,u0,tspan,p)
-    if(typeof(eqs)==GCE2&&eqs.poscheck)
-        @info "Setting positivity check for GCE2..."
-        poschecktimes = [tt for tt=tspan[1]:eqs.poscheckat:tspan[2]]
-        condition(u,t,integrator) = t ∈ poschecktimes && !ispositive(u.x[2],prob.d.nx,prob.d.ny,eqs.Λ)
-        affect!(integrator) = positivity!(integrator.u.x[2],prob.d.nx,prob.d.ny,eqs.Λ)
-        cbp = DiscreteCallback(condition,affect!,save_positions=(false,false))
-        @time solve(_prob,_alg,callback=cbp,tstops=poschecktimes;kwargs...)
-    else
-        @time solve(_prob,_alg;kwargs...)
-    end
+    _kwargs = get_de_kwargs(prob,eqs,tspan;kwargs...)
+    @time solve(_prob,_alg;_kwargs...)
 end
 
 integrate(prob,eqs::Vector{AbstractEquations},tspan;kwargs...) = [integrate(prob,eq,tspan;kwargs...) for eq in eqs]
