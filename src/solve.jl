@@ -2,9 +2,20 @@
     Solve method for DiffEq solution
 """
 function get_de_ic(prob,eqs,u0=nothing)
-    Random.seed!(123)
-    u0 == nothing ? rand(eqs,prob.d) : convert(eqs,u0,prob.d)
+    if u0 == nothing
+        rand(eqs,prob.d)
+    elseif typeof(u0) <: Number
+        rand(eqs,prob.d,u0)
+    else
+        convert(eqs,u0,prob.d)
+    end
 end
+
+# function get_de_ic(prob::BetaPlane{T,Kolmogorov{T}},eqs::Union{NL,GQL},u0=nothing) where T
+#     a = rand(eqs,prob.d)
+#     a[:,1] += acoeffs(prob)
+#     u0 == nothing ? a : convert(eqs,u0,prob.d)
+# end
 
 function get_de_params(prob,eqs)::AbstractParams
     A = acoeffs(prob)
@@ -19,17 +30,12 @@ get_de_p(d,eqs::GQL,p) = GQLParams(d.nx,d.ny,eqs.Λ,p...)
 get_de_p(d,eqs::CE2,p) = CE2Params(d.nx,d.ny,p...)
 get_de_p(d,eqs::GCE2,p) = GCE2Params(d.nx,d.ny,eqs.Λ,p...)
 
-get_de_probalg(prob,eqs,u0,t,p) = ODEProblem(f!,u0,t,p), RK4()
+get_de_probalg(prob,eqs,u0,t,p) = ODEProblem(f!,u0,t,p), BS3()
 get_de_probalg(prob::BetaPlane{T,Stochastic{T}},eqs::CE2,u0,t,p) where T = ODEProblem(f!,u0,t,p), Heun()
-get_de_probalg(prob::BetaPlane{T,Stochastic{T}},eqs,u0,t,p) where T =  SDEProblem(f!,g!,u0,t,p), EulerHeun()
-# function get_de_probalg(prob::BetaPlane{T,Stochastic{T}},eqs,u0,t,p) where T
-    # W0 = zeros(eqs,prob.d)
-    # Random.seed!(123)
-    # SDEProblem(f!,g!,u0,t,p,noise=noise!(t[1],W0)), EulerHeun()
-     # SDEProblem(f!,g!,u0,t,p), EulerHeun()
-# end
+get_de_probalg(prob::BetaPlane{T,Stochastic{T}},eqs,u0,t,p) where T = SDEProblem(f!,g!,u0,t,p), SRIW1()
 
 get_de_kwargs(prob,eqs::AbstractEquations,tspan;kwargs...) = kwargs
+
 function get_de_kwargs(prob,eqs::GCE2,tspan;kwargs...)
     if(!eqs.poscheck) return kwargs end
     @info "Setting positivity check callback..."
@@ -41,9 +47,10 @@ function get_de_kwargs(prob,eqs::GCE2,tspan;kwargs...)
 end
 
 function integrate(prob,eqs::AbstractEquations,tspan;u0=nothing,kwargs...)
-    u0 = get_de_ic(prob,eqs,u0)
-    p  = get_de_params(prob,eqs)
-    _prob,_alg = get_de_probalg(prob,eqs,u0,tspan,p)
+    Random.seed!(123)
+    _u0 = get_de_ic(prob,eqs,u0)
+    _p  = get_de_params(prob,eqs)
+    _prob,_alg = get_de_probalg(prob,eqs,_u0,tspan,_p)
     _kwargs = get_de_kwargs(prob,eqs,tspan;kwargs...)
     @time solve(_prob,_alg;_kwargs...)
 end

@@ -15,8 +15,8 @@ Base.similar(eqs::CE2,d::Domain{T}) where T = similar(DSSField{T},d)
 Base.similar(eqs::GCE2,d::Domain{T}) where T = similar(GSSField{T},d,Λ=eqs.Λ)
 
 Base.zeros(eqs::AbstractEquations,d) = fill!(similar(eqs,d),0)
-Random.rand(eqs::Union{NL,GQL},d::Domain{T}) where T =  1e-6.*exp.(im*rand!(Uniform(0,2π),similar(eqs,d)))
-Random.rand(eqs::Union{CE2,GCE2},d::Domain{T}) where T = convert(eqs,rand(NL(),d),d)
+Random.rand(eqs::Union{NL,GQL},d::Domain{T},aη::T=1e-6) where T =  aη*exp.(im*rand!(Uniform(0,2π),similar(eqs,d)))
+Random.rand(eqs::Union{CE2,GCE2},d::Domain{T},aη::T=1e-6) where T = convert(eqs,rand(NL(),d,aη),d)
 
 function Base.convert(::CE2,x::DNSField{T},d::Domain{T}) where T
     (nx,ny) = size(d) #
