@@ -185,7 +185,7 @@ function fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs::Union{NL,GQL}) where T
     for m=1:nx-1 # should 0 be included?
         for n=-ny+1:ny-1
             k = f.isotropic == true ? (m^2 + n^2)^0.5 : m
-            if (f.kf - f.dk < k < f.kf + f.dk) F[n+ny,m+1] = 1.0 end
+            if (f.kf - f.dk < k < f.kf + f.dk) F[n+ny,m+1] = one(T) end
         end
     end
     if (sum(F) ≥ 1.0) F .= F.* stochamp(f.ε,f.kf,sum(F)) end # this is dt unaware - dist contains dt
@@ -205,7 +205,6 @@ function fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs::CE2) where T
         end
     end
     Nf = sum(F)
-    @show Nf
     F .= F * stochcorr(f.ε,f.kf,Nf) # this is dt unaware - dist contains dt
     return F
 end
