@@ -451,22 +451,13 @@ end
     meanvorticity(...,u) -> instantaneous
     meanvorticity(...,t,u) -> time-averaged
 """
-function meanvorticity(nx::Int,ny::Int,u::DNSField{T}) where {T <: AbstractFloat}
-    inversefourier(nx,ny,u[:,1])
-end
+zonalvorticity(nx::Int,ny::Int,u::DNSField{T}) where {T <: AbstractFloat} = inversefourier(ny,u[:,1])
+zonalvorticity(nx::Int,ny::Int,u::DSSField{T}) where {T <: AbstractFloat} = inversefourier(ny,u.x[1])
+zonalvorticity(nx::Int,ny::Int,u::GSSField{T}) where {T <: AbstractFloat} = inversefourier(ny,u.x[1][:,1])
 
-function meanvorticity(nx::Int,ny::Int,u::Array{DNSField{T},1}) where {T <: AbstractFloat}
-    [meanvorticity(nx,ny,u[i]) for i=1:length(u)]
-    # reshape(cat(U...,dims=2),2ny-1,length(u))
-end
-
-function meanvorticity(nx::Int,ny::Int,u::GSSField{T}) where {T <: AbstractFloat}
-    inversefourier(nx,ny,u.x[1][:,1])
-end
-
-function meanvorticity(nx::Int,ny::Int,u::Array{GSSField{T},1}) where {T <: AbstractFloat}
-    [meanvorticity(nx,ny,u[i]) for i=1:length(u)]
-    # reshape(cat(U...,dims=2),2ny-1,length(u))
+function zonalvorticity(nx::Int,ny::Int,u) where {T <: AbstractFloat}
+    U = [zonalvorticity(nx,ny,u[i]) for i=1:length(u)]
+    reshape(cat(U...,dims=2),2ny-1,length(u))
 end
 
 function meanvorticity(nx::Int,ny::Int,t::Array{T,1},u;t0::T) where {T <: AbstractFloat}

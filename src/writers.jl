@@ -9,13 +9,14 @@ function Base.write(prob,eqs,sol;dn::String,fn::String)
     t,u = sol.t,sol.u
 
     Et,Zt,Etav,Ztav,Emt,Zmt,Emtav,Zmtav = dumpenergy(lx,ly,nx,ny,t,u)
-    Emn,Vxy,Uxy = typeof(eqs) == GCE2 ? dumpfields(lx,ly,nx,ny,t,u,Λ=Λ) : dumpfields(lx,ly,nx,ny,t,u)
+    Emn,Vxy,Uxy,Vyt = typeof(eqs) == GCE2 ? dumpfields(lx,ly,nx,ny,t,u,Λ=Λ) : dumpfields(lx,ly,nx,ny,t,u)
 
     d = Dict(   "t"=>t,
                 "Zt"=>Zt,"Ztav"=>Ztav,
                 "Et"=>Et,"Etav"=>Etav,
                 "Emt"=>Emt,"Emtav"=>Emtav,
-                "Emn"=>Emn,"Vxy"=>Vxy,"Uxy"=>Uxy)
+                "Emn"=>Emn,"Vxy"=>Vxy,"Uxy"=>Uxy,
+                "Vyt"=>Vyt)
     mkpath(dn)
     NPZ.npzwrite(dn*fn*".npz",d)
     nothing
@@ -34,7 +35,8 @@ function dumpfields(lx::T,ly::T,nx::Int,ny::Int,t::Array{Float64,1},u::Array{DNS
     Emn = energyspectrum(lx,ly,nx,ny,u,Λ=Λ)
     Vxy = vorticity(nx,ny,u,Λ=Λ)
     Uxy = zonalvelocity(lx,ly,nx,ny,u,Λ=Λ)
-    return Emn,Vxy,Uxy
+    Vyt = zonalvorticity(nx,ny,u)
+    return Emn,Vxy,Uxy,Vyt
     # E = fourierenergy(lx,ly,nx,ny,u)
     # E2 = energyspectrum(lx,ly,nx,ny,u,Λ=Λ)
     #
@@ -61,7 +63,8 @@ function dumpfields(lx::T,ly::T,nx::Int,ny::Int,t::Array{Float64,1},u::Array{DSS
     Emn = energyspectrum(lx,ly,nx,ny,u)
     Vxy = vorticity(nx,ny,u)
     Uxy = zonalvelocity(lx,ly,nx,ny,u)
-    return Emn,Vxy,Uxy
+    Vyt = zonalvorticity(nx,ny,u)
+    return Emn,Vxy,Uxy,Vyt
     # E = fourierenergy(lx,ly,nx,ny,u)
     # V = inversefourier(nx,ny,u)
     # U = zonalvelocity(lx,ly,nx,ny,u)
@@ -76,7 +79,8 @@ function dumpfields(lx::T,ly::T,nx::Int,ny::Int,t::Array{Float64,1},u::Array{GSS
     Emn = energyspectrum(lx,ly,nx,ny,u,Λ=Λ)
     Vxy = vorticity(nx,ny,u,Λ=Λ)
     Uxy = zonalvelocity(lx,ly,nx,ny,u,Λ=Λ)
-    return Emn,Vxy,Uxy
+    Vyt = zonalvorticity(nx,ny,u)
+    return Emn,Vxy,Uxy,Vyt
 end
 
 function dumpstats() end
