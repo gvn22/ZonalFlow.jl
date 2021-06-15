@@ -7,6 +7,7 @@ function get_de_ic(prob,eqs,u0=nothing)
     elseif typeof(u0) <: Number
         rand(eqs,prob.d,u0)
     else
+        @info "Converting QL solution to CE2 initial condition..."
         convert(eqs,u0,prob.d)
     end
 end
@@ -30,11 +31,19 @@ get_de_p(d,eqs::GQL,p) = GQLParams(d.nx,d.ny,eqs.Λ,p...)
 get_de_p(d,eqs::CE2,p) = CE2Params(d.nx,d.ny,p...)
 get_de_p(d,eqs::GCE2,p) = GCE2Params(d.nx,d.ny,eqs.Λ,p...)
 
-get_de_probalg(prob,eqs,u0,t,p) = ODEProblem(f!,u0,t,p), BS3()
+get_de_probalg(prob,eqs,u0,t,p) = ODEProblem(f!,u0,t,p), RK4()
 get_de_probalg(prob::BetaPlane{T,Stochastic{T}},eqs::CE2,u0,t,p) where T = ODEProblem(f!,u0,t,p), Heun()
 get_de_probalg(prob::BetaPlane{T,Stochastic{T}},eqs,u0,t,p) where T = SDEProblem(f!,g!,u0,t,p), SRIW1()
 
 get_de_kwargs(prob,eqs::AbstractEquations,tspan;kwargs...) = kwargs
+
+# function get_de_kwargs(prob::BetaPlane{T,Kolmogorov{T}},eqs::CE2,tspan;kwargs...) where T<:AbstractFloat
+#     info = SavedValues(T,Tuple{Int,Array{T,1},Array{Int,1},Array{T,2}})
+#     func(u,t,integrator) = rankis(integrator.u.x[2],prob.d.nx,prob.d.ny)
+#     rankchecktimes = [i for i=0.0:10.0:tspan[2]]
+#     rankcheckcallback = SavingCallback(func,info,save_start=true,save_everystep=false,saveat=rankchecktimes)
+#     merge((callback=rankcheckcallback,tstops=rankchecktimes),kwargs),info
+# end
 
 function get_de_kwargs(prob,eqs::GCE2,tspan;kwargs...)
     if(!eqs.poscheck) return kwargs end
