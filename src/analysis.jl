@@ -477,6 +477,23 @@ function meanvorticity(nx::Int,ny::Int,t::Array{T,1},u;t0::T) where {T <: Abstra
     Uav
 end
 
+"""
+    Rank information for CE2
+"""
+function modalevs(prob,u::DSSField{T}) where T <: AbstractFloat
+    (nx,ny) = size(prob.d)
+    mEVs = zeros(T,2ny-1,nx-1)
+    for m1=1:nx-1
+        mEVs[:,m1] = eigvals(u.x[2][:,:,m1])
+    end
+    mEVs
+end
+
+function modalevs(prob,u::Array{DSSField{T},1}) where T <: AbstractFloat
+    U = [modalevs(prob,u[i]) for i=1:length(u)]
+    reshape(cat(U...,dims=3),2prob.d.ny-1,prob.d.nx-1,length(u))
+end
+
 function zonostrophy(lx::T,ly::T,nx::Int,ny::Int,β::T,μ::T,u::Array{DNSField{T},1}) where {T <: AbstractFloat}
 
     E = energyspectrum(lx,ly,nx,ny,u)

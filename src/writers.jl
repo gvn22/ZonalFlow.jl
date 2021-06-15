@@ -22,6 +22,27 @@ function Base.write(prob,eqs,sol;dn::String,fn::String)
     nothing
 end
 
+function Base.write(prob,eqs::CE2,sol;dn::String,fn::String)
+
+    (lx,ly),(nx,ny),Λ = length(prob.d),size(prob.d),lambda(prob,eqs)
+    t,u = sol.t,sol.u
+
+    Et,Zt,Etav,Ztav,Emt,Zmt,Emtav,Zmtav = dumpenergy(lx,ly,nx,ny,t,u)
+    Emn,Vxy,Uxy,Vyt = dumpfields(lx,ly,nx,ny,t,u)
+    mEVs = dumpstats(prob,u)
+
+    d = Dict(   "t"=>t,
+                "Zt"=>Zt,"Ztav"=>Ztav,
+                "Et"=>Et,"Etav"=>Etav,
+                "Emt"=>Emt,"Emtav"=>Emtav,
+                "Emn"=>Emn,"Vxy"=>Vxy,"Uxy"=>Uxy,
+                "Vyt"=>Vyt,
+                "mEVs"=>mEVs)
+    mkpath(dn)
+    NPZ.npzwrite(dn*fn*".npz",d)
+    nothing
+end
+
 function dumpenergy(lx::T,ly::T,nx::Int,ny::Int,t::Array{T,1},u;t0::Float64=200.0) where {T <: AbstractFloat}
     Et,Zt = energy(lx,ly,nx,ny,u)
     Etav,Ztav = energy(lx,ly,nx,ny,t,u,t0=t0)
@@ -83,7 +104,10 @@ function dumpfields(lx::T,ly::T,nx::Int,ny::Int,t::Array{Float64,1},u::Array{GSS
     return Emn,Vxy,Uxy,Vyt
 end
 
-function dumpstats() end
+function dumpstats(prob,u::Array{DSSField{T},1}) where T <: AbstractFloat
+    mEVs = modalevs(prob,u)
+    mEVs
+end
 
 function dumpadjacency(lx::T,ly::T,nx::Int,ny::Int;fs::String,Λ::Int=nx-1) where {T <: AbstractFloat}
     A,C = adjacency(lx,ly,nx,ny,Λ=Λ)
