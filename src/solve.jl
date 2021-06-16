@@ -3,8 +3,10 @@
 """
 function get_de_ic(prob,eqs,u0=nothing)
     if u0 == nothing
+        @info "Setting a random initial condition..."
         rand(eqs,prob.d)
     elseif typeof(u0) <: Number
+        @info "Setting a DNS initial condition..."
         rand(eqs,prob.d,u0)
     else
         @info "Converting QL solution to CE2 initial condition..."
@@ -51,6 +53,17 @@ function get_de_kwargs(prob,eqs::GCE2,tspan;kwargs...)
     poschecktimes = [tt for tt=tspan[1]:eqs.poscheckat:tspan[2]]
     condition(u,t,integrator) = t ∈ poschecktimes && !ispositive(u.x[2],prob.d.nx,prob.d.ny,eqs.Λ)
     affect!(integrator) = positivity!(integrator.u.x[2],prob.d.nx,prob.d.ny,eqs.Λ)
+    poscheckcb = DiscreteCallback(condition,affect!,save_positions=(false,false))
+    merge((callback=poscheckcb,tstops=poschecktimes),kwargs)
+end
+
+function get_de_kwargs(prob,eqs::CE2,tspan;kwargs...)
+    if(!eqs.poscheck) return kwargs end
+    @info "Setting positivity check callback..."
+    poschecktimes = [tt for tt=tspan[1]:eqs.poscheckat:tspan[2]]
+    temp = zeros(ComplexF64,2*prob.d.ny-1,prob.d.nx-1,2*prob.d.ny-1,prob.d.nx-1)
+    condition(u,t,integrator) = t ∈ poschecktimes
+    affect!(integrator) = positivity!(integrator.u.x[2],temp,prob.d.nx,prob.d.ny)
     poscheckcb = DiscreteCallback(condition,affect!,save_positions=(false,false))
     merge((callback=poscheckcb,tstops=poschecktimes),kwargs)
 end
