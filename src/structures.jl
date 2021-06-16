@@ -84,7 +84,11 @@ struct GQL <: DNS
 end
 GQL(;Λ) = GQL(Λ)
 
-struct CE2 <: DSS end
+struct CE2 <: DSS
+    poscheck::Bool
+    poscheckat::Int
+end
+CE2(;poscheck=false,poscheckat=20) = CE2(poscheck,poscheckat)
 
 struct GCE2 <: GSS
     Λ::Int
