@@ -484,7 +484,7 @@ function modalevs(prob,u::DSSField{T}) where T <: AbstractFloat
     (nx,ny) = size(prob.d)
     mEVs = zeros(T,2ny-1,nx-1)
     for m1=1:nx-1
-        mEVs[:,m1] = eigvals(u.x[2][:,:,m1])
+        mEVs[:,m1] = real.(eigvals(u.x[2][:,:,m1]))
     end
     mEVs
 end
