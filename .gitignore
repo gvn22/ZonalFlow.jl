@@ -1,5 +1,10 @@
+*.npz
+*.jld2
+
 *.jl.*.cov
 *.jl.cov
 *.jl.mem
 Manifest.toml
 .DS_Store
+
+validate/.ipynb_checkpoints

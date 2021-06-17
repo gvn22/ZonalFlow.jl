@@ -29,6 +29,19 @@ function bcoeffs(nx::Int,ny::Int)
     zeros(ComplexF64,2*ny-1,nx)
 end
 
+function bcoeffs(nx::Int,ny::Int,γ::T) where T
+    B = zeros(T,2*ny-1,nx)
+    for m = 0:nx-1
+        nmin = m == 0 ? 1 : -(ny-1)
+        for n=nmin:ny-1
+
+            B[n+ny,m+1] = γ
+
+        end
+    end
+    B
+end
+
 function bcoeffs(lx::Float64,ly::Float64,nx::Int,ny::Int,β::Float64,μ::Float64,ν::Float64,ν₄::Float64)
     B = zeros(ComplexF64,2*ny-1,nx)
     α::Int = 2
