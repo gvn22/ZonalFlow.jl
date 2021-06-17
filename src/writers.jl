@@ -8,7 +8,7 @@ function Base.write(prob,eqs,sol;dn::String="",fn::String)
     (lx,ly),(nx,ny),Λ = length(prob.d),size(prob.d),lambda(prob,eqs)
     t,u = sol.t,sol.u
 
-    E = dumpenergy(lx,ly,nx,ny,t,u)
+    E = dumpscalars(lx,ly,nx,ny,t,u)
     F = typeof(eqs) == GCE2 ? dumpfields(lx,ly,nx,ny,t,u,Λ=Λ) : dumpfields(lx,ly,nx,ny,t,u)
     S = typeof(eqs) == CE2 ? dumpstats(prob,u) : Dict("empty"=>0)
 
@@ -16,7 +16,7 @@ function Base.write(prob,eqs,sol;dn::String="",fn::String)
     NPZ.npzwrite(fn*".npz",merge(Dict("t"=>sol.t),E,F,S))
 end
 
-function dumpenergy(lx::T,ly::T,nx::Int,ny::Int,t::Array{T,1},u;t0::Float64=200.0) where {T <: AbstractFloat}
+function dumpscalars(lx::T,ly::T,nx::Int,ny::Int,t::Array{T,1},u;t0::Float64=200.0) where {T <: AbstractFloat}
     Et,Zt = energy(lx,ly,nx,ny,u)
     Etav,Ztav = energy(lx,ly,nx,ny,t,u,t0=t0)
     Emt,Zmt = zonalenergy(lx,ly,nx,ny,u)
