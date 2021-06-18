@@ -4,53 +4,42 @@
 Base.write(prob,eqs::Vector{AbstractEquations},sols;dn::String,labels::Vector{String}=label(eqs)) = foreach(x->write(prob,x[1],x[2],dn=dn,fn=x[3]),zip(eqs,sols,labels))
 
 function Base.write(prob,eqs,sol;dn::String="",fn::String)
-
-    (lx,ly),(nx,ny) = length(prob.d),size(prob.d)
-    Λ = lambda(prob,eqs)
-    t,u = sol.t,sol.u
-
-    E = dumpscalars(prob,sol)
-    F = typeof(eqs) == GCE2 ? dumpfields(lx,ly,nx,ny,t,u,Λ=Λ) : dumpfields(lx,ly,nx,ny,t,u)
-    S = typeof(eqs) == CE2 ? dumpstats(prob,u) : Dict("empty"=>0)
-
     mkpath(dn)
-    NPZ.npzwrite(fn*".npz",merge(Dict("t"=>sol.t),E,F,S))
+    NPZ.npzwrite(dn*fn*".npz",merge(dumpscalars(prob,eqs,sol),
+                                    dumpfields(prob,eqs,sol),
+                                    dumpstats(prob,eqs,sol)))
 end
 
-function dumpscalars(prob::AbstractProblem{T},sol;t0::T=200.0) where {T<:AbstractFloat}
+function dumpscalars(prob,eqs,sol;t0=200.0)
     (lx,ly),(nx,ny) = length(prob.d),size(prob.d)
     Et,Zt = energy(lx,ly,nx,ny,sol.u)
     Etav,Ztav = energy(lx,ly,nx,ny,sol.t,sol.u,t0=t0)
     Emt,Zmt = zonalenergy(lx,ly,nx,ny,sol.u)
     Emtav,Zmtav = zonalenergy(lx,ly,nx,ny,sol.t,sol.u,t0=t0)
-    Dict("Zt"=>Zt,"Ztav"=>Ztav,"Et"=>Et,"Etav"=>Etav,"Emt"=>Emt,"Emtav"=>Emtav)
+    Dict("t"=>sol.t,"Zt"=>Zt,"Ztav"=>Ztav,"Et"=>Et,"Etav"=>Etav,"Emt"=>Emt,"Emtav"=>Emtav)
 end
 
-function dumpfields(lx::T,ly::T,nx::Int,ny::Int,t::Array{Float64,1},u::Array{DNSField{T},1};Λ::Int=nx-1) where {T <: AbstractFloat}
-    Emn = energyspectrum(lx,ly,nx,ny,u,Λ=Λ)
-    Vxy = vorticity(nx,ny,u,Λ=Λ)
-    Uxy = zonalvelocity(lx,ly,nx,ny,u,Λ=Λ)
-    Vyt = zonalvorticity(nx,ny,u)
-    Dict("Emn"=>Emn,"Vxy"=>Vxy,"Uxy"=>Uxy,"Vyt"=>Vyt)
+function dumpfields(prob,eqs,sol)
+    (lx,ly),(nx,ny) = length(prob.d),size(prob.d)
+    Emn = energyspectrum(lx,ly,nx,ny,sol.u)
+    Vxy = vorticity(nx,ny,sol.u)
+    Uxy = zonalvelocity(lx,ly,nx,ny,sol.u)
+    Vyt = zonalvorticity(nx,ny,sol.u)
+    Dict("t"=>sol.t,"Emn"=>Emn,"Vxy"=>Vxy,"Uxy"=>Uxy,"Vyt"=>Vyt)
 end
 
-function dumpfields(lx::T,ly::T,nx::Int,ny::Int,t::Array{Float64,1},u::Array{DSSField{T},1}) where {T <: AbstractFloat}
-    Emn = energyspectrum(lx,ly,nx,ny,u)
-    Vxy = vorticity(nx,ny,u)
-    Uxy = zonalvelocity(lx,ly,nx,ny,u)
-    Vyt = zonalvorticity(nx,ny,u)
-    Dict("Emn"=>Emn,"Vxy"=>Vxy,"Uxy"=>Uxy,"Vyt"=>Vyt)
+function dumpfields(prob,eqs::GCE2,sol)
+    (lx,ly),(nx,ny) = length(prob.d),size(prob.d)
+    Λ = eqs.Λ
+    Emn = energyspectrum(lx,ly,nx,ny,sol.u,Λ=Λ)
+    Vxy = vorticity(nx,ny,sol.u,Λ=Λ)
+    Uxy = zonalvelocity(lx,ly,nx,ny,sol.u,Λ=Λ)
+    Vyt = zonalvorticity(nx,ny,sol.u)
+    Dict("t"=>sol.t,"Emn"=>Emn,"Vxy"=>Vxy,"Uxy"=>Uxy,"Vyt"=>Vyt)
 end
 
-function dumpfields(lx::T,ly::T,nx::Int,ny::Int,t::Array{Float64,1},u::Array{GSSField{T},1};Λ::Int) where {T <: AbstractFloat}
-    Emn = energyspectrum(lx,ly,nx,ny,u,Λ=Λ)
-    Vxy = vorticity(nx,ny,u,Λ=Λ)
-    Uxy = zonalvelocity(lx,ly,nx,ny,u,Λ=Λ)
-    Vyt = zonalvorticity(nx,ny,u)
-    Dict("Emn"=>Emn,"Vxy"=>Vxy,"Uxy"=>Uxy,"Vyt"=>Vyt)
-end
-
-dumpstats(prob,u::Array{DSSField{T},1}) where {T<:AbstractFloat} = Dict("mEVs"=>modalevs(prob,u))
+dumpstats(prob,eqs,sol) = Dict("empty"=>0)
+dumpstats(prob,eqs::CE2,sol) = Dict("mEVs"=>modalevs(prob,sol.u))
 
 function dumpadjacency(lx::T,ly::T,nx::Int,ny::Int;fs::String,Λ::Int=nx-1) where {T <: AbstractFloat}
     A,C = adjacency(lx,ly,nx,ny,Λ=Λ)
