@@ -61,6 +61,37 @@ vorticity(nx::Int,ny::Int,u::Array{DNSField{T},1};Λ::Int=nx-1) where {T <: Abst
 vorticity(nx::Int,ny::Int,u::Array{DSSField{T},1}) where {T <: AbstractFloat} = inversefourier(nx,ny,u)
 vorticity(nx::Int,ny::Int,u::Array{GSSField{T},1};Λ::Int=nx-1) where {T <: AbstractFloat} = inversefourier(nx,ny,u,Λ=Λ)
 
+"""
+    Zonal mean vorticity
+    meanvorticity(...,u) -> instantaneous
+    meanvorticity(...,t,u) -> time-averaged
+"""
+zonalvorticity(nx::Int,ny::Int,u::DNSField{T}) where {T <: AbstractFloat} = inversefourier(ny,u[:,1])
+zonalvorticity(nx::Int,ny::Int,u::DSSField{T}) where {T <: AbstractFloat} = inversefourier(ny,u.x[1])
+zonalvorticity(nx::Int,ny::Int,u::GSSField{T}) where {T <: AbstractFloat} = inversefourier(ny,u.x[1][:,1])
+
+function zonalvorticity(nx::Int,ny::Int,u) where {T <: AbstractFloat}
+    U = [zonalvorticity(nx,ny,u[i]) for i=1:length(u)]
+    reshape(cat(U...,dims=2),2ny-1,length(u))
+end
+
+# function meanvorticity(nx::Int,ny::Int,t::Array{T,1},u;t0::T) where {T <: AbstractFloat}
+#
+#     U = meanvorticity(nx,ny,u)
+#     Uav = copy(U)
+#
+#     if (t0 < t[end])
+#
+#         i0 = max(findfirst(x -> x > t0,t),2)
+#         for i=i0:length(u)
+#             Uav[i] .= mean(u[i0-1:i])
+#         end
+#
+#     end
+#
+#     Uav
+# end
+
 function zonalvelocity(lx::T,ly::T,nx::Int,ny::Int,u::DNSField{T};Λ::Int=nx-1) where {T <: AbstractFloat}
 
     U = fill!(similar(u),0)
@@ -93,8 +124,8 @@ end
 function zonalvelocity(lx::T,ly::T,nx::Int,ny::Int,u::Array{DNSField{T},1};Λ::Int=nx-1) where {T <: AbstractFloat}
 
     U = [zonalvelocity(lx,ly,nx,ny,u[i],Λ=Λ) for i=1:length(u)]
-    # reshape(cat(U...,dims=3),2ny-1,2nx-1,length(u))
     reshape(cat(U...,dims=3),size(U[1])...,length(U))
+
 end
 
 function zonalvelocity(lx::T,ly::T,nx::Int,ny::Int,u::Array{DSSField{T},1}) where {T <: AbstractFloat}
@@ -227,44 +258,6 @@ fourierenergy(lx::T,ly::T,nx::Int,ny::Int,u::Array{DSSField{T},1}) where T = ene
 fourierenergy(lx::T,ly::T,nx::Int,ny::Int,Λ::Int,u::Array{GSSField{T},1}) where T = energyspectrum(lx,ly,nx,ny,u,Λ=Λ)
 
 """
-Quadratic invariants for NL/GQL
-"""
-function energy(lx::T,ly::T,nx::Int,ny::Int,u) where {T <: AbstractFloat}
-
-    E = zeros(T,length(u))
-    Z = zeros(T,length(u))
-
-    Em,Zm = zonalenergy(lx,ly,nx,ny,u)
-
-    for i=1:length(u)
-        E[i] = sum(Em[i,:])
-        Z[i] = sum(Zm[i,:])
-    end
-
-    E,Z
-end
-
-"""
-Time averaged energy and enstrophy for NL/GQL/CE2
-"""
-function energy(lx::T,ly::T,nx::Int,ny::Int,t,u;t0::T=200.0) where {T <: AbstractFloat}
-
-    E = zeros(T,length(u))
-    Z = zeros(T,length(u))
-
-    @info "Computing time averaged energy and enstrophy for NL/GQL/CE2/GCE2 fields..."
-
-    Em,Zm = zonalenergy(lx,ly,nx,ny,t,u,t0=t0)
-
-    for i=1:length(u)
-        E[i] = sum(Em[i,:])
-        Z[i] = sum(Zm[i,:])
-    end
-
-    E,Z
-end
-
-"""
 Zonal quadratic invariants for NL/GQL
 """
 function zonalenergy(lx::T,ly::T,nx::Int,ny::Int,u::Array{DNSField{T},1}) where T
@@ -378,35 +371,42 @@ function zonalenergy(lx::T,ly::T,nx::Int,ny::Int,t::Array{T,1},u;t0::T=500.0) wh
 end
 
 """
-    Zonal mean vorticity
-    meanvorticity(...,u) -> instantaneous
-    meanvorticity(...,t,u) -> time-averaged
+Quadratic invariants for NL/GQL
 """
-zonalvorticity(nx::Int,ny::Int,u::DNSField{T}) where {T <: AbstractFloat} = inversefourier(ny,u[:,1])
-zonalvorticity(nx::Int,ny::Int,u::DSSField{T}) where {T <: AbstractFloat} = inversefourier(ny,u.x[1])
-zonalvorticity(nx::Int,ny::Int,u::GSSField{T}) where {T <: AbstractFloat} = inversefourier(ny,u.x[1][:,1])
+function energy(lx::T,ly::T,nx::Int,ny::Int,u) where {T <: AbstractFloat}
 
-function zonalvorticity(nx::Int,ny::Int,u) where {T <: AbstractFloat}
-    U = [zonalvorticity(nx,ny,u[i]) for i=1:length(u)]
-    reshape(cat(U...,dims=2),2ny-1,length(u))
+    E = zeros(T,length(u))
+    Z = zeros(T,length(u))
+
+    Em,Zm = zonalenergy(lx,ly,nx,ny,u)
+
+    for i=1:length(u)
+        E[i] = sum(Em[i,:])
+        Z[i] = sum(Zm[i,:])
+    end
+
+    E,Z
 end
 
-# function meanvorticity(nx::Int,ny::Int,t::Array{T,1},u;t0::T) where {T <: AbstractFloat}
-#
-#     U = meanvorticity(nx,ny,u)
-#     Uav = copy(U)
-#
-#     if (t0 < t[end])
-#
-#         i0 = max(findfirst(x -> x > t0,t),2)
-#         for i=i0:length(u)
-#             Uav[i] .= mean(u[i0-1:i])
-#         end
-#
-#     end
-#
-#     Uav
-# end
+"""
+Time averaged energy and enstrophy for NL/GQL/CE2
+"""
+function energy(lx::T,ly::T,nx::Int,ny::Int,t,u;t0::T=200.0) where {T <: AbstractFloat}
+
+    E = zeros(T,length(u))
+    Z = zeros(T,length(u))
+
+    @info "Computing time averaged energy and enstrophy for NL/GQL/CE2/GCE2 fields..."
+
+    Em,Zm = zonalenergy(lx,ly,nx,ny,t,u,t0=t0)
+
+    for i=1:length(u)
+        E[i] = sum(Em[i,:])
+        Z[i] = sum(Zm[i,:])
+    end
+
+    E,Z
+end
 
 """
     Rank information for CE2
