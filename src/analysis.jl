@@ -404,22 +404,22 @@ function zonalvorticity(nx::Int,ny::Int,u) where {T <: AbstractFloat}
     reshape(cat(U...,dims=2),2ny-1,length(u))
 end
 
-function meanvorticity(nx::Int,ny::Int,t::Array{T,1},u;t0::T) where {T <: AbstractFloat}
-
-    U = meanvorticity(nx,ny,u)
-    Uav = copy(U)
-
-    if (t0 < t[end])
-
-        i0 = max(findfirst(x -> x > t0,t),2)
-        for i=i0:length(u)
-            Uav[i] .= mean(u[i0-1:i])
-        end
-
-    end
-
-    Uav
-end
+# function meanvorticity(nx::Int,ny::Int,t::Array{T,1},u;t0::T) where {T <: AbstractFloat}
+#
+#     U = meanvorticity(nx,ny,u)
+#     Uav = copy(U)
+#
+#     if (t0 < t[end])
+#
+#         i0 = max(findfirst(x -> x > t0,t),2)
+#         for i=i0:length(u)
+#             Uav[i] .= mean(u[i0-1:i])
+#         end
+#
+#     end
+#
+#     Uav
+# end
 
 """
     Rank information for CE2
