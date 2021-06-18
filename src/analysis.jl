@@ -438,15 +438,16 @@ function modalevs(prob,u::Array{DSSField{T},1}) where T <: AbstractFloat
     reshape(cat(U...,dims=3),2prob.d.ny-1,prob.d.nx-1,length(u))
 end
 
-function zonostrophy(lx::T,ly::T,nx::Int,ny::Int,β::T,μ::T,u::Array{DNSField{T},1}) where {T <: AbstractFloat}
+zonostrophy(prob,u::Array{DNSField{T},1}) where {T <: AbstractFloat} = [zonostrophy(prob,u[i]) for i=1:length(u)]
 
-    E = energyspectrum(lx,ly,nx,ny,u)
-    U = (2 .* E ./ (4.0π)) .^ 0.5
-    ε = μ .* U .^ 2
-    LR = (2 .* U ./ β) .^ 0.5
-    Lε = 0.5 .* (ε ./ β^3) .^ 0.2
-    LR,Lε,LR./Lε
-
+function zonostrophy(prob,u::DNSField{T}) where {T <: AbstractFloat}
+    E,Z = energy(prob.d.lx,prob.d.ly,prob.d.nx,prob.d.ny,u)
+    U = sqrt(2E/(4π))
+    ε = prob.c.μ*U^2
+    β = 2prob.c.Ω*cos(prob.c.θ)
+    LR = sqrt(2U/β)
+    Lε = 0.5*(ε/β^3)^0.2
+    LR/Lε
 end
 
 function energyinjectionrate(lx::T,ly::T,nx::Int,ny::Int,kf::Int,dk::Int,ε::T,sol;dt::T=0.005) where {T <: AbstractFloat}
