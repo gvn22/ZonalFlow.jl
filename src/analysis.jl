@@ -436,8 +436,8 @@ end
 
 zonostrophy(d::AbstractDomain,u::Vector{DNSField{T}}) where {T<:AbstractFloat} = [zonostrophy(d,u[i]) for i=1:length(u)]
 
-function adjacency(lx::T,ly::T,nx::Int,ny::Int;Λ=nx-1) where {T <: AbstractFloat}
-
+function adjacency(d::AbstractDomain;Λ=nx-1) where {T<:AbstractFloat}
+    (lx,ly),(nx,ny) = length(prob.d),size(prob.d)
     B = bcoeffs(lx,ly,nx,ny,10.0,0.01,0.0,1.0) # set unity linear coefficients
     B̂ = zeros(Complex{T},2ny-1,2nx-1)
     for m=0:nx-1
@@ -475,25 +475,16 @@ function adjacency(lx::T,ly::T,nx::Int,ny::Int;Λ=nx-1) where {T <: AbstractFloa
             end
         end
     end
-
-
     Cij = reshape(Ĉ,M*N,M*N)
-    # for i=1:
-    #     Bij[i,i] = vec(B̂)[i]
-    # end
-
-
     Bij,Cij
 end
 
-function adjacency(lx::T,ly::T,nx::Int,ny::Int,u::Array{DNSField{T},1}) where {T <: AbstractFloat}
-
-    M = 2nx-1
-    N = 2ny-1
-    U = zeros(Complex{T},M*N,M*N,1)
+# container for solution based adjacency calculation
+# to be changed to length u
+function adjacency(d::AbstractDomain,u::Vector{DNSField{T}}) where {T<:AbstractFloat}
+    U = zeros(Complex{T},(2d.nx-1)*(2d.ny-1),(2d.nx-1)*(2d.ny-1),1)
     for i=1:1
         @views U[:,:,i] .= adjacency(lx,ly,nx,ny,u[i])
     end
     U
-
 end
