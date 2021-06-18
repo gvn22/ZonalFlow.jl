@@ -425,10 +425,10 @@ function modalevs(prob,u::Array{DSSField{T},1}) where T <: AbstractFloat
     reshape(cat(U...,dims=3),2prob.d.ny-1,prob.d.nx-1,length(u))
 end
 
-zonostrophy(prob,u::Array{DNSField{T},1}) where {T <: AbstractFloat} = [zonostrophy(prob,u[i]) for i=1:length(u)]
+zonostrophy(d::AbstractDomain,u::Array{DNSField{T},1}) where {T <: AbstractFloat} = [zonostrophy(prob,u[i]) for i=1:length(u)]
 
-function zonostrophy(prob,u::DNSField{T}) where {T <: AbstractFloat}
-    E,Z = energy(prob.d.lx,prob.d.ly,prob.d.nx,prob.d.ny,u)
+function zonostrophy(d,u::DNSField{T}) where {T <: AbstractFloat}
+    E,Z = energy(length(d)...,size(d)...,u)
     U = sqrt(2E/(4π))
     ε = prob.c.μ*U^2
     β = 2prob.c.Ω*cos(prob.c.θ)
