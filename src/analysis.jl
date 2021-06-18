@@ -425,7 +425,7 @@ function modalevs(prob,u::Array{DSSField{T},1}) where T <: AbstractFloat
     reshape(cat(U...,dims=3),2prob.d.ny-1,prob.d.nx-1,length(u))
 end
 
-zonostrophy(d::AbstractDomain,u::Array{DNSField{T},1}) where {T <: AbstractFloat} = [zonostrophy(prob,u[i]) for i=1:length(u)]
+zonostrophy(d::AbstractDomain,u::Vector{DNSField{T}}) where {T <: AbstractFloat} = [zonostrophy(prob,u[i]) for i=1:length(u)]
 
 function zonostrophy(d,u::DNSField{T}) where {T <: AbstractFloat}
     E,Z = energy(length(d)...,size(d)...,u)
