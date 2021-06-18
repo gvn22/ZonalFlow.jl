@@ -411,7 +411,7 @@ end
 """
     Rank information for CE2
 """
-function modalevs(prob,u::DSSField{T}) where T <: AbstractFloat
+function modalevs(prob,u::DSSField{T}) where {T<:AbstractFloat}
     (nx,ny) = size(prob.d)
     mEVs = zeros(T,2ny-1,nx-1)
     for m1=1:nx-1
@@ -420,14 +420,12 @@ function modalevs(prob,u::DSSField{T}) where T <: AbstractFloat
     mEVs
 end
 
-function modalevs(prob,u::Array{DSSField{T},1}) where T <: AbstractFloat
+function modalevs(prob,u::Vector{DSSField{T}}) where {T<:AbstractFloat}
     U = [modalevs(prob,u[i]) for i=1:length(u)]
     reshape(cat(U...,dims=3),2prob.d.ny-1,prob.d.nx-1,length(u))
 end
 
-zonostrophy(d::AbstractDomain,u::Vector{DNSField{T}}) where {T <: AbstractFloat} = [zonostrophy(prob,u[i]) for i=1:length(u)]
-
-function zonostrophy(d,u::DNSField{T}) where {T <: AbstractFloat}
+function zonostrophy(d,u::DNSField{T}) where {T<:AbstractFloat}
     E,Z = energy(length(d)...,size(d)...,u)
     U = sqrt(2E/(4π))
     ε = prob.c.μ*U^2
@@ -436,6 +434,8 @@ function zonostrophy(d,u::DNSField{T}) where {T <: AbstractFloat}
     Lε = 0.5*(ε/β^3)^0.2
     LR/Lε
 end
+
+zonostrophy(d::AbstractDomain,u::Vector{DNSField{T}}) where {T<:AbstractFloat} = [zonostrophy(d,u[i]) for i=1:length(u)]
 
 function adjacency(lx::T,ly::T,nx::Int,ny::Int;Λ=nx-1) where {T <: AbstractFloat}
 
