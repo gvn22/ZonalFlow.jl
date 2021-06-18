@@ -437,35 +437,6 @@ function zonostrophy(prob,u::DNSField{T}) where {T <: AbstractFloat}
     LR/Lε
 end
 
-function energyinjectionrate(lx::T,ly::T,nx::Int,ny::Int,kf::Int,dk::Int,ε::T,sol;dt::T=0.005) where {T <: AbstractFloat}
-
-    F = fcoeffs(nx,ny,kf,dk,ε)
-    W = fill!(similar(sol.u[1]),0)
-    E = zeros(Float64,length(sol.u))
-
-    Random.seed!(123)
-    for i=1:length(E)
-
-        d = Uniform(0.0,Float64(2π))
-        W .= abs(1.0/sqrt(dt))*exp.(im*rand!(d,W))
-
-        for m = 0:nx-1
-            nmin = m == 0 ? 1 : -ny+1
-            for n = nmin:ny-1
-
-                k = Float64(2π)*norm([m/lx,n/ly])
-                @info "Step $i"
-
-                E[i] += abs(sol.u[i][n+ny,m+1]*W[n+ny,m+1]*F[n+ny,m+1])/k^2
-                # E[i] += u[n1 + ny,m1 + 1]*W.dW[n1 + ny,m1 + 1]*F[n1 + ny,m1 + 1]/(kx^2 + ky^2)
-
-            end
-        end
-    end
-
-    sum(E)/length(E)
-end
-
 function adjacency(lx::T,ly::T,nx::Int,ny::Int;Λ=nx-1) where {T <: AbstractFloat}
 
     B = bcoeffs(lx,ly,nx,ny,10.0,0.01,0.0,1.0) # set unity linear coefficients
