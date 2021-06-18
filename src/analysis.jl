@@ -167,95 +167,72 @@ end
 """
 
     Energy spectrum with conjugate modes included
-    energyspectrum(;Λ) -> DNSField/GSSField with cutoff Λ
+    energyspectrum(d,u) -> DNSField/DSSField/GSSField
 
 """
-function energyspectrum(lx::T,ly::T,nx::Int,ny::Int,u::DNSField{T};Λ::Int=nx-1) where {T <: AbstractFloat}
-
+function energyspectrum(d::AbstractDomain,u::DNSField{T}) where {T<:AbstractFloat}
+    (lx,ly),(nx,ny) = length(d),size(d)
     Ê = zeros(T,2ny-1,2nx-1)
-    for m=0:Λ
+    for m=0:nx-1
         nmin = m==0 ? 1 : -ny+1
         for n = nmin:ny-1
-
-            k = 2π*norm([m/lx,n/ly])
+            k = 2π*sqrt((m/lx)^2+(n/ly)^2)
             Ê[n+ny,m+nx] = abs(u[n+ny,m+1])^2/k^2
             Ê[-n+ny,-m+nx] = Ê[n+ny,m+nx]
-
         end
     end
     Ê
-
 end
 
-function energyspectrum(lx::T,ly::T,nx::Int,ny::Int,u::Array{DNSField{T},1};Λ::Int=nx-1) where {T <: AbstractFloat}
-
-    U = [energyspectrum(lx,ly,nx,ny,u[i],Λ=Λ) for i=1:length(u)]
-    reshape(cat(U...,dims=3),2ny-1,2nx-1,length(u))
-
-end
-
-function energyspectrum(lx::T,ly::T,nx::Int,ny::Int,u::DSSField{T}) where T<:AbstractFloat
-    E = zeros(T,2ny-1,2nx-1)
+function energyspectrum(d::AbstractDomain,u::DSSField{T}) where {T<:AbstractFloat}
+    (lx,ly),(nx,ny) = length(d),size(d)
+    Ê = zeros(T,2ny-1,2nx-1)
+    m1 = 0
     for n1 = 1:ny-1
-        ky = (2π/ly)*n1
-        E[n1 + ny,nx] += abs(u.x[1][n1 + ny])^2/ky^2
-        E[-n1 + ny,nx] = E[n1 + ny,nx]
+        k = 2π*(n1/ly)
+        Ê[n1 + ny,m1+nx] += abs(u.x[1][n1 + ny])^2/k^2
+        Ê[-n1 + ny,m1+nx] = Ê[n1 + ny,m1+nx]
     end
     for m1 = 1:nx-1
         for n1 = -ny+1:ny-1
-            kx = (2π/lx)*m1
-            ky = (2π/ly)*n1
-            E[n1 + ny,m1+nx] += abs(u.x[2][n1 + ny,n1 + ny,m1])/(kx^2 + ky^2)
-            E[-n1 + ny,-m1+nx] = E[n1 + ny,m1+nx]
+            k = 2π*sqrt((m1/lx)^2+(n1/ly)^2)
+            Ê[n1 + ny,m1+nx] += abs(u.x[2][n1 + ny,n1 + ny,m1])/k^2
+            Ê[-n1 + ny,-m1+nx] = Ê[n1 + ny,m1+nx]
         end
     end
-    E
+    Ê
 end
 
-function energyspectrum(lx::T,ly::T,nx::Int,ny::Int,u::Array{DSSField{T},1}) where {T <: AbstractFloat}
-
-    U = [energyspectrum(lx,ly,nx,ny,u[i]) for i=1:length(u)]
-    reshape(cat(U...,dims=3),2ny-1,2nx-1,length(u))
-
-end
-
-function energyspectrum(lx::T,ly::T,nx::Int,ny::Int,u::GSSField{T};Λ::Int) where {T <: AbstractFloat}
-
+function energyspectrum(d::AbstractDomain,u::GSSField{T}) where {T<:AbstractFloat}
+    (lx,ly),(nx,ny),Λ = length(d),size(d),size(u.x[1],2)-1
     Ê = zeros(T,2ny-1,2nx-1)
     for m=0:Λ
         nmin = m==0 ? 1 : -ny+1
         for n = nmin:ny-1
-
-            k = 2π*norm([m/lx,n/ly])
+            k = 2π*sqrt((m/lx)^2+(n/ly)^2)
             Ê[n+ny,m+nx] = abs(u.x[1][n+ny,m+1])^2/k^2
             Ê[-n+ny,-m+nx] = Ê[n+ny,m+nx]
-
         end
     end
     for m=Λ+1:nx-1
         for n = -ny+1:ny-1
-
-            k = 2π*norm([m/lx,n/ly])
+            k = 2π*sqrt((m/lx)^2+(n/ly)^2)
             Ê[n+ny,m+nx] = u.x[2][n+ny,m-Λ,n+ny,m-Λ]/k^2
             Ê[-n+ny,-m+nx] = Ê[n+ny,m+nx]
-
         end
     end
     Ê
-
 end
 
-function energyspectrum(lx::T,ly::T,nx::Int,ny::Int,u::Array{GSSField{T},1};Λ::Int) where {T <: AbstractFloat}
-
-    U = [energyspectrum(lx,ly,nx,ny,u[i],Λ=Λ) for i=1:length(u)]
-    reshape(cat(U...,dims=3),2ny-1,2nx-1,length(u))
-
+function energyspectrum(d::AbstractDomain,u)
+    U = [energyspectrum(d,u[i]) for i=1:length(u)]
+    reshape(cat(U...,dims=3),2d.ny-1,2d.nx-1,length(u))
 end
 
 # deprecated
-fourierenergy(lx::T,ly::T,nx::Int,ny::Int,u::Array{DNSField{T},1}) where T = energyspectrum(lx,ly,nx,ny,u)
-fourierenergy(lx::T,ly::T,nx::Int,ny::Int,u::Array{DSSField{T},1}) where T = energyspectrum(lx,ly,nx,ny,u)
-fourierenergy(lx::T,ly::T,nx::Int,ny::Int,Λ::Int,u::Array{GSSField{T},1}) where T = energyspectrum(lx,ly,nx,ny,u,Λ=Λ)
+fourierenergy(lx::T,ly::T,nx::Int,ny::Int,u::Array{DNSField{T},1}) where T = energyspectrum(Domain(lx,ly,nx,ny),u)
+fourierenergy(lx::T,ly::T,nx::Int,ny::Int,u::Array{DSSField{T},1}) where T = energyspectrum(Domain(lx,ly,nx,ny),u)
+fourierenergy(lx::T,ly::T,nx::Int,ny::Int,Λ::Int,u::Array{GSSField{T},1}) where T = energyspectrum(Domain(lx,ly,nx,ny),u)
 
 """
 Zonal quadratic invariants for NL/GQL
@@ -391,7 +368,7 @@ end
 """
 Time averaged energy and enstrophy for NL/GQL/CE2
 """
-function energy(lx::T,ly::T,nx::Int,ny::Int,t,u;t0::T=200.0) where {T <: AbstractFloat}
+function energy(lx::T,ly::T,nx::Int,ny::Int,t,u;t0::T=200.0) where {T<:AbstractFloat}
 
     E = zeros(T,length(u))
     Z = zeros(T,length(u))

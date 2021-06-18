@@ -21,7 +21,7 @@ end
 
 function dumpfields(prob,eqs,sol)
     (lx,ly),(nx,ny) = length(prob.d),size(prob.d)
-    Emn = energyspectrum(lx,ly,nx,ny,sol.u)
+    Emn = energyspectrum(prob.d,sol.u)
     Vxy = vorticity(nx,ny,sol.u)
     Uxy = zonalvelocity(lx,ly,nx,ny,sol.u)
     Vyt = zonalvorticity(nx,ny,sol.u)
@@ -31,7 +31,7 @@ end
 function dumpfields(prob,eqs::GCE2,sol)
     (lx,ly),(nx,ny) = length(prob.d),size(prob.d)
     Λ = eqs.Λ
-    Emn = energyspectrum(lx,ly,nx,ny,sol.u,Λ=Λ)
+    Emn = energyspectrum(prob.d,sol.u)
     Vxy = vorticity(nx,ny,sol.u,Λ=Λ)
     Uxy = zonalvelocity(lx,ly,nx,ny,sol.u,Λ=Λ)
     Vyt = zonalvorticity(nx,ny,sol.u)
