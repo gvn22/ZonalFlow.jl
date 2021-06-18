@@ -29,6 +29,11 @@ function inversefourier(nx::Int,ny::Int,u::DNSField{T};Λ::Int=nx-1) where {T <:
 
 end
 
+function inversefourier(nx::Int,ny::Int,u::Array{DNSField{T},1};Λ::Int=nx-1) where {T <: AbstractFloat}
+    U = [inversefourier(nx,ny,u[i],Λ=Λ) for i=1:length(u)]
+    reshape(cat(U...,dims=3),2ny-1,2nx-1,length(u))
+end
+
 function inversefourier(nx::Int,ny::Int,u::DSSField{T}) where {T <: AbstractFloat}
 
     û = zeros(Complex{T},2ny-1,2nx-1)
@@ -42,32 +47,14 @@ function inversefourier(nx::Int,ny::Int,u::DSSField{T}) where {T <: AbstractFloa
 
 end
 
-function inversefourier(nx::Int,ny::Int,u::Array{DNSField{T},1};Λ::Int=nx-1) where {T <: AbstractFloat}
-
-    U = [inversefourier(nx,ny,u[i],Λ=Λ) for i=1:length(u)]
-    reshape(cat(U...,dims=3),2ny-1,2nx-1,length(u))
-
-end
-
 function inversefourier(nx::Int,ny::Int,u::Array{DSSField{T},1}) where {T <: AbstractFloat}
-
     U = [inversefourier(nx,ny,u[i]) for i=1:length(u)]
     reshape(cat(U...,dims=3),2ny-1,2nx-1,length(u))
-
-end
-
-function inversefourier(nx::Int,ny::Int,Λ::Int,u::Array{GSSField{T},1}) where {T <: AbstractFloat}
-
-    U = [inversefourier(nx,ny,u[i].x[1],Λ=Λ) for i=1:length(u)]
-    reshape(cat(U...,dims=3),2ny-1,2nx-1,length(u))
-
 end
 
 function inversefourier(nx::Int,ny::Int,u::Array{GSSField{T},1};Λ::Int) where {T <: AbstractFloat}
-
     U = [inversefourier(nx,ny,u[i].x[1],Λ=Λ) for i=1:length(u)]
     reshape(cat(U...,dims=3),2ny-1,2nx-1,length(u))
-
 end
 
 vorticity(nx::Int,ny::Int,u::Array{DNSField{T},1};Λ::Int=nx-1) where {T <: AbstractFloat} = inversefourier(nx,ny,u,Λ=Λ)
