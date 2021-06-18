@@ -234,66 +234,10 @@ function energyspectrum(lx::T,ly::T,nx::Int,ny::Int,u::Array{GSSField{T},1};Λ::
 
 end
 
-function fourierenergy(lx::Float64,ly::Float64,nx::Int,ny::Int,u::Array{Array{ComplexF64,2},1})
-    E = zeros(Float64,2*ny-1,2*nx-1,length(u))
-    for i in eachindex(u)
-        for m1 = 0:nx-1
-            n1min = m1 == 0 ? 1 : -ny + 1
-            for n1 = n1min:ny-1
-                kx = 2.0*Float64(pi)*m1/lx
-                ky = 2.0*Float64(pi)*n1/ly
-                E[n1 + ny,m1+nx,i] = abs(u[i][n1+ny,m1+1])^2/(kx^2 + ky^2)
-                E[-n1 + ny,-m1+nx,i] = E[n1 + ny,m1+nx,i]
-            end
-        end
-    end
-    E
-end
-
-function fourierenergy(lx::T,ly::T,nx::Int,ny::Int,u::Array{DSSField{T},1}) where T<:AbstractFloat
-    E = zeros(T,2ny-1,2nx-1,length(u))
-    for i in eachindex(u)
-        for n1 = 1:ny-1
-            ky = 2.0*Float64(pi)/ly*n1
-            E[n1 + ny,nx,i] += abs(u[i].x[1][n1 + ny])^2/ky^2
-            E[-n1 + ny,nx,i] = E[n1 + ny,nx,i]
-        end
-        for m1 = 1:nx-1
-            for n1 = -(ny-1):ny-1
-                kx = 2.0*Float64(pi)/lx*m1
-                ky = 2.0*Float64(pi)/ly*n1
-                E[n1 + ny,m1+nx,i] += abs(u[i].x[2][n1 + ny,n1 + ny,m1])/(kx^2 + ky^2)
-                E[-n1 + ny,-m1+nx,i] = E[n1 + ny,m1+nx,i]
-            end
-        end
-    end
-    E
-end
-
-function fourierenergy(lx::Float64,ly::Float64,nx::Int,ny::Int,Λ::Int,u::Array{ArrayPartition{Complex{Float64},Tuple{Array{Complex{Float64},2},Array{Complex{Float64},4}}},1})
-    E = zeros(Float64,2*ny-1,2*nx-1,length(u))
-    for i in eachindex(u)
-        for m1 = 0:1:Λ
-            n1min = m1 == 0 ? 1 : -(ny-1)
-            for n1 = n1min:1:ny-1
-
-                kx = 2.0*Float64(pi)/lx*m1
-                ky = 2.0*Float64(pi)/ly*n1
-                E[n1 + ny,m1+nx,i] += abs(u[i].x[1][n1 + ny,m1 + 1])^2/(kx^2 + ky^2)
-                E[-n1 + ny,-m1+nx,i] = E[n1 + ny,m1+nx,i]
-            end
-        end
-        for m1 = Λ+1:1:nx-1
-            for n1 = -(ny-1):1:ny-1
-                kx = 2.0*Float64(pi)/lx*m1
-                ky = 2.0*Float64(pi)/ly*n1
-                E[n1 + ny,m1+nx,i] += abs(u[i].x[2][n1 + ny,m1 - Λ,n1 + ny,m1 - Λ])/(kx^2 + ky^2)
-                E[-n1 + ny,-m1+nx,i] = E[n1 + ny,m1+nx,i]
-            end
-        end
-    end
-    E
-end
+# deprecated
+fourierenergy(lx::T,ly::T,nx::Int,ny::Int,u::Array{DNSField{T},1}) where T = energyspectrum(lx,ly,nx,ny,u)
+fourierenergy(lx::T,ly::T,nx::Int,ny::Int,u::Array{DSSField{T},1}) where T = energyspectrum(lx,ly,nx,ny,u)
+fourierenergy(lx::T,ly::T,nx::Int,ny::Int,Λ::Int,u::Array{GSSField{T},1}) where T = energyspectrum(lx,ly,nx,ny,u,Λ=Λ)
 
 """
 Quadratic invariants for NL/GQL
