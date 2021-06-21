@@ -1,8 +1,8 @@
 """
     Invert to Cartesian domain from Fourier modes
 """
-function inversefourier(ny::Int,u::FirstCumulant{T}) where {T <: AbstractFloat}
-
+function inversefourier(d::AbstractDomain,u::FirstCumulant{T}) where {T<:AbstractFloat}
+    ny = d.ny
     û = zeros(Complex{T},2ny-1)
     for n = 1:ny-1
         û[n+ny] = u[n+ny]
@@ -11,13 +11,12 @@ function inversefourier(ny::Int,u::FirstCumulant{T}) where {T <: AbstractFloat}
 
     s = (2ny-1)/2.0
     s*real(ifft(ifftshift(û)))
-
 end
 
-function inversefourier(nx::Int,ny::Int,u::DNSField{T};Λ::Int=nx-1) where {T <: AbstractFloat}
-
+function inversefourier(d::AbstractDomain,u::DNSField{T}) where {T<:AbstractFloat}
+    (nx,ny) = size(d)
     û = zeros(Complex{T},2ny-1,2nx-1)
-    for m=0:Λ
+    for m=0:nx-1
         nmin = m==0 ? 1 : -ny+1
         for n = nmin:ny-1
             û[n+ny,m+nx] = u[n+ny,m+1]
@@ -26,16 +25,10 @@ function inversefourier(nx::Int,ny::Int,u::DNSField{T};Λ::Int=nx-1) where {T <:
     end
     s = (2ny-1)*(2nx-1)/4.0
     s*real(ifft(ifftshift(û)))
-
 end
 
-function inversefourier(nx::Int,ny::Int,u::Array{DNSField{T},1};Λ::Int=nx-1) where {T <: AbstractFloat}
-    U = [inversefourier(nx,ny,u[i],Λ=Λ) for i=1:length(u)]
-    reshape(cat(U...,dims=3),2ny-1,2nx-1,length(u))
-end
-
-function inversefourier(nx::Int,ny::Int,u::DSSField{T}) where {T <: AbstractFloat}
-
+function inversefourier(d::AbstractDomain,u::DSSField{T}) where {T<:AbstractFloat}
+    (nx,ny) = size(d)
     û = zeros(Complex{T},2ny-1,2nx-1)
     m1 = 0
     for n1 = 1:ny-1
@@ -44,35 +37,43 @@ function inversefourier(nx::Int,ny::Int,u::DSSField{T}) where {T <: AbstractFloa
     end
     s = (2ny-1)*(2nx-1)/4.0
     s*real(ifft(ifftshift(û)))
-
 end
 
-function inversefourier(nx::Int,ny::Int,u::Array{DSSField{T},1}) where {T <: AbstractFloat}
-    U = [inversefourier(nx,ny,u[i]) for i=1:length(u)]
-    reshape(cat(U...,dims=3),2ny-1,2nx-1,length(u))
+function inversefourier(d::AbstractDomain,u::GSSField{T}) where {T<:AbstractFloat}
+    (nx,ny) = size(d)
+    Λ = size(u.x[1])[2]-1
+    û = zeros(Complex{T},2ny-1,2nx-1)
+    for m=0:Λ
+        nmin = m==0 ? 1 : -ny+1
+        for n = nmin:ny-1
+            û[n+ny,m+nx] = u.x[1][n+ny,m+1]
+            û[-n+ny,-m+nx] = conj(u.x[1][n+ny,m+1])
+        end
+    end
+    s = (2ny-1)*(2nx-1)/4.0
+    s*real(ifft(ifftshift(û)))
 end
 
-function inversefourier(nx::Int,ny::Int,u::Array{GSSField{T},1};Λ::Int) where {T <: AbstractFloat}
-    U = [inversefourier(nx,ny,u[i].x[1],Λ=Λ) for i=1:length(u)]
-    reshape(cat(U...,dims=3),2ny-1,2nx-1,length(u))
+function inversefourier(d::AbstractDomain,u) where {T <: AbstractFloat}
+    U = [inversefourier(d,u[i]) for i=1:length(u)]
+    reshape(cat(U...,dims=length(size(U[1]))),size(U[1])...,length(u))
 end
-
-vorticity(nx::Int,ny::Int,u::Array{DNSField{T},1};Λ::Int=nx-1) where {T <: AbstractFloat} = inversefourier(nx,ny,u,Λ=Λ)
-vorticity(nx::Int,ny::Int,u::Array{DSSField{T},1}) where {T <: AbstractFloat} = inversefourier(nx,ny,u)
-vorticity(nx::Int,ny::Int,u::Array{GSSField{T},1};Λ::Int=nx-1) where {T <: AbstractFloat} = inversefourier(nx,ny,u,Λ=Λ)
 
 """
-    Zonal mean vorticity
-    meanvorticity(...,u) -> instantaneous
+    Vorticity and Zonal vorticity
+    meanvorticity(d,u) -> instantaneous
     meanvorticity(...,t,u) -> time-averaged
 """
-zonalvorticity(nx::Int,ny::Int,u::DNSField{T}) where {T <: AbstractFloat} = inversefourier(ny,u[:,1])
-zonalvorticity(nx::Int,ny::Int,u::DSSField{T}) where {T <: AbstractFloat} = inversefourier(ny,u.x[1])
-zonalvorticity(nx::Int,ny::Int,u::GSSField{T}) where {T <: AbstractFloat} = inversefourier(ny,u.x[1][:,1])
 
-function zonalvorticity(nx::Int,ny::Int,u) where {T <: AbstractFloat}
-    U = [zonalvorticity(nx,ny,u[i]) for i=1:length(u)]
-    reshape(cat(U...,dims=2),2ny-1,length(u))
+vorticity(d,u) = inversefourier(d,u) # the beauty of julia!
+
+zonalvorticity(d::AbstractDomain,u::DNSField{T}) where {T<:AbstractFloat} = inversefourier(d,u[:,1])
+zonalvorticity(d::AbstractDomain,u::DSSField{T}) where {T<:AbstractFloat} = inversefourier(d,u.x[1])
+zonalvorticity(d::AbstractDomain,u::GSSField{T}) where {T<:AbstractFloat} = inversefourier(d,u.x[1][:,1])
+
+function zonalvorticity(d::AbstractDomain,u) where {T<:AbstractFloat}
+    U = [zonalvorticity(d,u[i]) for i=1:length(u)]
+    reshape(cat(U...,dims=length(size(U[1]))),size(U[1])...,length(u))
 end
 
 # function meanvorticity(nx::Int,ny::Int,t::Array{T,1},u;t0::T) where {T <: AbstractFloat}
@@ -92,77 +93,62 @@ end
 #     Uav
 # end
 
-function zonalvelocity(lx::T,ly::T,nx::Int,ny::Int,u::DNSField{T};Λ::Int=nx-1) where {T <: AbstractFloat}
+"""
+    Zonal velocity
+"""
 
-    U = fill!(similar(u),0)
-    for m = 0:Λ
+function xvelocity(d::AbstractDomain,u::DNSField{T}) where {T<:AbstractFloat}
+    (lx,ly),(nx,ny) = length(d),size(d)
+    U = zeros(Complex{T},2ny-1,2nx-1)
+    for m = 0:size(u)[2]-1 # covers both GCE2 low modes and DNS
         nmin = m==0 ? 1 : -ny+1
         for n = nmin:ny-1
-
-            kx = 2π*m/lx
-            ky = 2π*n/ly
-            k = (kx^2 + ky^2)^0.5
+            kx,ky = 2π*m/lx,2π*n/ly
+            k = 2π*(kx^2 + ky^2)^0.5
             U[n+ny,m+1] = -im*ky*u[n+ny,m+1]/k^2
-
         end
     end
-    inversefourier(nx,ny,U,Λ=Λ)
-
+    inversefourier(d,U)
 end
 
-function zonalvelocity(lx::T,ly::T,nx::Int,ny::Int,u::DSSField{T}) where {T <: AbstractFloat}
+xvelocity(d::AbstractDomain,u::GSSField{T}) where {T<:AbstractFloat} = xvelocity(d,u.x[1])
 
+function xvelocity(d::AbstractDomain,u::DSSField{T}) where {T <: AbstractFloat}
+    (lx,ly),(nx,ny) = length(d),size(d)
     U = zeros(Complex{T},2ny-1,2nx-1)
     for n = 1:ny-1
         ky = 2π*n/ly
         U[n+ny,1] = -im*ky*u.x[1][n+ny]/ky^2
     end
-    inversefourier(nx,ny,U)
-
+    inversefourier(d,U)
 end
 
-function zonalvelocity(lx::T,ly::T,nx::Int,ny::Int,u::Array{DNSField{T},1};Λ::Int=nx-1) where {T <: AbstractFloat}
-
-    U = [zonalvelocity(lx,ly,nx,ny,u[i],Λ=Λ) for i=1:length(u)]
-    reshape(cat(U...,dims=3),size(U[1])...,length(U))
-
+function xvelocity(d::AbstractDomain,u) where {T <: AbstractFloat}
+    U = [xvelocity(d,u[i]) for i=1:length(u)]
+    reshape(cat(U...,dims=length(size(U[1]))),size(U[1])...,length(U))
 end
 
-function zonalvelocity(lx::T,ly::T,nx::Int,ny::Int,u::Array{DSSField{T},1}) where {T <: AbstractFloat}
-
-    U = [zonalvelocity(lx,ly,nx,ny,u[i]) for i=1:length(u)]
-    reshape(cat(U...,dims=3),2ny-1,2nx-1,length(u))
-
-end
-
-function zonalvelocity(lx::T,ly::T,nx::Int,ny::Int,u::Array{GSSField{T},1};Λ::Int) where {T <: AbstractFloat}
-
-    U = [zonalvelocity(lx,ly,nx,ny,u[i].x[1],Λ=Λ) for i=1:length(u)]
-    reshape(cat(U...,dims=3),2ny-1,2nx-1,length(u))
-
-end
-
-function zonalvelocity(lx::T,ly::T,nx::Int,ny::Int,t::Array{T,1},
-                        u;Λ::Int=nx-1,t0::T=100.0) where {T <: AbstractFloat}
-
-    U = [zonalvelocity(lx,ly,nx,ny,u[i],Λ=Λ) for i=1:length(u)]
-
-    if (t0 < t[end])
-        i0 = max(findfirst(x -> x > t0,t),2)
-        for i=i0:length(u)
-            for m = 0:Λ
-                nmin = m==0 ? 1 : -ny+1
-                for n = nmin:ny-1
-
-                    Uav[i][n+ny,m+1] = mean(U[i0-1:i][n+ny,m+1])
-
-                end
-            end
-        end
-    end
-    U
-
-end
+# function zonalvelocity(lx::T,ly::T,nx::Int,ny::Int,t::Array{T,1},
+#                         u;Λ::Int=nx-1,t0::T=100.0) where {T <: AbstractFloat}
+#
+#     U = [zonalvelocity(lx,ly,nx,ny,u[i],Λ=Λ) for i=1:length(u)]
+#
+#     if (t0 < t[end])
+#         i0 = max(findfirst(x -> x > t0,t),2)
+#         for i=i0:length(u)
+#             for m = 0:Λ
+#                 nmin = m==0 ? 1 : -ny+1
+#                 for n = nmin:ny-1
+#
+#                     Uav[i][n+ny,m+1] = mean(U[i0-1:i][n+ny,m+1])
+#
+#                 end
+#             end
+#         end
+#     end
+#     U
+#
+# end
 
 """
 
@@ -226,7 +212,7 @@ end
 
 function energyspectrum(d::AbstractDomain,u)
     U = [energyspectrum(d,u[i]) for i=1:length(u)]
-    reshape(cat(U...,dims=3),2d.ny-1,2d.nx-1,length(u))
+    reshape(cat(U...,dims=length(size(U[1]))),size(U[1])...,length(u))
 end
 
 # deprecated

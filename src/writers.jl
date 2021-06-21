@@ -22,19 +22,9 @@ end
 function dumpfields(prob,eqs,sol)
     (lx,ly),(nx,ny) = length(prob.d),size(prob.d)
     Emn = energyspectrum(prob.d,sol.u)
-    Vxy = vorticity(nx,ny,sol.u)
-    Uxy = zonalvelocity(lx,ly,nx,ny,sol.u)
-    Vyt = zonalvorticity(nx,ny,sol.u)
-    Dict("t"=>sol.t,"Emn"=>Emn,"Vxy"=>Vxy,"Uxy"=>Uxy,"Vyt"=>Vyt)
-end
-
-function dumpfields(prob,eqs::GCE2,sol)
-    (lx,ly),(nx,ny) = length(prob.d),size(prob.d)
-    Λ = eqs.Λ
-    Emn = energyspectrum(prob.d,sol.u)
-    Vxy = vorticity(nx,ny,sol.u,Λ=Λ)
-    Uxy = zonalvelocity(lx,ly,nx,ny,sol.u,Λ=Λ)
-    Vyt = zonalvorticity(nx,ny,sol.u)
+    Vxy = vorticity(prob.d,sol.u)
+    Uxy = xvelocity(prob.d,sol.u)
+    Vyt = zonalvorticity(prob.d,sol.u)
     Dict("t"=>sol.t,"Emn"=>Emn,"Vxy"=>Vxy,"Uxy"=>Uxy,"Vyt"=>Vyt)
 end
 
