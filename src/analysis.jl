@@ -1,4 +1,24 @@
 """
+    Construct a resolved field by interpreting Λ for any field type
+"""
+
+function resolvedfield(nx::Int,ny::Int,u::Array{Complex{T},N}) where {T,N}
+    û = zeros(Complex{T},2ny-1,2nx-1)
+    Λ = N == 2 ? size(u)[2] - 1 : 0 # interpret cutoff for DNS,DSS,GSS
+    for m1=0:Λ
+        nmin = m1==0 ? 1 : -ny+1
+        for n1 = nmin:ny-1
+            û[n1+ny,m1+nx] = u[n1+ny,m1+1]
+            û[-n1+ny,-m1+nx] = conj(u[n1+ny,m1+1])
+        end
+    end
+    û
+end
+
+resolvedfield(d::AbstractDomain,u::DNSField{T}) where {T<:AbstractFloat} = resolvedfield(d.nx,d.ny,u)
+resolvedfield(d::AbstractDomain,u::Union{DSSField{T},GSSField{T}}) where {T<:AbstractFloat} = resolvedfield(d.nx,d.ny,u.x[1])
+
+"""
     Invert to Cartesian domain from Fourier modes
 """
 function inversefourier(d::AbstractDomain,u::FirstCumulant{T}) where {T<:AbstractFloat}
@@ -13,51 +33,12 @@ function inversefourier(d::AbstractDomain,u::FirstCumulant{T}) where {T<:Abstrac
     s*real(ifft(ifftshift(û)))
 end
 
-function inversefourier(d::AbstractDomain,u::DNSField{T}) where {T<:AbstractFloat}
-    (nx,ny) = size(d)
-    û = zeros(Complex{T},2ny-1,2nx-1)
-    for m=0:nx-1
-        nmin = m==0 ? 1 : -ny+1
-        for n = nmin:ny-1
-            û[n+ny,m+nx] = u[n+ny,m+1]
-            û[-n+ny,-m+nx] = conj(u[n+ny,m+1])
-        end
-    end
-    s = (2ny-1)*(2nx-1)/4.0
-    s*real(ifft(ifftshift(û)))
+function inversefourier(d::AbstractDomain,u::Field{T}) where {T<:AbstractFloat}
+    s = (2d.ny-1)*(2d.nx-1)/4.0
+    s*real(ifft(ifftshift(u)))
 end
 
-function inversefourier(d::AbstractDomain,u::DSSField{T}) where {T<:AbstractFloat}
-    (nx,ny) = size(d)
-    û = zeros(Complex{T},2ny-1,2nx-1)
-    m1 = 0
-    for n1 = 1:ny-1
-        û[n1+ny,m1+nx] = u.x[1][n1+ny]
-        û[-n1+ny,-m1+nx] = conj(u.x[1][n1+ny])
-    end
-    s = (2ny-1)*(2nx-1)/4.0
-    s*real(ifft(ifftshift(û)))
-end
-
-function inversefourier(d::AbstractDomain,u::GSSField{T}) where {T<:AbstractFloat}
-    (nx,ny) = size(d)
-    Λ = size(u.x[1])[2]-1
-    û = zeros(Complex{T},2ny-1,2nx-1)
-    for m=0:Λ
-        nmin = m==0 ? 1 : -ny+1
-        for n = nmin:ny-1
-            û[n+ny,m+nx] = u.x[1][n+ny,m+1]
-            û[-n+ny,-m+nx] = conj(u.x[1][n+ny,m+1])
-        end
-    end
-    s = (2ny-1)*(2nx-1)/4.0
-    s*real(ifft(ifftshift(û)))
-end
-
-function inversefourier(d::AbstractDomain,u) where {T <: AbstractFloat}
-    U = [inversefourier(d,u[i]) for i=1:length(u)]
-    reshape(cat(U...,dims=length(size(U[1]))),size(U[1])...,length(u))
-end
+tonpz(u) = reshape(cat(u...,dims=length(size(u[1]))),size(u[1])...,length(u))
 
 """
     Vorticity and Zonal vorticity
@@ -65,7 +46,8 @@ end
     meanvorticity(...,t,u) -> time-averaged
 """
 
-vorticity(d,u) = inversefourier(d,u) # the beauty of julia!
+# vorticity(d,u) = resolvedfield(d,u) |> x-> inversefourier(d,x)
+vorticity(d,u) = [resolvedfield(d,u[i]) |> x->inversefourier(d,x) for i=1:length(u)] # the beauty of julia!
 
 zonalvorticity(d::AbstractDomain,u::DNSField{T}) where {T<:AbstractFloat} = inversefourier(d,u[:,1])
 zonalvorticity(d::AbstractDomain,u::DSSField{T}) where {T<:AbstractFloat} = inversefourier(d,u.x[1])

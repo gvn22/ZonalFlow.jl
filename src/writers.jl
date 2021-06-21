@@ -22,7 +22,7 @@ end
 function dumpfields(prob,eqs,sol)
     (lx,ly),(nx,ny) = length(prob.d),size(prob.d)
     Emn = energyspectrum(prob.d,sol.u)
-    Vxy = vorticity(prob.d,sol.u)
+    Vxy = vorticity(prob.d,sol.u) |> tonpz
     Uxy = xvelocity(prob.d,sol.u)
     Vyt = zonalvorticity(prob.d,sol.u)
     Dict("t"=>sol.t,"Emn"=>Emn,"Vxy"=>Vxy,"Uxy"=>Uxy,"Vyt"=>Vyt)
