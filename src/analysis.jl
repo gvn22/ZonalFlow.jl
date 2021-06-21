@@ -388,7 +388,7 @@ end
 """
     Rank information for CE2
 """
-function modalevs(d,u::DSSField{T}) where {T<:AbstractFloat}
+function modaleigvals(d,u::DSSField{T}) where {T<:AbstractFloat}
     mEVs = zeros(T,2d.ny-1,d.nx-1)
     for m1=1:d.nx-1
         mEVs[:,m1] = real.(eigvals(u.x[2][:,:,m1]))
@@ -396,8 +396,8 @@ function modalevs(d,u::DSSField{T}) where {T<:AbstractFloat}
     mEVs
 end
 
-function modalevs(d::AbstractDomain,u::Vector{DSSField{T}}) where {T<:AbstractFloat}
-    U = [modalevs(d,u[i]) for i=1:length(u)]
+function modaleigvals(d::AbstractDomain,u::Vector{DSSField{T}}) where {T<:AbstractFloat}
+    U = [modaleigvals(d,u[i]) for i=1:length(u)]
     reshape(cat(U...,dims=3),2d.ny-1,d.nx-1,length(u))
 end
 

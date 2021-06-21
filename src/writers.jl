@@ -39,7 +39,7 @@ function dumpfields(prob,eqs::GCE2,sol)
 end
 
 dumpstats(prob,eqs,sol) = Dict("empty"=>0)
-dumpstats(prob,eqs::CE2,sol) = Dict("mEVs"=>modalevs(prob,sol.u))
+dumpstats(prob,eqs::CE2,sol) = Dict("mEVs"=>modaleigvals(prob.d,sol.u))
 
 function dumpadjacency(lx::T,ly::T,nx::Int,ny::Int;fs::String,Λ::Int=nx-1) where {T <: AbstractFloat}
     A,C = adjacency(lx,ly,nx,ny,Λ=Λ)
