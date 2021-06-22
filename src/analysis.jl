@@ -101,33 +101,9 @@ xvelocity(d,u) = xvelocityfield(d,u) |> x->resolvedfield(d,x) |> x->inversefouri
 #     Uav
 # end
 
-# function zonalvelocity(lx::T,ly::T,nx::Int,ny::Int,t::Array{T,1},
-#                         u;Λ::Int=nx-1,t0::T=100.0) where {T <: AbstractFloat}
-#
-#     U = [zonalvelocity(lx,ly,nx,ny,u[i],Λ=Λ) for i=1:length(u)]
-#
-#     if (t0 < t[end])
-#         i0 = max(findfirst(x -> x > t0,t),2)
-#         for i=i0:length(u)
-#             for m = 0:Λ
-#                 nmin = m==0 ? 1 : -ny+1
-#                 for n = nmin:ny-1
-#
-#                     Uav[i][n+ny,m+1] = mean(U[i0-1:i][n+ny,m+1])
-#
-#                 end
-#             end
-#         end
-#     end
-#     U
-#
-# end
-
 """
-
-    Energy spectrum with conjugate modes included
-    energyspectrum(d,u) -> DNSField/DSSField/GSSField
-
+    energyspectrum(d,u)
+    Energy spectrum appropriately conjugated
 """
 function energyspectrum(d::AbstractDomain,u::DNSField{T}) where {T<:AbstractFloat}
     (lx,ly),(nx,ny) = length(d),size(d)
@@ -183,12 +159,10 @@ function energyspectrum(d::AbstractDomain,u::GSSField{T}) where {T<:AbstractFloa
     Ê
 end
 
-# energyspectrum(d::AbstractDomain,u) = [energyspectrum(d,u[i]) for i=1:length(u)]
-
 # deprecated
-fourierenergy(lx::T,ly::T,nx::Int,ny::Int,u::Array{DNSField{T},1}) where T = energyspectrum(Domain(lx,ly,nx,ny),u)
-fourierenergy(lx::T,ly::T,nx::Int,ny::Int,u::Array{DSSField{T},1}) where T = energyspectrum(Domain(lx,ly,nx,ny),u)
-fourierenergy(lx::T,ly::T,nx::Int,ny::Int,Λ::Int,u::Array{GSSField{T},1}) where T = energyspectrum(Domain(lx,ly,nx,ny),u)
+fourierenergy(lx::T,ly::T,nx::Int,ny::Int,u::Array{DNSField{T},1}) where T = energyspectrum.(Ref(Domain(lx,ly,nx,ny)),u)
+fourierenergy(lx::T,ly::T,nx::Int,ny::Int,u::Array{DSSField{T},1}) where T = energyspectrum.(Ref(Domain(lx,ly,nx,ny)),u)
+fourierenergy(lx::T,ly::T,nx::Int,ny::Int,Λ::Int,u::Array{GSSField{T},1}) where T = energyspectrum.(Ref(Domain(lx,ly,nx,ny)),u)
 
 """
 Zonal quadratic invariants for NL/GQL
