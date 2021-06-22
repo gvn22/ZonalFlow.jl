@@ -1,8 +1,10 @@
 """
-    Construct a resolved field by interpreting Λ for any field type
+    resolvedfield(d,u)
+    Construct appropriately conjugated resolved field for any field type
 """
 
-function resolvedfield(nx::Int,ny::Int,u::Array{Complex{T},N}) where {T,N}
+function resolvedfield(d::AbstractDomain,u::Array{Complex{T},N}) where {T,N}
+    (nx,ny) = size(d)
     û = zeros(Complex{T},2ny-1,2nx-1)
     Λ = N == 2 ? size(u)[2] - 1 : 0 # interpret cutoff for DNS,DSS,GSS
     for m1=0:Λ
@@ -15,22 +17,34 @@ function resolvedfield(nx::Int,ny::Int,u::Array{Complex{T},N}) where {T,N}
     û
 end
 
-resolvedfield(d::AbstractDomain,u::DNSField{T}) where {T<:AbstractFloat} = resolvedfield(d.nx,d.ny,u)
-resolvedfield(d::AbstractDomain,u::Union{DSSField{T},GSSField{T}}) where {T<:AbstractFloat} = resolvedfield(d.nx,d.ny,u.x[1])
+resolvedfield(d::AbstractDomain,u::Union{DSSField{T},GSSField{T}}) where {T<:AbstractFloat} = resolvedfield(d,u.x[1])
 
 """
-    Invert to Cartesian domain from Fourier modes
+    zonalfield(d,u)
+    Construct appropriately conjugated zonal component of any field type
 """
-function inversefourier(d::AbstractDomain,u::FirstCumulant{T}) where {T<:AbstractFloat}
+function zonalfield(d::AbstractDomain,u::FirstCumulant{T}) where {T<:AbstractFloat}
     ny = d.ny
     û = zeros(Complex{T},2ny-1)
     for n = 1:ny-1
         û[n+ny] = u[n+ny]
         û[-n+ny] = conj(u[n+ny])
     end
+    û
+end
 
-    s = (2ny-1)/2.0
-    s*real(ifft(ifftshift(û)))
+zonalfield(d::AbstractDomain,u::DNSField{T}) where {T<:AbstractFloat} = zonalfield(d,u[:,1])
+zonalfield(d::AbstractDomain,u::DSSField{T}) where {T<:AbstractFloat} = zonalfield(d,u.x[1])
+zonalfield(d::AbstractDomain,u::GSSField{T}) where {T<:AbstractFloat} = zonalfield(d,u.x[1][:,1])
+
+"""
+    inversefourier(d,u)
+    Inverse Fourier functions of appropriately conjugated fields
+"""
+
+function inversefourier(d::AbstractDomain,u::FirstCumulant{T}) where {T<:AbstractFloat}
+    s = (2d.ny-1)/2.0
+    s*real(ifft(ifftshift(u)))
 end
 
 function inversefourier(d::AbstractDomain,u::Field{T}) where {T<:AbstractFloat}
@@ -38,25 +52,37 @@ function inversefourier(d::AbstractDomain,u::Field{T}) where {T<:AbstractFloat}
     s*real(ifft(ifftshift(u)))
 end
 
-tonpz(u) = reshape(cat(u...,dims=length(size(u[1]))),size(u[1])...,length(u))
-
 """
-    Vorticity and Zonal vorticity
-    meanvorticity(d,u) -> instantaneous
-    meanvorticity(...,t,u) -> time-averaged
+    vorticity(d,u)
+    zonalvorticity(d,u)
+    Compute vorticity and zonal vorticity based on input solution
 """
 
-# vorticity(d,u) = resolvedfield(d,u) |> x-> inversefourier(d,x)
-vorticity(d,u) = [resolvedfield(d,u[i]) |> x->inversefourier(d,x) for i=1:length(u)] # the beauty of julia!
+vorticity(d,u) = [resolvedfield(d,u[i]) |> x->inversefourier(d,x) for i=1:length(u)]
+zonalvorticity(d,u) = [zonalfield(d,u[i]) |> x->inversefourier(d,x) for i=1:length(u)] # the beauty of julia!
 
-zonalvorticity(d::AbstractDomain,u::DNSField{T}) where {T<:AbstractFloat} = inversefourier(d,u[:,1])
-zonalvorticity(d::AbstractDomain,u::DSSField{T}) where {T<:AbstractFloat} = inversefourier(d,u.x[1])
-zonalvorticity(d::AbstractDomain,u::GSSField{T}) where {T<:AbstractFloat} = inversefourier(d,u.x[1][:,1])
+"""
+    Velocity
+"""
 
-function zonalvorticity(d::AbstractDomain,u) where {T<:AbstractFloat}
-    U = [zonalvorticity(d,u[i]) for i=1:length(u)]
-    reshape(cat(U...,dims=length(size(U[1]))),size(U[1])...,length(u))
+function xvelocityfield(d::AbstractDomain,u::Array{Complex{T},N}) where {T<:AbstractFloat,N}
+    (lx,ly),(nx,ny) = length(d),size(d)
+    û = fill!(similar(u),0)
+    Λ = N == 2 ? size(u)[2] - 1 : 0 # interpret cutoff for DNS,DSS,GSS
+    for m1=0:Λ
+        nmin = m1==0 ? 1 : -ny+1
+        for n1 = nmin:ny-1
+            kx,ky = 2π*m1/lx,2π*n1/ly
+            k = (kx^2 + ky^2)^0.5
+            û[n1+ny,m1+1] = -im*ky/k^2*u[n1+ny,m1+1]
+        end
+    end
+    û
 end
+
+xvelocityfield(d::AbstractDomain,u::Union{DSSField{T},GSSField{T}}) where {T<:AbstractFloat} = xvelocityfield(d,u.x[1])
+
+xvelocity(d,u) = [xvelocityfield(d,u[i]) |> x->resolvedfield(d,x) |> x->inversefourier(d,x) for i=1:length(u)]
 
 # function meanvorticity(nx::Int,ny::Int,t::Array{T,1},u;t0::T) where {T <: AbstractFloat}
 #
@@ -74,41 +100,6 @@ end
 #
 #     Uav
 # end
-
-"""
-    Zonal velocity
-"""
-
-function xvelocity(d::AbstractDomain,u::DNSField{T}) where {T<:AbstractFloat}
-    (lx,ly),(nx,ny) = length(d),size(d)
-    U = zeros(Complex{T},2ny-1,2nx-1)
-    for m = 0:size(u)[2]-1 # covers both GCE2 low modes and DNS
-        nmin = m==0 ? 1 : -ny+1
-        for n = nmin:ny-1
-            kx,ky = 2π*m/lx,2π*n/ly
-            k = 2π*(kx^2 + ky^2)^0.5
-            U[n+ny,m+1] = -im*ky*u[n+ny,m+1]/k^2
-        end
-    end
-    inversefourier(d,U)
-end
-
-xvelocity(d::AbstractDomain,u::GSSField{T}) where {T<:AbstractFloat} = xvelocity(d,u.x[1])
-
-function xvelocity(d::AbstractDomain,u::DSSField{T}) where {T <: AbstractFloat}
-    (lx,ly),(nx,ny) = length(d),size(d)
-    U = zeros(Complex{T},2ny-1,2nx-1)
-    for n = 1:ny-1
-        ky = 2π*n/ly
-        U[n+ny,1] = -im*ky*u.x[1][n+ny]/ky^2
-    end
-    inversefourier(d,U)
-end
-
-function xvelocity(d::AbstractDomain,u) where {T <: AbstractFloat}
-    U = [xvelocity(d,u[i]) for i=1:length(u)]
-    reshape(cat(U...,dims=length(size(U[1]))),size(U[1])...,length(U))
-end
 
 # function zonalvelocity(lx::T,ly::T,nx::Int,ny::Int,t::Array{T,1},
 #                         u;Λ::Int=nx-1,t0::T=100.0) where {T <: AbstractFloat}
