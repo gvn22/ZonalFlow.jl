@@ -58,8 +58,8 @@ end
     Compute vorticity and zonal vorticity based on input solution
 """
 
-vorticity(d,u) = [resolvedfield(d,u[i]) |> x->inversefourier(d,x) for i=1:length(u)]
-zonalvorticity(d,u) = [zonalfield(d,u[i]) |> x->inversefourier(d,x) for i=1:length(u)] # the beauty of julia!
+vorticity(d,u) = resolvedfield(d,u) |> x->inversefourier(d,x)
+zonalvorticity(d,u) = zonalfield(d,u) |> x->inversefourier(d,x) # the beauty of julia!
 
 """
     Velocity
@@ -82,7 +82,7 @@ end
 
 xvelocityfield(d::AbstractDomain,u::Union{DSSField{T},GSSField{T}}) where {T<:AbstractFloat} = xvelocityfield(d,u.x[1])
 
-xvelocity(d,u) = [xvelocityfield(d,u[i]) |> x->resolvedfield(d,x) |> x->inversefourier(d,x) for i=1:length(u)]
+xvelocity(d,u) = xvelocityfield(d,u) |> x->resolvedfield(d,x) |> x->inversefourier(d,x)
 
 # function meanvorticity(nx::Int,ny::Int,t::Array{T,1},u;t0::T) where {T <: AbstractFloat}
 #
@@ -149,13 +149,13 @@ function energyspectrum(d::AbstractDomain,u::DSSField{T}) where {T<:AbstractFloa
     m1 = 0
     for n1 = 1:ny-1
         k = 2π*(n1/ly)
-        Ê[n1 + ny,m1+nx] += abs(u.x[1][n1 + ny])^2/k^2
+        Ê[n1 + ny,m1+nx] = abs(u.x[1][n1 + ny])^2/k^2
         Ê[-n1 + ny,m1+nx] = Ê[n1 + ny,m1+nx]
     end
     for m1 = 1:nx-1
         for n1 = -ny+1:ny-1
             k = 2π*sqrt((m1/lx)^2+(n1/ly)^2)
-            Ê[n1 + ny,m1+nx] += abs(u.x[2][n1 + ny,n1 + ny,m1])/k^2
+            Ê[n1 + ny,m1+nx] = abs(u.x[2][n1 + ny,n1 + ny,m1])/k^2
             Ê[-n1 + ny,-m1+nx] = Ê[n1 + ny,m1+nx]
         end
     end
@@ -183,10 +183,7 @@ function energyspectrum(d::AbstractDomain,u::GSSField{T}) where {T<:AbstractFloa
     Ê
 end
 
-function energyspectrum(d::AbstractDomain,u)
-    U = [energyspectrum(d,u[i]) for i=1:length(u)]
-    reshape(cat(U...,dims=length(size(U[1]))),size(U[1])...,length(u))
-end
+# energyspectrum(d::AbstractDomain,u) = [energyspectrum(d,u[i]) for i=1:length(u)]
 
 # deprecated
 fourierenergy(lx::T,ly::T,nx::Int,ny::Int,u::Array{DNSField{T},1}) where T = energyspectrum(Domain(lx,ly,nx,ny),u)
