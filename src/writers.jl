@@ -1,7 +1,7 @@
 function Base.write(prob,eqs,sol;dn::String="",fn::String)
     mkpath(dn)
-    NPZ.npzwrite(dn*fn*".npz",merge(dumpscalars(prob,eqs,sol),
-                                    dumpfields(prob,eqs,sol),
+    NPZ.npzwrite(dn*fn*".npz",merge(dumpscalars(prob,sol),
+                                    dumpfields(prob,sol),
                                     dumpstats(prob,eqs,sol)))
 end
 
@@ -9,25 +9,24 @@ Base.write(prob,eqs::Vector{AbstractEquations},sols;dn::String,labels::Vector{St
 
 tonpz(u) = reshape(cat(u...,dims=length(size(u[1]))),size(u[1])...,length(u))
 
-function dumpscalars(prob,eqs,sol;t0=200.0)
-    (lx,ly),(nx,ny) = length(prob.d),size(prob.d)
-    Et,Zt = energy(lx,ly,nx,ny,sol.u)
-    Etav,Ztav = energy(lx,ly,nx,ny,sol.t,sol.u,t0=t0)
-    Emt,Zmt = zonalenergy(lx,ly,nx,ny,sol.u)
-    Emtav,Zmtav = zonalenergy(lx,ly,nx,ny,sol.t,sol.u,t0=t0)
-    Dict("t"=>sol.t,"Zt"=>Zt,"Ztav"=>Ztav,"Et"=>Et,"Etav"=>Etav,"Emt"=>Emt,"Emtav"=>Emtav)
+function dumpscalars(prob,sol;t0=200.0)
+    Et = energy.(Ref(prob.d),sol.u)
+    Zt = enstrophy.(Ref(prob.d),sol.u)
+    Emt = zonalenergy.(Ref(prob.d),sol.u) |> tonpz
+    Emtav = zonalenergy.(Ref(prob.d),sol.u) |> x->timeaverage(sol.t,x) |> tonpz
+    Dict("t"=>sol.t,"Et"=>Et,"Emt"=>Emt,"Zt"=>Zt,"Emtav"=>Emtav)
 end
 
-function dumpfields(prob,eqs,sol)
-    Emn = energyspectrum.(Ref(prob.d),sol.u) |> tonpz
-    Vxy = vorticity.(Ref(prob.d),sol.u) |> tonpz
+function dumpfields(prob,sol)
+    Emn = energyspectrum.(Ref(prob.d),sol.u) |> x->timeaverage(sol.t,x) |> tonpz
+    Vxy = vorticity.(Ref(prob.d),sol.u) |> x->timeaverage(sol.t,x) |> tonpz
     Uxy = xvelocity.(Ref(prob.d),sol.u) |> tonpz
-    Vyt = zonalvorticity.(Ref(prob.d),sol.u) |> tonpz
+    Vyt = zonalvorticity.(Ref(prob.d),sol.u) |> x->timeaverage(sol.t,x) |> tonpz
     Dict("t"=>sol.t,"Emn"=>Emn,"Vxy"=>Vxy,"Uxy"=>Uxy,"Vyt"=>Vyt)
 end
 
 dumpstats(prob,eqs,sol) = Dict("empty"=>0)
-dumpstats(prob,eqs::CE2,sol) = Dict("mEVs"=>modaleigvals(prob.d,sol.u))
+dumpstats(prob,eqs::CE2,sol) = Dict("mEVs"=> modaleigvals.(Ref(prob.d),sol.u) |> tonpz)
 
 function dumpadjacency(lx::T,ly::T,nx::Int,ny::Int;fs::String,Λ::Int=nx-1) where {T <: AbstractFloat}
     A,C = adjacency(lx,ly,nx,ny,Λ=Λ)

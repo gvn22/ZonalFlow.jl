@@ -2,10 +2,9 @@
     resolvedfield(d,u)
     Construct appropriately conjugated resolved field for any field type
 """
-
-function resolvedfield(d::AbstractDomain,u::Array{Complex{T},N}) where {T,N}
+function resolvedfield(d::AbstractDomain,u::Array{T,N}) where {T,N}
     (nx,ny) = size(d)
-    û = zeros(Complex{T},2ny-1,2nx-1)
+    û = zeros(T,2ny-1,2nx-1)
     Λ = N == 2 ? size(u)[2] - 1 : 0 # interpret cutoff for DNS,DSS,GSS
     for m1=0:Λ
         nmin = m1==0 ? 1 : -ny+1
@@ -23,9 +22,9 @@ resolvedfield(d::AbstractDomain,u::Union{DSSField{T},GSSField{T}}) where {T<:Abs
     zonalfield(d,u)
     Construct appropriately conjugated zonal component of any field type
 """
-function zonalfield(d::AbstractDomain,u::FirstCumulant{T}) where {T<:AbstractFloat}
+function zonalfield(d::AbstractDomain,u::Array{T,1}) where {T}
     ny = d.ny
-    û = zeros(Complex{T},2ny-1)
+    û = zeros(T,2ny-1)
     for n = 1:ny-1
         û[n+ny] = u[n+ny]
         û[-n+ny] = conj(u[n+ny])
@@ -57,14 +56,12 @@ end
     zonalvorticity(d,u)
     Compute vorticity and zonal vorticity based on input solution
 """
-
 vorticity(d,u) = resolvedfield(d,u) |> x->inversefourier(d,x)
 zonalvorticity(d,u) = zonalfield(d,u) |> x->inversefourier(d,x) # the beauty of julia!
 
 """
     Velocity
 """
-
 function xvelocityfield(d::AbstractDomain,u::Array{Complex{T},N}) where {T<:AbstractFloat,N}
     (lx,ly),(nx,ny) = length(d),size(d)
     û = fill!(similar(u),0)
@@ -81,238 +78,108 @@ function xvelocityfield(d::AbstractDomain,u::Array{Complex{T},N}) where {T<:Abst
 end
 
 xvelocityfield(d::AbstractDomain,u::Union{DSSField{T},GSSField{T}}) where {T<:AbstractFloat} = xvelocityfield(d,u.x[1])
-
 xvelocity(d,u) = xvelocityfield(d,u) |> x->resolvedfield(d,x) |> x->inversefourier(d,x)
-
-# function meanvorticity(nx::Int,ny::Int,t::Array{T,1},u;t0::T) where {T <: AbstractFloat}
-#
-#     U = meanvorticity(nx,ny,u)
-#     Uav = copy(U)
-#
-#     if (t0 < t[end])
-#
-#         i0 = max(findfirst(x -> x > t0,t),2)
-#         for i=i0:length(u)
-#             Uav[i] .= mean(u[i0-1:i])
-#         end
-#
-#     end
-#
-#     Uav
-# end
 
 """
     energyspectrum(d,u)
     Energy spectrum appropriately conjugated
 """
-function energyspectrum(d::AbstractDomain,u::DNSField{T}) where {T<:AbstractFloat}
+function scalarfield(d::AbstractDomain,u::DNSField{T};scalar='e') where {T<:AbstractFloat}
     (lx,ly),(nx,ny) = length(d),size(d)
-    Ê = zeros(T,2ny-1,2nx-1)
-    for m=0:nx-1
-        nmin = m==0 ? 1 : -ny+1
-        for n = nmin:ny-1
-            k = 2π*sqrt((m/lx)^2+(n/ly)^2)
-            Ê[n+ny,m+nx] = abs(u[n+ny,m+1])^2/k^2
-            Ê[-n+ny,-m+nx] = Ê[n+ny,m+nx]
+    U = zeros(T,2ny-1,nx)
+    for m1=0:nx-1
+        nmin = m1==0 ? 1 : -ny+1
+        for n1 = nmin:ny-1
+            kx,ky = 2π*(m1/lx),2π*(n1/ly)
+            k = scalar == 'e' ? (kx^2+ky^2)^0.5 : one(T)
+            U[n1+ny,m1+1] = abs(u[n1+ny,m1+1])^2/k^2
         end
     end
-    Ê
+    U
 end
 
-function energyspectrum(d::AbstractDomain,u::DSSField{T}) where {T<:AbstractFloat}
+function scalarfield(d::AbstractDomain,u::DSSField{T};scalar='e') where {T<:AbstractFloat}
     (lx,ly),(nx,ny) = length(d),size(d)
-    Ê = zeros(T,2ny-1,2nx-1)
+    U = zeros(T,2ny-1,nx)
     m1 = 0
     for n1 = 1:ny-1
-        k = 2π*(n1/ly)
-        Ê[n1 + ny,m1+nx] = abs(u.x[1][n1 + ny])^2/k^2
-        Ê[-n1 + ny,m1+nx] = Ê[n1 + ny,m1+nx]
+        kx,ky = 2π*(m1/lx),2π*(n1/ly)
+        k = scalar == 'e' ? (kx^2+ky^2)^0.5 : one(T)
+        U[n1+ny,m1+1] = abs(u.x[1][n1+ny])^2/k^2
     end
     for m1 = 1:nx-1
         for n1 = -ny+1:ny-1
-            k = 2π*sqrt((m1/lx)^2+(n1/ly)^2)
-            Ê[n1 + ny,m1+nx] = abs(u.x[2][n1 + ny,n1 + ny,m1])/k^2
-            Ê[-n1 + ny,-m1+nx] = Ê[n1 + ny,m1+nx]
+            kx,ky = 2π*(m1/lx),2π*(n1/ly)
+            k = scalar == 'e' ? (kx^2+ky^2)^0.5 : one(T)
+            U[n1+ny,m1+1] =  abs(u.x[2][n1 + ny,n1 + ny,m1])/k^2
         end
     end
-    Ê
+    U
 end
 
-function energyspectrum(d::AbstractDomain,u::GSSField{T}) where {T<:AbstractFloat}
+function scalarfield(d::AbstractDomain,u::GSSField{T};scalar='e') where {T<:AbstractFloat}
     (lx,ly),(nx,ny),Λ = length(d),size(d),size(u.x[1],2)-1
-    Ê = zeros(T,2ny-1,2nx-1)
-    for m=0:Λ
-        nmin = m==0 ? 1 : -ny+1
-        for n = nmin:ny-1
-            k = 2π*sqrt((m/lx)^2+(n/ly)^2)
-            Ê[n+ny,m+nx] = abs(u.x[1][n+ny,m+1])^2/k^2
-            Ê[-n+ny,-m+nx] = Ê[n+ny,m+nx]
+    U = zeros(T,2ny-1,nx)
+    for m1=0:Λ
+        nmin = m1==0 ? 1 : -ny+1
+        for n1 = nmin:ny-1
+            kx,ky = 2π*(m1/lx),2π*(n1/ly)
+            k = scalar == 'e' ? (kx^2+ky^2)^0.5 : one(T)
+            U[n1+ny,m1+1] = abs(u.x[1][n1+ny,m1+1])^2/k^2
         end
     end
-    for m=Λ+1:nx-1
-        for n = -ny+1:ny-1
-            k = 2π*sqrt((m/lx)^2+(n/ly)^2)
-            Ê[n+ny,m+nx] = u.x[2][n+ny,m-Λ,n+ny,m-Λ]/k^2
-            Ê[-n+ny,-m+nx] = Ê[n+ny,m+nx]
+    for m1=Λ+1:nx-1
+        for n1 = -ny+1:ny-1
+            kx,ky = 2π*(m1/lx),2π*(n1/ly)
+            k = scalar == 'e' ? (kx^2+ky^2)^0.5 : one(T)
+            U[n1+ny,m1+1] = abs(u.x[2][n1+ny,m1-Λ,n1+ny,m1-Λ])/k^2
         end
     end
-    Ê
+    U
 end
 
-# deprecated
-fourierenergy(lx::T,ly::T,nx::Int,ny::Int,u::Array{DNSField{T},1}) where T = energyspectrum.(Ref(Domain(lx,ly,nx,ny)),u)
-fourierenergy(lx::T,ly::T,nx::Int,ny::Int,u::Array{DSSField{T},1}) where T = energyspectrum.(Ref(Domain(lx,ly,nx,ny)),u)
-fourierenergy(lx::T,ly::T,nx::Int,ny::Int,Λ::Int,u::Array{GSSField{T},1}) where T = energyspectrum.(Ref(Domain(lx,ly,nx,ny)),u)
+energyspectrum(d,u) = scalarfield(d,u,scalar='e') |> x->resolvedfield(d,x)
+enstrophyspectrum(d,u) = scalarfield(d,u,scalar='z') |> x->resolvedfield(d,x)
 
 """
-Zonal quadratic invariants for NL/GQL
+    zonalenergy(d,u)
+    zonalenstrophy(d,u)
+    Zonal quadratic invariants for all modes including conjugates
 """
-function zonalenergy(lx::T,ly::T,nx::Int,ny::Int,u::Array{DNSField{T},1}) where T
+function zonalenergy(d::AbstractDomain,u)
+    Ê = energyspectrum(d,u)
+    E = [sum(Ê[:,d.nx])]
+    append!(E,[2*sum(Ê[:,m]) for m=d.nx+1:2d.nx-1])
+    E
+end
 
-    E = zeros(T,length(u),nx)
-    Z = zeros(T,length(u),nx)
-
-    @info "Computing zonal energy and enstrophy for NL/GQL fields..."
-    for i=1:length(u)
-        for m = 0:nx-1
-            nmin = m==0 ? 1 : -ny+1
-            for n = nmin:ny-1
-
-                k = Float64(2π)*norm([m/lx,n/ly])
-
-                E[i,m+1] += abs(u[i][n+ny,m+1])^2/k^2
-                Z[i,m+1] += abs(u[i][n+ny,m+1])^2
-
-            end
-        end
-    end
-
-    E,Z
+function zonalenstrophy(d::AbstractDomain,u)
+    Ẑ = enstrophyspectrum(d,u)
+    Z = [sum(Ẑ[:,d.nx])]
+    append!(Z,[2*sum(Ẑ[:,m]) for m=d.nx+1:2d.nx-1])
+    Z
 end
 
 """
-Zonal quadratic invariants for CE2
+    energy(d,u)
+    enstrophy(d,u)
+    Quadratic invariants for all modes including conjugates
 """
-function zonalenergy(lx::T,ly::T,nx::Int,ny::Int,u::Array{DSSField{T},1}) where T
+energy(d::AbstractDomain,u) = sum(zonalenergy(d,u)) # the beauty of julia is killing me!
+enstrophy(d::AbstractDomain,u) = sum(zonalenstrophy(d,u))
 
-    E = zeros(T,length(u),nx)
-    Z = zeros(T,length(u),nx)
-
-    @info "Computing zonal energy and enstrophy for CE2 fields..."
-    for i=1:length(u)
-        m = 0
-        for n = 1:ny-1
-            ky = 2π*n/ly
-            E[i,m+1] += abs(u[i].x[1][n+ny])^2/ky^2
-            Z[i,m+1] += abs(u[i].x[1][n+ny])^2
-        end
-        for m = 1:nx-1
-            for n = -ny+1:ny-1
-                kx = 2π*m/lx
-                ky = 2π*n/ly
-                k = (kx^2 + ky^2)^0.5
-                E[i,m+1] += abs(u[i].x[2][n+ny,n+ny,m])/k^2
-                Z[i,m+1] += abs(u[i].x[2][n+ny,n+ny,m])
-            end
-        end
+"""
+    timeaverage(t,u)
+    Time average anything given to it
+"""
+function timeaverage(t,u;t0=100.0)
+    U = copy(u)
+    t0 = min(t0,t[end])
+    i0 = max(findfirst(x -> x > t0,t),2)
+    for i=i0:length(u)
+        U[i] = mean(u[i0-1:i])
     end
-
-    E,Z
-end
-
-"""
-Zonal quadratic invariants for GCE2
-"""
-function zonalenergy(lx::T,ly::T,nx::Int,ny::Int,u::Array{GSSField{T},1}) where T
-
-    E = zeros(T,length(u),nx)
-    Z = zeros(T,length(u),nx)
-
-    Λ = size(u[1].x[1],2)-1
-
-    @info "Computing zonal energy and enstrophy for GCE2($Λ) fields..."
-    for i=1:length(u)
-        for m=0:nx-1
-            nmin = m==0 ? 1 : -(ny-1)
-            for n=nmin:ny-1
-
-                k = 2π*norm([m/lx,n/ly])
-
-                if(m ≤ Λ)
-                    E[i,m+1] += abs(u[i].x[1][n+ny,m+1])^2/k^2
-                    Z[i,m+1] += abs(u[i].x[1][n+ny,m+1])^2
-                else
-                    E[i,m+1] += abs(u[i].x[2][n+ny,m-Λ,n+ny,m-Λ])/k^2
-                    Z[i,m+1] += abs(u[i].x[2][n+ny,m-Λ,n+ny,m-Λ])
-                end
-
-            end
-        end
-    end
-
-    E,Z
-end
-
-"""
-Time averaged zonal quadratic invariants for NL/GQL/CE2/GCE2
-"""
-function zonalenergy(lx::T,ly::T,nx::Int,ny::Int,t::Array{T,1},u;t0::T=500.0) where {T <: AbstractFloat}
-
-    E,Z = zonalenergy(lx,ly,nx,ny,u)
-    Eav,Zav = copy(E),copy(Z)
-
-    if (t0 < t[end])
-
-        i0 = max(findfirst(x -> x > t0,t),2)
-        for i=i0:length(u)
-            for m=1:nx
-
-                Eav[i,m] = mean(E[i0-1:i,m])
-                Zav[i,m] = mean(Z[i0-1:i,m])
-
-            end
-        end
-    end
-
-    Eav,Zav
-end
-
-"""
-Quadratic invariants for NL/GQL
-"""
-function energy(lx::T,ly::T,nx::Int,ny::Int,u) where {T <: AbstractFloat}
-
-    E = zeros(T,length(u))
-    Z = zeros(T,length(u))
-
-    Em,Zm = zonalenergy(lx,ly,nx,ny,u)
-
-    for i=1:length(u)
-        E[i] = sum(Em[i,:])
-        Z[i] = sum(Zm[i,:])
-    end
-
-    E,Z
-end
-
-"""
-Time averaged energy and enstrophy for NL/GQL/CE2
-"""
-function energy(lx::T,ly::T,nx::Int,ny::Int,t,u;t0::T=200.0) where {T<:AbstractFloat}
-
-    E = zeros(T,length(u))
-    Z = zeros(T,length(u))
-
-    @info "Computing time averaged energy and enstrophy for NL/GQL/CE2/GCE2 fields..."
-
-    Em,Zm = zonalenergy(lx,ly,nx,ny,t,u,t0=t0)
-
-    for i=1:length(u)
-        E[i] = sum(Em[i,:])
-        Z[i] = sum(Zm[i,:])
-    end
-
-    E,Z
+    U
 end
 
 """
@@ -326,11 +193,10 @@ function modaleigvals(d,u::DSSField{T}) where {T<:AbstractFloat}
     mEVs
 end
 
-function modaleigvals(d::AbstractDomain,u::Vector{DSSField{T}}) where {T<:AbstractFloat}
-    U = [modaleigvals(d,u[i]) for i=1:length(u)]
-    reshape(cat(U...,dims=3),2d.ny-1,d.nx-1,length(u))
-end
-
+"""
+    zonostrophy(d,u)
+    Zonosotrophy and other invariants
+"""
 function zonostrophy(d,u::DNSField{T}) where {T<:AbstractFloat}
     E,Z = energy(length(d)...,size(d)...,u)
     U = sqrt(2E/(4π))
@@ -341,8 +207,10 @@ function zonostrophy(d,u::DNSField{T}) where {T<:AbstractFloat}
     LR/Lε
 end
 
-zonostrophy(d::AbstractDomain,u::Vector{DNSField{T}}) where {T<:AbstractFloat} = [zonostrophy(d,u[i]) for i=1:length(u)]
-
+"""
+    adjacency(d,u)
+    Adjacency matrices for GQL/NL
+"""
 function adjacency(d::AbstractDomain;Λ=nx-1) where {T<:AbstractFloat}
     (lx,ly),(nx,ny) = length(prob.d),size(prob.d)
     B = bcoeffs(lx,ly,nx,ny,10.0,0.01,0.0,1.0) # set unity linear coefficients
