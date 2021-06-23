@@ -20,6 +20,7 @@ include("noise.jl")
 include("tools.jl")
 include("analysis.jl")
 include("writers.jl")
+include("deprecated.jl")
 
 export  Domain,
         Coefficients,
