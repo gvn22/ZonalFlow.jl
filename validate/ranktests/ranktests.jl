@@ -15,7 +15,7 @@ tsargs  = (
             saveat=5
            );
 
-dn      = "validate/ranktests/";
+dn      = "validate/ranktests/repeat/";
 eqs     = [GQL(0),CE2()];
 
 ## Point Jet
@@ -26,6 +26,9 @@ prob    = BetaPlane(domain,coeffs,forcing);
 
 ql_pj      = integrate(prob,eqs[1],tspan;tsargs...)
 write(prob,eqs[1],ql_pj,dn=dn,fn="ql_pj_500")
+
+ce2_pj     = integrate(prob,eqs[2],tspan;tsargs...)
+write(prob,eqs[2],ce2_pj,dn=dn,fn="ce2_pj_500")
 
 ce2_pj     = integrate(prob,eqs[2],tspan;u0=ql_pj.u[end],tsargs...)
 write(prob,eqs[2],ce2_pj,dn=dn,fn="ce2_pj_qlic_500")
