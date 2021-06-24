@@ -160,6 +160,11 @@ function zonalenstrophy(d::AbstractDomain,u)
     Z
 end
 
+function modalenergy(d::AbstractDomain,u;m::Int=0)
+    Ê = energyspectrum(d,u)
+    Ê[:,d.nx+m]
+end
+
 """
     energy(d,u)
     enstrophy(d,u)
@@ -183,6 +188,8 @@ function timeaverage(t,u;t0=100.0)
 end
 
 """
+    modaleigvals(d,u)
+    modalffts(d,u)
     Rank information for CE2
 """
 function modaleigvals(d,u::DSSField{T}) where {T<:AbstractFloat}
@@ -192,6 +199,9 @@ function modaleigvals(d,u::DSSField{T}) where {T<:AbstractFloat}
     end
     mEVs
 end
+
+secondcumulant(d,u::DSSField{T};m::Int=1) where {T<:AbstractFloat} = inversefourier(Domain(d.ly,d.ly,d.ny,d.ny),u.x[2][:,:,m])
+secondcumulant(d,u;m::Int=1) = secondcumulant(d,convert(CE2(),u,d),m=m)
 
 """
     zonostrophy(d,u)
