@@ -178,6 +178,9 @@ stochamp(ε::T,kf::Int,N::T) where T<:AbstractFloat = convert(T,sqrt(2ε*kf^2)/s
 stochcorr(ε::T,kf::Int,dk::Int) where T<:AbstractFloat = convert(T,2π*ε*kf/(32.0dk))
 stochcorr(ε::T,kf::Int,N::T) where T<:AbstractFloat = convert(T,4*π*π*ε*kf/N/8.0)
 
+stochamp2(ε::T,kf::Int,N::T) where T<:AbstractFloat = convert(T,sqrt(ε/N)*kf)
+stochcorr2(ε::T,kf::Int,N::T) where T<:AbstractFloat = convert(T,4ε*kf/N)
+
 function fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs::Union{NL,GQL}) where T
     d,f = prob.d,prob.f
     (nx,ny),Λ = size(d),lambda(prob,eqs)
@@ -188,7 +191,8 @@ function fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs::Union{NL,GQL}) where T
             if (f.kf - f.dk < k < f.kf + f.dk) F[n+ny,m+1] = one(T) end
         end
     end
-    if (sum(F) ≥ 1.0) F .= F.* stochamp(f.ε,f.kf,sum(F)) end # this is dt unaware - dist contains dt
+    Nf = sum(F)
+    if (sum(F) ≥ 1.0) F .= F * stochamp2(f.ε,f.kf,Nf) end # this is dt unaware - dist contains dt
     return F
 end
 
@@ -205,7 +209,8 @@ function fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs::CE2) where T
         end
     end
     Nf = sum(F)
-    F .= F * stochcorr(f.ε,f.kf,Nf) # this is dt unaware - dist contains dt
+    F .= F * stochcorr2(f.ε,f.kf,Nf) # this is dt unaware - dist contains dt
+    # F .= F * stochcorr(f.ε,f.kf,f.dk)
     return F
 end
 
