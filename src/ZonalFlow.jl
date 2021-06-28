@@ -20,7 +20,8 @@ include("noise.jl")
 include("tools.jl")
 include("analysis.jl")
 include("writers.jl")
-include("deprecated.jl")
+# include("deprecated.jl")
+# include("future.jl")
 
 export  Domain,
         Coefficients,
@@ -35,18 +36,5 @@ export  NL,
         CE2
 
 export  integrate
-
-# export  energy,
-#         adjacency
-
-# for optimization
-# export  acoeffs,
-#         bcoeffs,
-#         ccoeffs,
-#         fcoeffs,
-#         get_de_ic,
-#         get_de_params,
-#         get_de_probalg,
-#         f!,g!
 
 end
