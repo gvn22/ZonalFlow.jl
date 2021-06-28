@@ -7,8 +7,11 @@
 Manifest.toml
 .DS_Store
 
+validate/ranktests/repeat/
+validate/ranktests/figures/
 validate/stochastic/8x8/
 validate/kolmogorov/8x8/
 validate/pointjet/8x8/
 validate/pointjet/12x12/
+validate/old/
 validate/.ipynb_checkpoints

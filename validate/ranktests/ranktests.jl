@@ -185,21 +185,20 @@ write(prob,eqs[2],ce2_kf_24,dn=dn,fn="ce2_kf_24x24_500");
 
 ## Stochastic jet
 domain  = Domain(extent=(2π,2π),res=(8,8));
-coeffs  = Coefficients(Ω=5.0,θ=0.0,μ=0.01,ν=0.0,ν₄=1.0,linear=false);
+coeffs  = Coefficients(Ω=5.0,θ=0.0,μ=0.01,ν=0.0,ν₄=1.0,linear=true);
 forcing = Stochastic(kf=5,dk=2,ε=0.005,τ=0.0,isotropic=false);
 prob    = BetaPlane(domain,coeffs,forcing);
 
 ql_sf      = integrate(prob,eqs[1],tspan;tsargs...)
-write(prob,eqs[1],ql_sf,dn=dn,fn="ql_sf_500")
+write(prob,eqs[1],ql_sf,dn=dn,fn="ql_sf_test_500")
 
 ce2_sf     = integrate(prob,eqs[2],tspan;tsargs...)
-write(prob,eqs[2],ce2_sf,dn=dn,fn="ce2_sf_500")
+write(prob,eqs[2],ce2_sf,dn=dn,fn="ce2_sf_test_500")
 
 ce2_sf_qlic     = integrate(prob,eqs[2],tspan;u0=ql_sf.u[end],tsargs...)
 write(prob,eqs[2],ce2_sf_qlic,dn=dn,fn="ce2_sf_qlic_500")
 
 #
-
 domain  = Domain(extent=(2π,2π),res=(12,12));
 coeffs  = Coefficients(Ω=5.0,θ=0.0,μ=0.01,ν=0.0,ν₄=1.0,linear=false);
 forcing = Stochastic(kf=5,dk=2,ε=0.005,τ=0.0,isotropic=false);
@@ -211,16 +210,17 @@ write(prob,eqs[1],ql_sf,dn=dn,fn="ql_sf_test_1000")
 ce2_sf     = integrate(prob,eqs[2],tspan;tsargs...)
 write(prob,eqs[2],ce2_sf,dn=dn,fn="ce2_sf_test_1000")
 
+tspan = (0.0,500.0)
 domain  = Domain(extent=(2π,2π),res=(12,12));
 coeffs  = Coefficients(Ω=5.0,θ=0.0,μ=0.01,ν=0.0,ν₄=1.0,linear=false);
 forcing = Stochastic(kf=8,dk=2,ε=0.01,τ=0.0,isotropic=false);
 prob    = BetaPlane(domain,coeffs,forcing);
 
 ql_sf      = integrate(prob,eqs[1],tspan;tsargs...)
-write(prob,eqs[1],ql_sf,dn=dn,fn="ql_sf_test2_1000")
+write(prob,eqs[1],ql_sf,dn=dn,fn="ql_sf_test_1000")
 
 ce2_sf     = integrate(prob,eqs[2],tspan;tsargs...)
-write(prob,eqs[2],ce2_sf,dn=dn,fn="ce2_sf_test2_1000")
+write(prob,eqs[2],ce2_sf,dn=dn,fn="ce2_sf_test_1000")
 
 ce2_sf_qlic     = integrate(prob,eqs[2],tspan;u0=ql_sf.u[end],tsargs...)
-write(prob,eqs[2],ce2_sf_qlic,dn=dn,fn="ce2_sf_qlic_test2_1000")
+write(prob,eqs[2],ce2_sf_qlic,dn=dn,fn="ce2_sf_qlic_test_1000")
