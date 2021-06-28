@@ -10,7 +10,6 @@ using LinearAlgebra
 using Random
 using Distributions
 using NPZ
-using Reexport
 
 include("structures.jl")
 include("ic.jl")
@@ -21,6 +20,7 @@ include("noise.jl")
 include("tools.jl")
 include("analysis.jl")
 include("writers.jl")
+include("deprecated.jl")
 
 export  Domain,
         Coefficients,
@@ -36,12 +36,10 @@ export  NL,
 
 export  integrate
 
-export  energy,
-        adjacency
+# export  energy,
+#         adjacency
 
 # for optimization
-# @reexport using OrdinaryDiffEq: solve
-# @reexport using StochasticDiffEq: solve
 # export  acoeffs,
 #         bcoeffs,
 #         ccoeffs,
