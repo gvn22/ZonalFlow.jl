@@ -34,7 +34,7 @@ get_de_p(d,eqs::CE2,p) = CE2Params(d.nx,d.ny,p...)
 get_de_p(d,eqs::GCE2,p) = GCE2Params(d.nx,d.ny,eqs.Λ,p...)
 
 get_de_probalg(prob,eqs,u0,t,p) = ODEProblem(f!,u0,t,p), DP5()
-get_de_probalg(prob::BetaPlane{T,Stochastic{T}},eqs::CE2,u0,t,p) where T = ODEProblem(f!,u0,t,p), Heun()
+get_de_probalg(prob::BetaPlane{T,Stochastic{T}},eqs::CE2,u0,t,p) where T = ODEProblem(f!,u0,t,p), RK4()
 get_de_probalg(prob::BetaPlane{T,Stochastic{T}},eqs,u0,t,p) where T = SDEProblem(f!,g!,u0,t,p), SRIW1()
 
 get_de_kwargs(prob,eqs::AbstractEquations,tspan;kwargs...) = kwargs
