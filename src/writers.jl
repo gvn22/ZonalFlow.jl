@@ -16,10 +16,10 @@ function dumpscalars(prob,sol;t0=500.0)
     Em0nt = modalenergy.(Ref(prob.d),sol.u,m=0) |> tonpz
     Em1nt = modalenergy.(Ref(prob.d),sol.u,m=1) |> tonpz
     Em2nt = modalenergy.(Ref(prob.d),sol.u,m=2) |> tonpz
-    Em0ntav = modalenergy.(Ref(prob.d),sol.u,m=0) |> x->timeaverage(sol.t,x) |> tonpz
-    Em1ntav = modalenergy.(Ref(prob.d),sol.u,m=1) |> x->timeaverage(sol.t,x) |> tonpz
-    Em2ntav = modalenergy.(Ref(prob.d),sol.u,m=2) |> x->timeaverage(sol.t,x) |> tonpz
-    Emtav = zonalenergy.(Ref(prob.d),sol.u) |> x->timeaverage(sol.t,x) |> tonpz
+    Em0ntav = modalenergy.(Ref(prob.d),sol.u,m=0) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
+    Em1ntav = modalenergy.(Ref(prob.d),sol.u,m=1) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
+    Em2ntav = modalenergy.(Ref(prob.d),sol.u,m=2) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
+    Emtav = zonalenergy.(Ref(prob.d),sol.u) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
     Dict("t"=>sol.t,"Et"=>Et,"Emt"=>Emt,"Zt"=>Zt,"Emtav"=>Emtav,"Em0nt"=>Em0nt,"Em1nt"=>Em1nt,"Em2nt"=>Em2nt,
         "Em0ntav"=>Em0ntav,"Em1ntav"=>Em1ntav,"Em2ntav"=>Em2ntav)
 end
