@@ -192,7 +192,8 @@ function fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs::Union{NL,GQL}) where T
         end
     end
     Nf = sum(F)
-    if (sum(F) ≥ 1.0) F .= F * stochamp2(f.ε,f.kf,Nf) end # this is dt unaware - dist contains dt
+    # if (sum(F) ≥ 1.0) F .= F * stochamp2(f.ε,f.kf,Nf) end # this is dt unaware - dist contains dt
+    if (Nf ≥ 1.0) F .= F * stochamp(f.ε,f.kf,Nf) end # this is dt unaware - dist contains dt
     return F
 end
 
@@ -209,7 +210,8 @@ function fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs::CE2) where T
         end
     end
     Nf = sum(F)
-    F .= F * stochcorr2(f.ε,f.kf,Nf) # this is dt unaware - dist contains dt
+    # F .= F * stochcorr2(f.ε,f.kf,Nf) # this is dt unaware - dist contains dt
+    F .= F * stochcorr(f.ε,f.kf,Nf) # this is dt unaware - dist contains dt
     # F .= F * stochcorr(f.ε,f.kf,f.dk)
     return F
 end
