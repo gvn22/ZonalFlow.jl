@@ -24,16 +24,16 @@ function dumpscalars(prob,sol;t0=500.0)
         "Em0ntav"=>Em0ntav,"Em1ntav"=>Em1ntav,"Em2ntav"=>Em2ntav)
 end
 
-function dumpfields(prob,sol)
-    Emn = energyspectrum.(Ref(prob.d),sol.u) |> x->timeaverage(sol.t,x) |> tonpz
+function dumpfields(prob,sol;t0=500.0)
+    Emn = energyspectrum.(Ref(prob.d),sol.u) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
     Fyym1 = secondcumulant.(Ref(prob.d),sol.u,m=1) |> tonpz
     Fyym2 = secondcumulant.(Ref(prob.d),sol.u,m=2) |> tonpz
     Fyym3 = secondcumulant.(Ref(prob.d),sol.u,m=3) |> tonpz
-    Vxyav = vorticity.(Ref(prob.d),sol.u) |> x->timeaverage(sol.t,x) |> tonpz
+    Vxyav = vorticity.(Ref(prob.d),sol.u) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
     Vxy = vorticity.(Ref(prob.d),sol.u) |> tonpz
     Uxy = xvelocity.(Ref(prob.d),sol.u) |> tonpz
     Vyt = zonalvorticity.(Ref(prob.d),sol.u) |> tonpz
-    Vytav = zonalvorticity.(Ref(prob.d),sol.u) |> x->timeaverage(sol.t,x) |> tonpz
+    Vytav = zonalvorticity.(Ref(prob.d),sol.u) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
     Dict("t"=>sol.t,"Emn"=>Emn,"Vxy"=>Vxy,"Vxyav"=>Vxyav,"Uxy"=>Uxy,"Vyt"=>Vyt,"Vytav"=>Vytav,"Fyym1"=>Fyym1,"Fyym2"=>Fyym2,"Fyym3"=>Fyym3)
 end
 
