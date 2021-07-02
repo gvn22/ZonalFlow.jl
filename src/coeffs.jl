@@ -192,7 +192,8 @@ function fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs::Union{NL,GQL}) where T
         end
     end
     Nf = sum(F)
-    if (sum(F) ≥ 1.0) F .= F * stochamp2(f.ε,f.kf,Nf) end # this is dt unaware - dist contains dt
+    # if (sum(F) ≥ 1.0) F .= F * stochamp2(f.ε,f.kf,Nf) end # this is dt unaware - dist contains dt
+    if (Nf ≥ 1.0) F .= F * stochamp(f.ε,f.kf,Nf) end # this is dt unaware - dist contains dt
     return F
 end
 
@@ -209,7 +210,8 @@ function fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs::CE2) where T
         end
     end
     Nf = sum(F)
-    F .= F * stochcorr2(f.ε,f.kf,Nf) # this is dt unaware - dist contains dt
+    # F .= F * stochcorr2(f.ε,f.kf,Nf) # this is dt unaware - dist contains dt
+    F .= F * stochcorr(f.ε,f.kf,Nf) # this is dt unaware - dist contains dt
     # F .= F * stochcorr(f.ε,f.kf,f.dk)
     return F
 end
@@ -230,4 +232,48 @@ function fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs::GCE2) where T
     Nf = sum(F.x[2])
     F.x[2] .= F.x[2] * stochcorr(f.ε,f.kf,Nf) # this is dt unaware - dist contains dt
     return F
+end
+
+function fcoeffs2(prob::BetaPlane{T,Stochastic{T}},eqs::Union{NL,GQL}) where T
+    (nx,ny) = size(prob.d)
+    F0 = fcoeffs2(prob,CE2())
+    F = zeros(T,2ny-1,nx)
+    for m=1:nx-1
+        for n=-ny+1:ny-1
+            F[n+ny,m+1] = sqrt(2*F0[n+ny,n+ny,m])
+        end
+    end
+    F
+end
+
+function fcoeffs2(prob::BetaPlane{T,Stochastic{T}},eqs::CE2) where T
+    d,f = prob.d,prob.f
+    (nx,ny) = size(d)
+    F = zeros(T,2ny-1,2ny-1,nx-1)
+    m1 = f.kf - f.dk
+    m2 = f.kf + f.dk
+    Nk = m2 - m1 + 1
+    c  = 0.2
+    for m=m1:m2
+        Ck = zero(T)
+        for n=-ny+1:ny-1
+            kx,ky = 2π*m/d.lx,2π*n/d.ly
+            F[n+ny,n+ny,m] = c^2*exp(-ky^2*c^2)
+            Ck += F[n+ny,n+ny,m]/(kx^2+ky^2)
+        end
+        F[:,:,m] /= (2Ck*Nk)
+    end
+    F .* f.ε
+end
+
+function fcoeffs2(prob::BetaPlane{T,Stochastic{T}},eqs::GCE2) where T
+    (nx,ny),Λ = size(prob.d),lambda(prob,eqs)
+    F0 = fcoeffs2(prob,CE2())
+    F = ArrayPartition(zeros(T,2ny-1,Λ+1),zeros(T,2ny-1,nx-Λ,2ny-1,nx-Λ))
+    for m=1:nx-1
+        for n=-ny+1:ny-1
+            F.x[2][n+ny,m-Λ,n+ny,m-Λ] = F0[n+ny,n+ny,m]
+        end
+    end
+    F
 end

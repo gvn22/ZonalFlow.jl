@@ -18,7 +18,7 @@ function get_de_params(prob,eqs)::AbstractParams
     A = acoeffs(prob)
     B = bcoeffs(prob)
     C⁺,C⁻ = ccoeffs(prob,eqs)
-    F = fcoeffs(prob,eqs)
+    F = fcoeffs2(prob,eqs)
     get_de_p(prob.d,eqs,[A,B,C⁺,C⁻,F])
 end
 
