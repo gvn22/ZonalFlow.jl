@@ -140,6 +140,7 @@ end
 
 energyspectrum(d,u) = scalarfield(d,u,scalar='e') |> x->resolvedfield(d,x)
 enstrophyspectrum(d,u) = scalarfield(d,u,scalar='z') |> x->resolvedfield(d,x)
+forcingspectrum(d,u0) = scalarfield(d,u0,scalar='e') |> x-> resolvedfield(d,x)
 
 """
     zonalenergy(d,u)
