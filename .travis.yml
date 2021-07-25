@@ -31,3 +31,5 @@ after_success:
       Pkg.add("Coverage")
       using Coverage
       Coveralls.submit(process_folder())'
+notifications:
+  slack: marstonteam:10Y65E6vplKOoOSHG3Ykj2oO

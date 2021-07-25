@@ -2,51 +2,66 @@
 [![Build Status](https://travis-ci.com/gvn22/ZonalFlow.jl.svg?branch=master)](https://travis-ci.com/gvn22/ZonalFlow.jl)
 [![Coverage](https://codecov.io/gh/gvn22/ZonalFlow.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/gvn22/ZonalFlow.jl)
 
-## Generalized Quasilinear approximation and Generalized Cumulant Expansion
+This is a numerical solver for barotropic vorticity equation on the beta-plane, which can solve tendencies for the following dynamical equation systems:
 
-- `nl()`: Numerically solving the fully non-linear (NL) dynamics of dissipative and driven rotational flows can be a computational expensive task if one is interested in the statistical behaviour of turbulent zonal jets. In a spectral code, the computational bottleneck is computing the sum of all interactions arising from the non-linear terms in the dynamical field equations.
+- NL: original (fully non-linear) governing equations with no mode-reduction
+- QL: quasilinear equations
+- GQL: generalised quasilinear equations
 
-- `gql()`: The Generalized Quasilinear (GQL) approximation [[1]](#1) simplifies these non-linear terms by inducing rules for interaction between low (L) and high (H) wavenumber zonal projections of the dynamical field obtained using a spectral filter with cutoff Λ. Specifically, the `HH→H` (eddy-eddy non-linearity interactions as well as the `HL→L` and `LL→H` interactions are eliminated. In this manner, the field equations can be extrapolated between Quasilinear (QL) dynamics for Λ = 0, and NL dynamics for Λ = M (the maximum zonal wavenumber). Therefore, a GQL system obtained for Λ < M, and that suffices to simulate zonal jet statistics for given friction and driving parameters, is by nature a reduced model of the underlying dynamics. However, obtaining statistics of the flow may still require performing simulations with large spin-up times to arrive at a statistical significant sample.
+and the following (equivalent) statistical equation systems:
 
-- `gce2()`: The Generalized Cumulant Expansion (GCE2) circumvents this last problem, by posing equations in terms of the statistics -- the first and second cumulant -- derived from the GQL equations for a given cutoff Λ. This allows the required cumulants (or equaivalently the moments) to be obtained directly, precluding the need for large spin-up dynamical calculations. In practice, the cumulant sizes for low Λ are large and can be computationally more expensive per timestep; however, this can be partly offset by the fact that fewer timesteps need to be solved. Use of dimensional reduction techniques can help speed this up further.
+- CE2: cumulant expansions at second order
+- GCE2: generalized cumulant expansions at second order
 
-`ZonalFlow` allows you to solve all three sets of equations: NL, GQL and GCE2 for dynamics on the β-plane. It uses the [OrdinaryDiffEq](https://github.com/SciML/OrdinaryDiffEq.jl) package for numerically time-integrating the spectral ODE problem, giving access to a range of integration algorithms. A matrix-free representation is used to minimize computational cost. Currently, only fixed timestep algorithms are recommended and computations are serial for now.
+The package interfaces with the DifferentialEquations package in order to utilise its ecosystem of time integration schemes.  A variety of different initial condition types can  be chosen. Simulation data is output as npz files, which can be accessed using Python.
 
-Functions `nl(params...)`, `gql(params...)` and `gce2(params...)` solver functions are exported by the package together with a number of solution analysis functions.
+## Contents
+* [Installation instructions](#installation-instructions)
+* [Example simulation script](#example-simulation-script)
+* [Citing us](#citing-us)
+* [License](#license)
 
-###### References
-<a id="1">[1]</a> Marston, J. B. and Chini, G. P. and Tobias, S. M. (2016) _Physical Review Letters_ __116__ 214501
+### Installation instructions
+Simply add the package using the Julia package manager as:
 
-## Use
-The current release solves for equations on the β-plane with forcing by a deterministic point-jet and relaxation; the choice of hyperviscosity is available. Set the parameters for a given solution as follows:
+```julia
+julia>]
+(v1.5) pkg> add ZonalFlow
+```
 
-Domain:
-- lx: axial domain length
-- ly: transverse domain length
-- nx: axial resolution
-- ny: transverse resolution
-- Λ (for GQL and GCE2)
+### Example simulation script
 
-Problem:
-- Ω: Rotational rate
-- θ: Latitude
-- β: Coriolis parameter
-- Ξ: jet strength
-- τ: relaxation time
+```
+using ZonalFlow
 
-Timestepping and solution save:
-- jw: Jet width; defaults to 0.2
-- ic: Initial Condition; defaults to point jet with random seed.
-- dt: Timestep size; defaults to 0.001.
-- t_end: Final solution time
-- savefreq: Data saving frequency
+tspan   = (0.0,1000.0);
+tsargs  = (
+            dt=0.001,
+            adaptive=false,
+            progress=true,
+            progress_steps=10000,
+            save_everystep=false,
+            save_start=true,
+            dense=false,
+            save_noise=false,
+            saveat=5
+           );
 
-Each solver function returns the solution variable to which the following analysis algorithms may be applied.
+domain  = Domain(extent=(2π,2π),res=(16,16));
+coeffs  = Coefficients(Ω=2π,θ=0.0,μ=0.05,ν=0.0,ν₄=0.0);
+forcing = PointJet(Ξ=1.0,Δθ=0.1,τ=20.0);
+prob    = BetaPlane(domain,coeffs,forcing);
 
-- `zonalenergy(params...)`
-- `fourierenergy(params...)`
-- `meanvorticity(params...)`
-- `zonalvelocity(params...)`
+dn      = "pointjet/"
 
-## License
+sol     = integrate(prob,NL(),tspan;tsargs...)
+write(prob,NL(),sol,dn=dn,fn="nl")
+
+
+```
+
+### Citing us
+We will soon upload citation instructions, as the relevant articles are due for submission soon. Please feel free to contact me if you are using the code!
+
+### License
 MIT
