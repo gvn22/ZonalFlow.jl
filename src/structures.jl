@@ -87,8 +87,9 @@ GQL(;Λ) = GQL(Λ)
 struct CE2 <: DSS
     poscheck::Bool
     poscheckat::Int
+    eigmax::Bool
 end
-CE2(;poscheck=false,poscheckat=20) = CE2(poscheck,poscheckat)
+CE2(;poscheck=false,poscheckat=20,eigmax=false) = CE2(poscheck,poscheckat,eigmax)
 
 struct GCE2 <: GSS
     Λ::Int

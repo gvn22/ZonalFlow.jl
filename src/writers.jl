@@ -2,8 +2,8 @@ function Base.write(prob,eqs,sol;dn::String="",fn::String)
     mkpath(dn)
     NPZ.npzwrite(dn*fn*".npz",merge(dumpscalars(prob,sol),
                                     dumpfields(prob,sol),
-                                    dumpstats(prob,eqs,sol),
-                                    dumpcoeffs(prob,eqs,sol)))
+                                    dumpstats(prob,eqs,sol)))
+                                    # dumpcoeffs(prob,eqs,sol)))
 end
 
 Base.write(prob,eqs::Vector{AbstractEquations},sols;dn::String,labels::Vector{String}=label(eqs)) = foreach(x->write(prob,x[1],x[2],dn=dn,fn=x[3]),zip(eqs,sols,labels))
@@ -25,7 +25,7 @@ function dumpcoeffs(prob,eqs,sol)
 end
 
 
-function dumpscalars(prob,sol;t0=500.0)
+function dumpscalars(prob,sol;t0=50.0)
     Et = energy.(Ref(prob.d),sol.u)
     Zt = enstrophy.(Ref(prob.d),sol.u)
     Emt = zonalenergy.(Ref(prob.d),sol.u) |> tonpz
@@ -40,7 +40,7 @@ function dumpscalars(prob,sol;t0=500.0)
         "Em0ntav"=>Em0ntav,"Em1ntav"=>Em1ntav,"Em2ntav"=>Em2ntav)
 end
 
-function dumpfields(prob,sol;t0=500.0)
+function dumpfields(prob,sol;t0=50.0)
     Emn = energyspectrum.(Ref(prob.d),sol.u) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
     Fyym1 = secondcumulant.(Ref(prob.d),sol.u,m=1) |> tonpz
     Fyym2 = secondcumulant.(Ref(prob.d),sol.u,m=2) |> tonpz

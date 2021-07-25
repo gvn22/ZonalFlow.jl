@@ -45,3 +45,16 @@ function positivity!(cumulant::Array{ComplexF64,3},temp::Array{ComplexF64,4},nx:
     end
 
 end
+
+function truncatecumulant!(d::AbstractDomain,cc::SecondCumulant{T},temp::SecondCumulant{T}) where T
+    for m=1:d.nx-1
+        D,V = eigen(cc[:,:,m])
+        D[1:2d.nx-2] .= zero(T)
+        # @show D
+        # Dmax = [real(e) >= maximum(real.(D)) ? e : 0.0 for e in D]
+        temp[:,:,m] = V*diagm(D)*inv(V)
+        # @show Dmax
+    end
+    cc .= temp
+    nothing
+end
