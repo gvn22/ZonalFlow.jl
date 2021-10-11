@@ -252,6 +252,7 @@ function f!(du::DSSField{T},u::DSSField{T},p::CE2Params,t) where T<:AbstractFloa
             end
         end
     end
+    # du.x[1] .= zero(Complex{T}) # ! set ∂ζ₀/∂t = 0
     # H'*H
     @inbounds for m3=1:nx-1
         @inbounds for n3=-ny+1:ny-1
@@ -275,8 +276,17 @@ function f!(du::DSSField{T},u::DSSField{T},p::CE2Params,t) where T<:AbstractFloa
         @inbounds for n3=-ny+1:ny-1
             @inbounds for n=-ny+1:ny-1
                 du.x[2][n+ny,n3+ny,m3] += dy[n+ny,n3+ny,m3]
+                # du.x[2][n+ny,n3+ny,1] = zero(Complex{T}) # !! set ∂ζ₁/∂t = 0
             end
         end
     end
+    # !! set ∂ζ₁/∂t = 0
+    # @inbounds for m3=1:1
+    #     @inbounds for n3=-ny+1:ny-1
+    #         @inbounds for n=-ny+1:ny-1
+    #             du.x[2][n+ny,n3+ny,m3] = zero(Complex{T})
+    #         end
+    #     end
+    # end
     nothing
 end
