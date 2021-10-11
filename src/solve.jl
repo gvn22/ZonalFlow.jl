@@ -58,7 +58,7 @@ function get_de_kwargs(prob,eqs::CE2,tspan;kwargs...)
         condition(u,t,integrator) = t ∈ poschecktimes
         temp = zeros(ComplexF64,2*prob.d.ny-1,prob.d.nx-1,2*prob.d.ny-1,prob.d.nx-1)
         posaffect!(integrator) = positivity!(integrator.u.x[2],temp,prob.d.nx,prob.d.ny)
-        poscondition(u,t,integrator) = t > 0.0
+        poscondition(u,t,integrator) = t ∈ poschecktimes
         poscheckcb = DiscreteCallback(poscondition,posaffect!,save_positions=(false,false))
         return merge((callback=poscheckcb,tstops=poschecktimes),kwargs)
     else
