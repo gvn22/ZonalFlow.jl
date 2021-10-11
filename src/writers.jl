@@ -26,22 +26,24 @@ function dumpcoeffs(prob,eqs,sol)
 end
 
 
-function dumpscalars(prob,sol;t0=50.0)
+function dumpscalars(prob,sol;t0=500.0)
     Et = energy.(Ref(prob.d),sol.u)
     Zt = enstrophy.(Ref(prob.d),sol.u)
     Emt = zonalenergy.(Ref(prob.d),sol.u) |> tonpz
-    Em0nt = modalenergy.(Ref(prob.d),sol.u,m=0) |> tonpz
-    Em1nt = modalenergy.(Ref(prob.d),sol.u,m=1) |> tonpz
-    Em2nt = modalenergy.(Ref(prob.d),sol.u,m=2) |> tonpz
-    Em0ntav = modalenergy.(Ref(prob.d),sol.u,m=0) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
-    Em1ntav = modalenergy.(Ref(prob.d),sol.u,m=1) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
-    Em2ntav = modalenergy.(Ref(prob.d),sol.u,m=2) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
     Emtav = zonalenergy.(Ref(prob.d),sol.u) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
-    Dict("t"=>sol.t,"Et"=>Et,"Emt"=>Emt,"Zt"=>Zt,"Emtav"=>Emtav,"Em0nt"=>Em0nt,"Em1nt"=>Em1nt,"Em2nt"=>Em2nt,
-        "Em0ntav"=>Em0ntav,"Em1ntav"=>Em1ntav,"Em2ntav"=>Em2ntav)
+    Dict("t"=>sol.t,"Et"=>Et,"Emt"=>Emt,"Emtav"=>Emtav,"Zt"=>Zt)
+    # ! study eigenvalue structures for each zonal mode in second cumulant
+    # Em0nt = modalenergy.(Ref(prob.d),sol.u,m=0) |> tonpz
+    # Em1nt = modalenergy.(Ref(prob.d),sol.u,m=1) |> tonpz
+    # Em2nt = modalenergy.(Ref(prob.d),sol.u,m=2) |> tonpz
+    # Em0ntav = modalenergy.(Ref(prob.d),sol.u,m=0) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
+    # Em1ntav = modalenergy.(Ref(prob.d),sol.u,m=1) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
+    # Em2ntav = modalenergy.(Ref(prob.d),sol.u,m=2) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
+    # Dict("t"=>sol.t,"Et"=>Et,"Emt"=>Emt,"Zt"=>Zt,"Emtav"=>Emtav,"Em0nt"=>Em0nt,"Em1nt"=>Em1nt,"Em2nt"=>Em2nt,
+    #     "Em0ntav"=>Em0ntav,"Em1ntav"=>Em1ntav,"Em2ntav"=>Em2ntav)
 end
 
-function dumpfields(prob,sol;t0=50.0)
+function dumpfields(prob,sol;t0=500.0)
     Emn = energyspectrum.(Ref(prob.d),sol.u) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
     Fyym1 = secondcumulant.(Ref(prob.d),sol.u,m=1) |> tonpz
     Fyym2 = secondcumulant.(Ref(prob.d),sol.u,m=2) |> tonpz
