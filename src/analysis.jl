@@ -178,8 +178,8 @@ enstrophy(d::AbstractDomain,u) = sum(zonalenstrophy(d,u))
     timeaverage(t,u)
     Time average anything given to it
 """
-function timeaverage(t,u;t0=100.0)
-    U = copy(u)
+function timeaverage(t,u;t0=500.0)
+    U = deepcopy(u)
     t0 = min(t0,t[end])
     i0 = max(findfirst(x -> x > t0,t),2)
     for i=i0:length(u)
