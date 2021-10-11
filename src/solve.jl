@@ -10,11 +10,15 @@ function get_de_ic(prob,eqs,u0=nothing)
     else
         @info "Converting QL solution to CE2 initial condition..."
         convert(eqs,u0,prob.d)
-        # u0 = convert(eqs,u0,prob.d)
         # small noise to m = 1
+        # u0 = convert(eqs,u0,prob.d)
         # for n = 1:2prob.d.ny-1
-        #     u0.x[2][n,n,1] += 1e-6*exp(im*rand(Uniform(0,2π)))
-        #     @show u0.x[2][n,n,1]
+        #     for n2 = 1:2prob.d.ny-1
+        #         for m = 1:prob.d.nx-1
+        #             u0.x[2][n2,n,m] += 1e-12*exp(im*rand(Uniform(0,2π)))
+        #         end
+        #         u0.x[2][n2,n,2] = 0.0
+        #     end
         # end
         # return u0
     end
