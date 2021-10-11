@@ -191,8 +191,10 @@ end
 """
     modaleigvals(d,u)
     modalffts(d,u)
-    Rank information for CE2
+    Rank information for QL/CE2 second cumulants
 """
+modaleigvals(d,u::DNSField{T}) where {T<:AbstractFloat} = convert(CE2(),u,d) |> x -> modaleigvals(d,x)
+
 function modaleigvals(d,u::DSSField{T}) where {T<:AbstractFloat}
     mEVs = zeros(T,2d.ny-1,d.nx-1)
     for m1=1:d.nx-1

@@ -2,8 +2,9 @@ function Base.write(prob,eqs,sol;dn::String="",fn::String)
     mkpath(dn)
     NPZ.npzwrite(dn*fn*".npz",merge(dumpscalars(prob,sol),
                                     dumpfields(prob,sol),
-                                    dumpstats(prob,eqs,sol)))
-                                    # dumpcoeffs(prob,eqs,sol)))
+                                    dumpstats(prob,eqs,sol),
+                                    # dumpcoeffs(prob,eqs,sol),
+                                    ))
 end
 
 Base.write(prob,eqs::Vector{AbstractEquations},sols;dn::String,labels::Vector{String}=label(eqs)) = foreach(x->write(prob,x[1],x[2],dn=dn,fn=x[3]),zip(eqs,sols,labels))
@@ -54,7 +55,11 @@ function dumpfields(prob,sol;t0=50.0)
 end
 
 dumpstats(prob,eqs,sol) = Dict("empty"=>0)
-dumpstats(prob,eqs::CE2,sol) = Dict("mEVs"=> modaleigvals.(Ref(prob.d),sol.u) |> tonpz)
+dumpstats(prob,eqs::GQL,sol) = Dict("mEVs"=> convert.(Ref(CE2()),sol.u,Ref(prob.d)) |> x-> modaleigvals.(Ref(prob.d),x) |> tonpz)
+dumpstats(prob,eqs::CE2,sol) = Dict("mEVs"=> modaleigvals.(Ref(prob.d),x) |> tonpz)
+# !!! time averaged second cumulants from QL/CE2
+# dumpstats(prob,eqs::GQL,sol) = Dict("mEVs"=> convert.(Ref(CE2()),sol.u,Ref(prob.d)) |> x-> timeaverage(sol.t,x,t0=500.0) |> x-> modaleigvals.(Ref(prob.d),x) |> tonpz)
+# dumpstats(prob,eqs::CE2,sol) = Dict("mEVs"=> timeaverage(sol.t,sol.u,t0=500.0) |> x-> modaleigvals.(Ref(prob.d),x) |> tonpz)
 
 function dumpadjacency(lx::T,ly::T,nx::Int,ny::Int;fs::String,Λ::Int=nx-1) where {T <: AbstractFloat}
     A,C = adjacency(lx,ly,nx,ny,Λ=Λ)
