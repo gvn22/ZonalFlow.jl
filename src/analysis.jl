@@ -178,8 +178,8 @@ enstrophy(d::AbstractDomain,u) = sum(zonalenstrophy(d,u))
     timeaverage(t,u)
     Time average anything given to it
 """
-function timeaverage(t,u;t0=100.0)
-    U = copy(u)
+function timeaverage(t,u;t0=500.0)
+    U = deepcopy(u)
     t0 = min(t0,t[end])
     i0 = max(findfirst(x -> x > t0,t),2)
     for i=i0:length(u)
@@ -191,8 +191,10 @@ end
 """
     modaleigvals(d,u)
     modalffts(d,u)
-    Rank information for CE2
+    Rank information for QL/CE2 second cumulants
 """
+modaleigvals(d,u::DNSField{T}) where {T<:AbstractFloat} = convert(CE2(),u,d) |> x -> modaleigvals(d,x)
+
 function modaleigvals(d,u::DSSField{T}) where {T<:AbstractFloat}
     mEVs = zeros(T,2d.ny-1,d.nx-1)
     for m1=1:d.nx-1

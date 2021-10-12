@@ -2,8 +2,9 @@ function Base.write(prob,eqs,sol;dn::String="",fn::String)
     mkpath(dn)
     NPZ.npzwrite(dn*fn*".npz",merge(dumpscalars(prob,sol),
                                     dumpfields(prob,sol),
-                                    dumpstats(prob,eqs,sol)))
-                                    # dumpcoeffs(prob,eqs,sol)))
+                                    dumpstats(prob,eqs,sol),
+                                    dumpcoeffs(prob,eqs,sol),
+                                    ))
 end
 
 Base.write(prob,eqs::Vector{AbstractEquations},sols;dn::String,labels::Vector{String}=label(eqs)) = foreach(x->write(prob,x[1],x[2],dn=dn,fn=x[3]),zip(eqs,sols,labels))
@@ -12,35 +13,37 @@ tonpz(u) = reshape(cat(u...,dims=length(size(u[1]))),size(u[1])...,length(u))
 
 function dumpcoeffs(prob,eqs::CE2,sol)
     x = zeros(eqs,prob.d)
-    x.x[2] .= fcoeffs2(prob,eqs)
+    x.x[2] .= fcoeffs(prob,eqs)
     F = forcingspectrum(prob.d,x)
     Dict("t"=>sol.t,"F"=>F)
 end
 
 function dumpcoeffs(prob,eqs,sol)
     x = zeros(eqs,prob.d)
-    x .= fcoeffs2(prob,eqs)
+    x .= fcoeffs(prob,eqs)
     F = forcingspectrum(prob.d,x)
     Dict("t"=>sol.t,"F"=>F)
 end
 
 
-function dumpscalars(prob,sol;t0=50.0)
+function dumpscalars(prob,sol;t0=500.0)
     Et = energy.(Ref(prob.d),sol.u)
     Zt = enstrophy.(Ref(prob.d),sol.u)
     Emt = zonalenergy.(Ref(prob.d),sol.u) |> tonpz
-    Em0nt = modalenergy.(Ref(prob.d),sol.u,m=0) |> tonpz
-    Em1nt = modalenergy.(Ref(prob.d),sol.u,m=1) |> tonpz
-    Em2nt = modalenergy.(Ref(prob.d),sol.u,m=2) |> tonpz
-    Em0ntav = modalenergy.(Ref(prob.d),sol.u,m=0) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
-    Em1ntav = modalenergy.(Ref(prob.d),sol.u,m=1) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
-    Em2ntav = modalenergy.(Ref(prob.d),sol.u,m=2) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
     Emtav = zonalenergy.(Ref(prob.d),sol.u) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
-    Dict("t"=>sol.t,"Et"=>Et,"Emt"=>Emt,"Zt"=>Zt,"Emtav"=>Emtav,"Em0nt"=>Em0nt,"Em1nt"=>Em1nt,"Em2nt"=>Em2nt,
-        "Em0ntav"=>Em0ntav,"Em1ntav"=>Em1ntav,"Em2ntav"=>Em2ntav)
+    Dict("t"=>sol.t,"Et"=>Et,"Emt"=>Emt,"Emtav"=>Emtav,"Zt"=>Zt)
+    # ! study eigenvalue structures for each zonal mode in second cumulant
+    # Em0nt = modalenergy.(Ref(prob.d),sol.u,m=0) |> tonpz
+    # Em1nt = modalenergy.(Ref(prob.d),sol.u,m=1) |> tonpz
+    # Em2nt = modalenergy.(Ref(prob.d),sol.u,m=2) |> tonpz
+    # Em0ntav = modalenergy.(Ref(prob.d),sol.u,m=0) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
+    # Em1ntav = modalenergy.(Ref(prob.d),sol.u,m=1) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
+    # Em2ntav = modalenergy.(Ref(prob.d),sol.u,m=2) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
+    # Dict("t"=>sol.t,"Et"=>Et,"Emt"=>Emt,"Zt"=>Zt,"Emtav"=>Emtav,"Em0nt"=>Em0nt,"Em1nt"=>Em1nt,"Em2nt"=>Em2nt,
+    #     "Em0ntav"=>Em0ntav,"Em1ntav"=>Em1ntav,"Em2ntav"=>Em2ntav)
 end
 
-function dumpfields(prob,sol;t0=50.0)
+function dumpfields(prob,sol;t0=500.0)
     Emn = energyspectrum.(Ref(prob.d),sol.u) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
     Fyym1 = secondcumulant.(Ref(prob.d),sol.u,m=1) |> tonpz
     Fyym2 = secondcumulant.(Ref(prob.d),sol.u,m=2) |> tonpz
@@ -54,7 +57,11 @@ function dumpfields(prob,sol;t0=50.0)
 end
 
 dumpstats(prob,eqs,sol) = Dict("empty"=>0)
+dumpstats(prob,eqs::GQL,sol) = Dict("mEVs"=> convert.(Ref(CE2()),sol.u,Ref(prob.d)) |> x-> modaleigvals.(Ref(prob.d),x) |> tonpz)
 dumpstats(prob,eqs::CE2,sol) = Dict("mEVs"=> modaleigvals.(Ref(prob.d),sol.u) |> tonpz)
+# !!! time averaged second cumulants from QL/CE2
+# dumpstats(prob,eqs::GQL,sol) = Dict("mEVs"=> convert.(Ref(CE2()),sol.u,Ref(prob.d)) |> x-> timeaverage(sol.t,x,t0=500.0) |> x-> modaleigvals.(Ref(prob.d),x) |> tonpz)
+# dumpstats(prob,eqs::CE2,sol) = Dict("mEVs"=> timeaverage(sol.t,sol.u,t0=500.0) |> x-> modaleigvals.(Ref(prob.d),x) |> tonpz)
 
 function dumpadjacency(lx::T,ly::T,nx::Int,ny::Int;fs::String,Λ::Int=nx-1) where {T <: AbstractFloat}
     A,C = adjacency(lx,ly,nx,ny,Λ=Λ)
