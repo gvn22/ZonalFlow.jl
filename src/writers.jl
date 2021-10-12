@@ -3,7 +3,7 @@ function Base.write(prob,eqs,sol;dn::String="",fn::String)
     NPZ.npzwrite(dn*fn*".npz",merge(dumpscalars(prob,sol),
                                     dumpfields(prob,sol),
                                     dumpstats(prob,eqs,sol),
-                                    # dumpcoeffs(prob,eqs,sol),
+                                    dumpcoeffs(prob,eqs,sol),
                                     ))
 end
 
@@ -13,14 +13,14 @@ tonpz(u) = reshape(cat(u...,dims=length(size(u[1]))),size(u[1])...,length(u))
 
 function dumpcoeffs(prob,eqs::CE2,sol)
     x = zeros(eqs,prob.d)
-    x.x[2] .= fcoeffs2(prob,eqs)
+    x.x[2] .= fcoeffs(prob,eqs)
     F = forcingspectrum(prob.d,x)
     Dict("t"=>sol.t,"F"=>F)
 end
 
 function dumpcoeffs(prob,eqs,sol)
     x = zeros(eqs,prob.d)
-    x .= fcoeffs2(prob,eqs)
+    x .= fcoeffs(prob,eqs)
     F = forcingspectrum(prob.d,x)
     Dict("t"=>sol.t,"F"=>F)
 end
@@ -58,7 +58,7 @@ end
 
 dumpstats(prob,eqs,sol) = Dict("empty"=>0)
 dumpstats(prob,eqs::GQL,sol) = Dict("mEVs"=> convert.(Ref(CE2()),sol.u,Ref(prob.d)) |> x-> modaleigvals.(Ref(prob.d),x) |> tonpz)
-dumpstats(prob,eqs::CE2,sol) = Dict("mEVs"=> modaleigvals.(Ref(prob.d),x) |> tonpz)
+dumpstats(prob,eqs::CE2,sol) = Dict("mEVs"=> modaleigvals.(Ref(prob.d),sol.u) |> tonpz)
 # !!! time averaged second cumulants from QL/CE2
 # dumpstats(prob,eqs::GQL,sol) = Dict("mEVs"=> convert.(Ref(CE2()),sol.u,Ref(prob.d)) |> x-> timeaverage(sol.t,x,t0=500.0) |> x-> modaleigvals.(Ref(prob.d),x) |> tonpz)
 # dumpstats(prob,eqs::CE2,sol) = Dict("mEVs"=> timeaverage(sol.t,sol.u,t0=500.0) |> x-> modaleigvals.(Ref(prob.d),x) |> tonpz)
