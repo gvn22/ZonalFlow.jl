@@ -231,15 +231,7 @@ function adjacency(prob::BetaPlane{T,Stochastic{T}},eqs) where {T<:AbstractFloat
     M,N = 2nx-1,2ny-1
 
     # linear coefficients
-    B = bcoeffs(prob)
-    B̂ = zeros(Complex{T},2ny-1,2nx-1)
-    for m=0:nx-1
-        nmin = m==0 ? 1 : -ny+1
-        for n = nmin:ny-1
-            B̂[n+ny,m+nx] = B[n+ny,m+1]
-            B̂[-n+ny,-m+nx] = conj(B[n+ny,m+1])
-        end
-    end
+    B̂ = bcoeffs(prob) |> x-> resolvedfield(prob.d,x)
     Bij = zeros(Complex{T},M*N,M*N)
     for i=1:length(vec(B̂))
         Bij[i,i] = vec(B̂)[i]
