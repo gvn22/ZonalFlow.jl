@@ -257,12 +257,108 @@ function adjacency(prob::BetaPlane{T,Stochastic{T}},eqs) where {T<:AbstractFloat
     Bij,Cij
 end
 
-# container for solution based adjacency calculation
-# to be changed to length u...
 function adjacency(prob::BetaPlane{T,Stochastic{T}},eqs,sol) where {T<:AbstractFloat}
-    U = zeros(Complex{T},(2d.nx-1)*(2d.ny-1),(2d.nx-1)*(2d.ny-1),1)
-    for i=1:1
-        @views U[:,:,i] .= adjacency(lx,ly,nx,ny,u[i])
+
+    (nx,ny),Λ = size(prob.d),lambda(prob,eqs)
+
+    # A = fcoeffs(prob,eqs)
+    B̂ = bcoeffs(prob) |> x-> resolvedfield(prob.d,x)
+    Bij = zeros(Complex{T},length(B̂),length(B̂))
+    for i=1:length(vec(B̂))
+        Bij[i,i] = vec(B̂)[i]
     end
-    U
+
+    Cp,Cm = ccoeffs(prob,eqs)
+    Ĉ = zeros(Complex{T},2ny-1,2nx-1,2ny-1,2nx-1) # time-dependent adjacency matrix
+    u = deepcopy(sol.u[end]) # u = zeros(Complex{T},2ny-1,nx-1)
+
+    """
+    Constants
+    """
+    # @inbounds for n1=1:ny-1
+    #     m1 = 0
+    #     du[n1+ny,m1+1] += A[n1+ny]
+    # end
+    """
+    Linearities
+    """
+    # @inbounds for m1=1:nx-1
+    #     @inbounds for n1=-ny+1:ny-1
+    #         du[n1+ny,m1+1] += B[n1+ny,m1+1]*u[n1+ny,m1+1]
+    #     end
+    # end
+    """
+    Interaction of low modes
+    """
+    @inbounds for m1=1:Λ
+        @inbounds for n1=-ny+1:ny-1
+            # L + L = L
+            @inbounds for m2=0:min(m1,Λ-m1)
+                n2min = m2 == 0 ? 1 : -ny+1
+                @inbounds for n2=max(n2min,-ny+1-n1):min(ny-1,ny-1-n1)
+                    m = m1 + m2
+                    n = n1 + n2
+                    Ĉ[n2+ny,m2+nx,n1+ny,m1+nx] += Cp[n2+ny,m2+1,n1+ny,m1+1]*u[n1+ny,m1+1]*u[n2+ny,m2+1]
+                    Ĉ[-n2+ny,-m2+nx,-n1+ny,-m1+nx] = conj(Ĉ[n2+ny,m2+nx,n1+ny,m1+nx])
+                end
+            end
+            # L - L = L
+            for m2=0:m1
+                n2min = m2 == 0 ? 1 : -ny+1
+                n2max = m2 == m1 ? n1 - 1 : ny-1
+                for n2=max(n2min,n1-ny+1):min(n2max,n1+ny-1)
+                    m = m1 - m2
+                    n = n1 - n2
+                    # du[n+ny,m+1] += Cm[n2+ny,m2+1,n1+ny,m1+1]*u[n1+ny,m1+1]*conj(u[n2+ny,m2+1])
+                    Ĉ[-n2+ny,-m2+nx,n1+ny,m1+nx] += Cm[n2+ny,m2+1,n1+ny,m1+1]*u[n1+ny,m1+1]*conj(u[n2+ny,m2+1])
+                    Ĉ[n2+ny,m2+nx,-n1+ny,-m1+nx] = conj(Ĉ[-n2+ny,-m2+nx,n1+ny,m1+nx])
+                end
+            end
+        end
+    end
+
+    """
+    Interaction of high modes: in NL there only low modes.
+    """
+    @inbounds for m1=Λ+1:nx-1
+        @inbounds for n1=-ny+1:ny-1
+            # H - H = L
+            @inbounds for m2=max(Λ+1,m1-Λ):m1
+                n2max = m2 == m1 ? n1 - 1 : ny-1
+                @inbounds for n2=max(-ny+1,n1-ny+1):min(n2max,n1+ny-1)
+                    m = m1 - m2
+                    n = n1 - n2
+                    # du[n+ny,m+1] += Cm[n2+ny,m2+1,n1+ny,m1+1]*u[n1+ny,m1+1]*conj(u[n2+ny,m2+1])
+                    Ĉ[-n2+ny,-m2+nx,n1+ny,m1+nx] += Cm[n2+ny,m2+1,n1+ny,m1+1]*u[n1+ny,m1+1]*conj(u[n2+ny,m2+1])
+                    Ĉ[n2+ny,m2+nx,-n1+ny,-m1+nx] = conj(Ĉ[-n2+ny,-m2+nx,n1+ny,m1+nx])
+
+                end
+            end
+            # H + L = H
+            @inbounds for m2=0:min(nx-1-m1,Λ)
+                n2min = m2 == 0 ? 1 : -ny+1
+                @inbounds for n2=max(n2min,-ny+1-n1):min(ny-1,ny-1-n1)
+                    m = m1 + m2
+                    n = n1 + n2
+                    # du[n+ny,m+1] += Cp[n2+ny,m2+1,n1+ny,m1+1]*u[n1+ny,m1+1]*u[n2+ny,m2+1]
+                    Ĉ[n2+ny,m2+nx,n1+ny,m1+nx] += Cp[n2+ny,m2+1,n1+ny,m1+1]*u[n1+ny,m1+1]*u[n2+ny,m2+1]
+                    Ĉ[-n2+ny,-m2+nx,-n1+ny,-m1+nx] = conj(Ĉ[n2+ny,m2+nx,n1+ny,m1+nx])
+                end
+            end
+            # H - L = H
+            @inbounds for m2=0:1:min(Λ,m1 - Λ - 1)
+                n2min = m2 == 0 ? 1 : -ny+1
+                @inbounds for n2=max(n2min,n1-ny+1):1:min(ny-1,n1+ny-1)
+                    m = m1 - m2
+                    n = n1 - n2
+                    # du[n+ny,m+1] += Cm[n2+ny,m2+1,n1+ny,m1+1]*u[n1+ny,m1+1]*conj(u[n2+ny,m2+1])
+                    Ĉ[-n2+ny,-m2+nx,n1+ny,m1+nx] += Cm[n2+ny,m2+1,n1+ny,m1+1]*u[n1+ny,m1+1]*conj(u[n2+ny,m2+1])
+                    Ĉ[n2+ny,m2+nx,-n1+ny,-m1+nx] = conj(Ĉ[-n2+ny,-m2+nx,n1+ny,m1+nx])
+                end
+            end
+        end
+    end
+    Cij = reshape(Ĉ,(2ny-1)*(2nx-1),(2ny-1)*(2nx-1))
+
+    Bij,Cij
 end
