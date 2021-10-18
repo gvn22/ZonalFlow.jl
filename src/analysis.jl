@@ -232,7 +232,7 @@ function adjacency(prob::BetaPlane{T,Stochastic{T}},eqs) where {T<:AbstractFloat
 
     # linear coefficients
     B̂ = bcoeffs(prob) |> x-> resolvedfield(prob.d,x)
-    Bij = zeros(Complex{T},M*N,M*N)
+    Bij = zeros(Complex{T},length(B̂),length(B̂))
     for i=1:length(vec(B̂))
         Bij[i,i] = vec(B̂)[i]
     end
@@ -252,8 +252,9 @@ function adjacency(prob::BetaPlane{T,Stochastic{T}},eqs) where {T<:AbstractFloat
             end
         end
     end
+    Cij = reshape(Ĉ,M*N,M*N)
 
-    Bij,reshape(Ĉ,M*N,M*N)
+    Bij,Cij
 end
 
 # container for solution based adjacency calculation
