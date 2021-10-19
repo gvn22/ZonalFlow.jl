@@ -230,6 +230,13 @@ function adjacency(prob::BetaPlane{T,Stochastic{T}},eqs) where {T<:AbstractFloat
     (lx,ly),(nx,ny) = length(prob.d),size(prob.d)
     M,N = 2nx-1,2ny-1
 
+    # constants
+    A = fcoeffs(prob,eqs) |> x-> resolvedfield(prob.d,x)
+    Aij = zeros(Complex{T},length(A),length(A))
+    for i=1:length(vec(A))
+        Aij[i,i] = vec(A)[i]
+    end
+
     # linear coefficients
     B̂ = bcoeffs(prob) |> x-> resolvedfield(prob.d,x)
     Bij = zeros(Complex{T},length(B̂),length(B̂))
@@ -254,42 +261,46 @@ function adjacency(prob::BetaPlane{T,Stochastic{T}},eqs) where {T<:AbstractFloat
     end
     Cij = reshape(Ĉ,M*N,M*N)
 
-    Bij,Cij
+    Aij,Bij,Cij
 end
 
 function adjacency(prob::BetaPlane{T,Stochastic{T}},eqs,sol) where {T<:AbstractFloat}
 
     (nx,ny),Λ = size(prob.d),lambda(prob,eqs)
-
-    # A = fcoeffs(prob,eqs)
-    B̂ = bcoeffs(prob) |> x-> resolvedfield(prob.d,x)
-    Bij = zeros(Complex{T},length(B̂),length(B̂))
-    for i=1:length(vec(B̂))
-        Bij[i,i] = vec(B̂)[i]
-    end
-
-    Cp,Cm = ccoeffs(prob,eqs)
-    Ĉ = zeros(Complex{T},2ny-1,2nx-1,2ny-1,2nx-1) # time-dependent adjacency matrix
     u = deepcopy(sol.u[end]) # u = zeros(Complex{T},2ny-1,nx-1)
 
     """
     Constants
     """
-    # @inbounds for n1=1:ny-1
-    #     m1 = 0
-    #     du[n1+ny,m1+1] += A[n1+ny]
-    # end
+    A = fcoeffs(prob,eqs) |> x-> resolvedfield(prob.d,x)
+    Aij = zeros(Complex{T},length(A),length(A))
+    for i=1:length(vec(A))
+        Aij[i,i] = vec(A)[i]
+    end
+
     """
     Linearities
     """
-    # @inbounds for m1=1:nx-1
-    #     @inbounds for n1=-ny+1:ny-1
-    #         du[n1+ny,m1+1] += B[n1+ny,m1+1]*u[n1+ny,m1+1]
-    #     end
-    # end
+    B = bcoeffs(prob)
+    @inbounds for m1=1:nx-1
+        @inbounds for n1=-ny+1:ny-1
+            B[n1+ny,m1+1] *= u[n1+ny,m1+1] # consider field
+        end
+    end
+
+    B̂ = resolvedfield(prob.d,B)
+    Bij = zeros(Complex{T},length(B̂),length(B̂))
+    for i=1:length(vec(B̂))
+        Bij[i,i] = vec(B̂)[i]
+    end
+
     """
-    Interaction of low modes
+    Nonlinearities
     """
+    Cp,Cm = ccoeffs(prob,eqs)
+    Ĉ = zeros(Complex{T},2ny-1,2nx-1,2ny-1,2nx-1) # time-dependent adjacency matrix
+
+    # L interactions
     @inbounds for m1=1:Λ
         @inbounds for n1=-ny+1:ny-1
             # L + L = L
@@ -317,9 +328,7 @@ function adjacency(prob::BetaPlane{T,Stochastic{T}},eqs,sol) where {T<:AbstractF
         end
     end
 
-    """
-    Interaction of high modes: in NL there only low modes.
-    """
+    # H interactions
     @inbounds for m1=Λ+1:nx-1
         @inbounds for n1=-ny+1:ny-1
             # H - H = L
@@ -360,5 +369,5 @@ function adjacency(prob::BetaPlane{T,Stochastic{T}},eqs,sol) where {T<:AbstractF
     end
     Cij = reshape(Ĉ,(2ny-1)*(2nx-1),(2ny-1)*(2nx-1))
 
-    Bij,Cij
+    Aij,Bij,Cij
 end
