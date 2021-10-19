@@ -253,6 +253,7 @@ function adjacency(prob::BetaPlane{T,Stochastic{T}},eqs) where {T<:AbstractFloat
                 for n2=-ny+1:ny-1
                     Ĉ[n2+ny,m2+nx,n1+ny,m1+nx] = Cp[n2+ny,m2+1,n1+ny,m1+1]
                     Ĉ[-n2+ny,-m2+nx,-n1+ny,-m1+nx] = conj(Ĉ[n2+ny,m2+nx,n1+ny,m1+nx])
+
                     Ĉ[-n2+ny,-m2+nx,n1+ny,m1+nx] = Cm[n2+ny,m2+1,n1+ny,m1+1]
                     Ĉ[n2+ny,m2+nx,-n1+ny,-m1+nx] = conj(Ĉ[-n2+ny,-m2+nx,n1+ny,m1+nx])
                 end
@@ -262,12 +263,12 @@ function adjacency(prob::BetaPlane{T,Stochastic{T}},eqs) where {T<:AbstractFloat
     Cij = reshape(Ĉ,M*N,M*N)
 
     Aij,Bij,Cij
+
 end
 
-function adjacency(prob::BetaPlane{T,Stochastic{T}},eqs,sol) where {T<:AbstractFloat}
+function adjacency(prob::BetaPlane{T,Stochastic{T}},eqs,u) where {T<:AbstractFloat}
 
     (nx,ny),Λ = size(prob.d),lambda(prob,eqs)
-    u = deepcopy(sol.u[end]) # u = zeros(Complex{T},2ny-1,nx-1)
 
     """
     Constants
@@ -298,7 +299,9 @@ function adjacency(prob::BetaPlane{T,Stochastic{T}},eqs,sol) where {T<:AbstractF
     Nonlinearities
     """
     Cp,Cm = ccoeffs(prob,eqs)
-    Ĉ = zeros(Complex{T},2ny-1,2nx-1,2ny-1,2nx-1) # time-dependent adjacency matrix
+    Ĉ = zeros(Complex{T},2ny-1,2nx-1,2ny-1,2nx-1)
+    Ĉl = fill!(similar(Ĉ),0)
+    Ĉh = fill!(similar(Ĉ),0)
 
     # L interactions
     @inbounds for m1=1:Λ
@@ -307,10 +310,15 @@ function adjacency(prob::BetaPlane{T,Stochastic{T}},eqs,sol) where {T<:AbstractF
             @inbounds for m2=0:min(m1,Λ-m1)
                 n2min = m2 == 0 ? 1 : -ny+1
                 @inbounds for n2=max(n2min,-ny+1-n1):min(ny-1,ny-1-n1)
-                    m = m1 + m2
-                    n = n1 + n2
-                    Ĉ[n2+ny,m2+nx,n1+ny,m1+nx] += Cp[n2+ny,m2+1,n1+ny,m1+1]*u[n1+ny,m1+1]*u[n2+ny,m2+1]
-                    Ĉ[-n2+ny,-m2+nx,-n1+ny,-m1+nx] = conj(Ĉ[n2+ny,m2+nx,n1+ny,m1+nx])
+                    # m = m1 + m2
+                    # n = n1 + n2
+                    s = Cp[n2+ny,m2+1,n1+ny,m1+1]*u[n1+ny,m1+1]*u[n2+ny,m2+1]
+
+                    Ĉ[n2+ny,m2+nx,n1+ny,m1+nx] += s
+                    Ĉ[-n2+ny,-m2+nx,-n1+ny,-m1+nx] = conj(s)
+
+                    Ĉl[n2+ny,m2+nx,n1+ny,m1+nx] += s
+                    Ĉl[-n2+ny,-m2+nx,-n1+ny,-m1+nx] = conj(s)
                 end
             end
             # L - L = L
@@ -318,11 +326,15 @@ function adjacency(prob::BetaPlane{T,Stochastic{T}},eqs,sol) where {T<:AbstractF
                 n2min = m2 == 0 ? 1 : -ny+1
                 n2max = m2 == m1 ? n1 - 1 : ny-1
                 for n2=max(n2min,n1-ny+1):min(n2max,n1+ny-1)
-                    m = m1 - m2
-                    n = n1 - n2
-                    # du[n+ny,m+1] += Cm[n2+ny,m2+1,n1+ny,m1+1]*u[n1+ny,m1+1]*conj(u[n2+ny,m2+1])
-                    Ĉ[-n2+ny,-m2+nx,n1+ny,m1+nx] += Cm[n2+ny,m2+1,n1+ny,m1+1]*u[n1+ny,m1+1]*conj(u[n2+ny,m2+1])
-                    Ĉ[n2+ny,m2+nx,-n1+ny,-m1+nx] = conj(Ĉ[-n2+ny,-m2+nx,n1+ny,m1+nx])
+                    # m = m1 - m2
+                    # n = n1 - n2
+                    s = Cm[n2+ny,m2+1,n1+ny,m1+1]*u[n1+ny,m1+1]*conj(u[n2+ny,m2+1])
+
+                    Ĉ[-n2+ny,-m2+nx,n1+ny,m1+nx] += s
+                    Ĉ[n2+ny,m2+nx,-n1+ny,-m1+nx] = conj(s)
+
+                    Ĉl[-n2+ny,-m2+nx,n1+ny,m1+nx] += s
+                    Ĉl[n2+ny,m2+nx,-n1+ny,-m1+nx] = conj(s)
                 end
             end
         end
@@ -335,39 +347,52 @@ function adjacency(prob::BetaPlane{T,Stochastic{T}},eqs,sol) where {T<:AbstractF
             @inbounds for m2=max(Λ+1,m1-Λ):m1
                 n2max = m2 == m1 ? n1 - 1 : ny-1
                 @inbounds for n2=max(-ny+1,n1-ny+1):min(n2max,n1+ny-1)
-                    m = m1 - m2
-                    n = n1 - n2
-                    # du[n+ny,m+1] += Cm[n2+ny,m2+1,n1+ny,m1+1]*u[n1+ny,m1+1]*conj(u[n2+ny,m2+1])
-                    Ĉ[-n2+ny,-m2+nx,n1+ny,m1+nx] += Cm[n2+ny,m2+1,n1+ny,m1+1]*u[n1+ny,m1+1]*conj(u[n2+ny,m2+1])
-                    Ĉ[n2+ny,m2+nx,-n1+ny,-m1+nx] = conj(Ĉ[-n2+ny,-m2+nx,n1+ny,m1+nx])
+                    # m = m1 - m2
+                    # n = n1 - n2
+                    s = Cm[n2+ny,m2+1,n1+ny,m1+1]*u[n1+ny,m1+1]*conj(u[n2+ny,m2+1])
 
+                    Ĉ[-n2+ny,-m2+nx,n1+ny,m1+nx] += s
+                    Ĉ[n2+ny,m2+nx,-n1+ny,-m1+nx] = conj(s)
+
+                    Ĉl[-n2+ny,-m2+nx,n1+ny,m1+nx] += s
+                    Ĉl[n2+ny,m2+nx,-n1+ny,-m1+nx] = conj(s)
                 end
             end
             # H + L = H
             @inbounds for m2=0:min(nx-1-m1,Λ)
                 n2min = m2 == 0 ? 1 : -ny+1
                 @inbounds for n2=max(n2min,-ny+1-n1):min(ny-1,ny-1-n1)
-                    m = m1 + m2
-                    n = n1 + n2
-                    # du[n+ny,m+1] += Cp[n2+ny,m2+1,n1+ny,m1+1]*u[n1+ny,m1+1]*u[n2+ny,m2+1]
-                    Ĉ[n2+ny,m2+nx,n1+ny,m1+nx] += Cp[n2+ny,m2+1,n1+ny,m1+1]*u[n1+ny,m1+1]*u[n2+ny,m2+1]
-                    Ĉ[-n2+ny,-m2+nx,-n1+ny,-m1+nx] = conj(Ĉ[n2+ny,m2+nx,n1+ny,m1+nx])
+                    # m = m1 + m2
+                    # n = n1 + n2
+                    s = Cp[n2+ny,m2+1,n1+ny,m1+1]*u[n1+ny,m1+1]*u[n2+ny,m2+1]
+
+                    Ĉ[n2+ny,m2+nx,n1+ny,m1+nx] += s
+                    Ĉ[-n2+ny,-m2+nx,-n1+ny,-m1+nx] = conj(s)
+
+                    Ĉh[n2+ny,m2+nx,n1+ny,m1+nx] += s
+                    Ĉh[-n2+ny,-m2+nx,-n1+ny,-m1+nx] = conj(s)
                 end
             end
             # H - L = H
             @inbounds for m2=0:1:min(Λ,m1 - Λ - 1)
                 n2min = m2 == 0 ? 1 : -ny+1
                 @inbounds for n2=max(n2min,n1-ny+1):1:min(ny-1,n1+ny-1)
-                    m = m1 - m2
-                    n = n1 - n2
-                    # du[n+ny,m+1] += Cm[n2+ny,m2+1,n1+ny,m1+1]*u[n1+ny,m1+1]*conj(u[n2+ny,m2+1])
-                    Ĉ[-n2+ny,-m2+nx,n1+ny,m1+nx] += Cm[n2+ny,m2+1,n1+ny,m1+1]*u[n1+ny,m1+1]*conj(u[n2+ny,m2+1])
-                    Ĉ[n2+ny,m2+nx,-n1+ny,-m1+nx] = conj(Ĉ[-n2+ny,-m2+nx,n1+ny,m1+nx])
+                    # m = m1 - m2
+                    # n = n1 - n2
+                    s = Cm[n2+ny,m2+1,n1+ny,m1+1]*u[n1+ny,m1+1]*conj(u[n2+ny,m2+1])
+
+                    Ĉ[-n2+ny,-m2+nx,n1+ny,m1+nx] += s
+                    Ĉ[n2+ny,m2+nx,-n1+ny,-m1+nx] = conj(s)
+
+                    Ĉh[-n2+ny,-m2+nx,n1+ny,m1+nx] += s
+                    Ĉh[n2+ny,m2+nx,-n1+ny,-m1+nx] = conj(s)
                 end
             end
         end
     end
     Cij = reshape(Ĉ,(2ny-1)*(2nx-1),(2ny-1)*(2nx-1))
+    Clij = reshape(Ĉl,(2ny-1)*(2nx-1),(2ny-1)*(2nx-1))
+    Chij = reshape(Ĉh,(2ny-1)*(2nx-1),(2ny-1)*(2nx-1))
 
-    Aij,Bij,Cij
+    Aij,Bij,Cij,Clij,Chij
 end

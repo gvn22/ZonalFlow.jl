@@ -68,7 +68,7 @@ function dumpadjacency(prob,eqs::Union{NL,GQL};fn::String)
     NPZ.npzwrite(fn*".npz",Dict("A"=>A,"B"=>B,"C"=>C))
 end
 
-function dumpadjacency(prob,eqs::Union{NL,GQL},sol;fn::String)
-    A,B,C = adjacency(prob,eqs,sol)
-    NPZ.npzwrite(fn*".npz",Dict("A"=>A,"B"=>B,"C"=>C))
+function dumpadjacency(prob,eqs::Union{NL,GQL},u;fn::String)
+    A,B,C,Cl,Ch = adjacency(prob,eqs,u)
+    NPZ.npzwrite(fn*".npz",Dict("A"=>A,"B"=>B,"C"=>C,"Cl"=>Cl,"Ch"=>Ch))
 end
