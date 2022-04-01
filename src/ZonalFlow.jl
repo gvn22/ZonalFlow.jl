@@ -35,6 +35,6 @@ export  NL,
         GCE2,
         CE2
 
-export  integrate
+export  integrate,dumpadjacency
 
 end

@@ -63,8 +63,12 @@ dumpstats(prob,eqs::CE2,sol) = Dict("mEVs"=> modaleigvals.(Ref(prob.d),sol.u) |>
 # dumpstats(prob,eqs::GQL,sol) = Dict("mEVs"=> convert.(Ref(CE2()),sol.u,Ref(prob.d)) |> x-> timeaverage(sol.t,x,t0=500.0) |> x-> modaleigvals.(Ref(prob.d),x) |> tonpz)
 # dumpstats(prob,eqs::CE2,sol) = Dict("mEVs"=> timeaverage(sol.t,sol.u,t0=500.0) |> x-> modaleigvals.(Ref(prob.d),x) |> tonpz)
 
-function dumpadjacency(lx::T,ly::T,nx::Int,ny::Int;fs::String,Λ::Int=nx-1) where {T <: AbstractFloat}
-    A,C = adjacency(lx,ly,nx,ny,Λ=Λ)
-    d = Dict("A"=>A,"C"=>C)
-    NPZ.npzwrite(fs*".npz",d)
+function dumpadjacency(prob,eqs::Union{NL,GQL};fn::String)
+    A,B,C = adjacency(prob,eqs)
+    NPZ.npzwrite(fn*".npz",Dict("A"=>A,"B"=>B,"C"=>C))
+end
+
+function dumpadjacency(prob,eqs::Union{NL,GQL},u;fn::String)
+    A,B,C,Cl,Ch = adjacency(prob,eqs,u)
+    NPZ.npzwrite(fn*".npz",Dict("A"=>A,"B"=>B,"C"=>C,"Cl"=>Cl,"Ch"=>Ch))
 end

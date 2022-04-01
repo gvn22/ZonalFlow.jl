@@ -199,6 +199,7 @@ function fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs::CE2) where T
         Ck = zero(T)
         Nk += 1
         for n=-ny+1:ny-1
+        # for n=3:3
             kx,ky = 2π*m/prob.d.lx,2π*n/prob.d.ly
             Γ[n+ny,n+ny,m] = c^2*exp(-ky^2*c^2) # c^2
             Ck += Γ[n+ny,n+ny,m]/(kx^2+ky^2)
