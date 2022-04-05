@@ -105,6 +105,13 @@ function f!(du::DNSField{T},u::DNSField{T},p::GQLParams{T},t) where T<:AbstractF
             end
         end
     end
+    # @inbounds for n1=-ny+1:ny-1
+    #     # m1 = 3
+    #     m1 = 0
+    #     du[n1+ny,m1+1] = zero(Complex{T})
+    #     m1 = 1
+    #     du[n1+ny,m1+1] = zero(Complex{T})
+    # end
     nothing
 end
 
@@ -281,7 +288,7 @@ function f!(du::DSSField{T},u::DSSField{T},p::CE2Params,t) where T<:AbstractFloa
         end
     end
     # !! set ∂ζ₁/∂t = 0
-    # @inbounds for m3=1:1
+    # @inbounds for m3=3:3
     #     @inbounds for n3=-ny+1:ny-1
     #         @inbounds for n=-ny+1:ny-1
     #             du.x[2][n+ny,n3+ny,m3] = zero(Complex{T})

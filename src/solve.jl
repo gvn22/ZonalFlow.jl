@@ -1,17 +1,44 @@
 """
     Solve method for DiffEq solution
 """
+
 function get_de_ic(prob,eqs,u0=nothing)
     if u0 == nothing
         @info "Setting a random initial condition..."
-        rand(eqs,prob.d)
+        # @info "Setting higher power IC"
+        # rand(eqs,prob.d)
+        # rand(eqs,prob.d,1e-5)
+        # u0 = rand(eqs,prob.d,1e-4)
+        # small noise to m = 1
+        u0 = rand(eqs,prob.d,1e-4)
+        # @info "with m = 3 set to 0..."
+        # # u0 = convert(eqs,u0,prob.d)
+        # for n = -prob.d.ny+1:prob.d.ny-1
+        #     m = 3
+        #     # u0[n+prob.d.ny,m+1] = 0.0
+        #     u0.x[2][n+prob.d.ny,n+prob.d.ny,m] = 0.0
+        # end
+        return u0
     elseif typeof(u0) <: Number
         typeof(eqs) == CE2 ? fullrank(eqs,prob.d,u0) : rand(eqs,prob.d,u0)
     else
         @info "Converting QL solution to CE2 initial condition..."
-        convert(eqs,u0,prob.d)
-        # small noise to m = 1
+        u0 = convert(eqs,u0,prob.d)
+        # @info "Setting m = 3 to 0"
+        # for n = -prob.d.ny+1:prob.d.ny-1
+        #     m = 3
+        #     u0.x[2][n+prob.d.ny,n+prob.d.ny,m] = 0.0
+        # end
+        # # small noise to m = 1
         # u0 = convert(eqs,u0,prob.d)
+        # @info "Perturbing m = 2 in QL initial condition..."
+        # for n = -prob.d.ny+1:prob.d.ny-1
+        #     m = 2
+        #     u0[n+prob.d.ny,m+1] = 1e-4*exp(im*rand(Uniform(0,2π)))
+        #     for m = 3:prob.d.nx-1
+        #         u0[n+prob.d.ny,m+1] = 0.0
+        #     end
+        # end
         # for n = 1:2prob.d.ny-1
         #     for n2 = 1:2prob.d.ny-1
         #         for m = 1:prob.d.nx-1
@@ -20,7 +47,7 @@ function get_de_ic(prob,eqs,u0=nothing)
         #         u0.x[2][n2,n,2] = 0.0
         #     end
         # end
-        # return u0
+        return u0
     end
 end
 
