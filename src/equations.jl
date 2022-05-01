@@ -1,5 +1,6 @@
 g!(du::DNSField{T},u,p,t) where T = du .= p.F
 g!(du::GSSField{T},u,p,t) where T = du.x[1] .= p.F.x[1]
+g!(du::DSSField{T},u,p,t) where T = du .= zero(T)
 
 function f!(du::DNSField{T},u::DNSField{T},p::NLParams{T},t) where T<:AbstractFloat
     nx,ny,A,B,Cp,Cm = p.nx,p.ny,p.A,p.B,p.C⁺,p.C⁻
@@ -105,6 +106,13 @@ function f!(du::DNSField{T},u::DNSField{T},p::GQLParams{T},t) where T<:AbstractF
             end
         end
     end
+    # @inbounds for n1=-ny+1:ny-1
+    #     # m1 = 3
+    #     m1 = 0
+    #     du[n1+ny,m1+1] = zero(Complex{T})
+    #     m1 = 1
+    #     du[n1+ny,m1+1] = zero(Complex{T})
+    # end
     nothing
 end
 
@@ -225,14 +233,15 @@ function f!(du::DSSField{T},u::DSSField{T},p::CE2Params,t) where T<:AbstractFloa
     @inbounds for n1=1:ny-1
         du.x[1][n1+ny] += A[n1+ny]
         du.x[1][n1+ny] += B[n1+ny,1]*u.x[1][n1+ny]
-        # M + M = M
-        @inbounds for n2=max(1,-ny+1-n1):min(ny-1,ny-1-n1)
-            du.x[1][n1+n2+ny] += Cp[n2+ny,1,n1+ny,1]*u.x[1][n1+ny]*u.x[1][n2+ny]
-        end
-        # M - M = M
-        @inbounds for n2=max(1,n1-ny+1):min(n1-1,n1+ny-1)
-            du.x[1][n1-n2+ny] += Cm[n2+ny,1,n1+ny,1]*u.x[1][n1+ny]*conj(u.x[1][n2+ny])
-        end
+        # Identically zero
+        # # M + M = M
+        # @inbounds for n2=max(1,-ny+1-n1):min(ny-1,ny-1-n1)
+        #     du.x[1][n1+n2+ny] += Cp[n2+ny,1,n1+ny,1]*u.x[1][n1+ny]*u.x[1][n2+ny]
+        # end
+        # # M - M = M
+        # @inbounds for n2=max(1,n1-ny+1):min(n1-1,n1+ny-1)
+        #     du.x[1][n1-n2+ny] += Cm[n2+ny,1,n1+ny,1]*u.x[1][n1+ny]*conj(u.x[1][n2+ny])
+        # end
     end
     temp .= zero(Complex{T})
     @inbounds for m=1:nx-1
@@ -281,7 +290,7 @@ function f!(du::DSSField{T},u::DSSField{T},p::CE2Params,t) where T<:AbstractFloa
         end
     end
     # !! set ∂ζ₁/∂t = 0
-    # @inbounds for m3=1:1
+    # @inbounds for m3=3:3
     #     @inbounds for n3=-ny+1:ny-1
     #         @inbounds for n=-ny+1:ny-1
     #             du.x[2][n+ny,n3+ny,m3] = zero(Complex{T})

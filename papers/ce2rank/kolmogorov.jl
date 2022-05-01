@@ -23,10 +23,11 @@ prob    = BetaPlane(domain,coeffs,forcing);
 dn      = "data/8x8/rich/"
 
 eqs = [GQL(0),CE2(),CE2(),CE2(eigmax=true)];
-labels = ["ql_kf","ce2_kf","ce2_qlic_kf","ce2_qlic_eigmax_kf"];
+labels = ["ql_kf_zm","ce2_kf","ce2_qlic_kf","ce2_qlic_eigmax_kf"];
 
 ql      = integrate(prob,eqs[1],tspan;tsargs...)
 write(prob,eqs[1],ql,dn=dn,fn=labels[1])
+@save "ql_kf_.jld2" ql
 
 ce2     = integrate(prob,eqs[2],tspan;tsargs...)
 write(prob,eqs[2],ce2,dn=dn,fn=labels[2])
@@ -42,6 +43,13 @@ write(prob,eqs[3],ce2_qlic_m1,dn=dn,fn="ce2_qlic_m1r3t10_av_kf")
 
 ce2_qlic_m2     = integrate(prob,CE2(),tspan;u0=ql.u[end],tsargs...)
 write(prob,eqs[3],ce2_qlic_m2,dn=dn,fn="ce2_qlic_m2_kf")
+
+ql_qlic      = integrate(prob,eqs[1],tspan;u0=ql.u[end],tsargs...)
+write(prob,eqs[1],ql_qlic,dn=dn,fn="ql_qlic_kf")
+
+@load dn*"ql.jld2" ql
+ql_qlic_m2      = integrate(prob,eqs[1],tspan;u0=ql.u[end],tsargs...)
+write(prob,eqs[1],ql_qlic_m2,dn=dn,fn="ql_qlic_m2_kf_2")
 
 # dn      = "data/8x8/brad/"
 
