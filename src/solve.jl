@@ -64,10 +64,6 @@ get_de_p(d,eqs::GQL,p) = GQLParams(d.nx,d.ny,eqs.Λ,p...)
 get_de_p(d,eqs::CE2,p) = CE2Params(d.nx,d.ny,p...)
 get_de_p(d,eqs::GCE2,p) = GCE2Params(d.nx,d.ny,eqs.Λ,p...)
 
-get_de_probalg(prob,eqs,u0,t,p) = ODEProblem(f!,u0,t,p), DP5()
-get_de_probalg(prob::BetaPlane{T,Stochastic{T}},eqs::CE2,u0,t,p) where T = ODEProblem(f!,u0,t,p), RK4()
-get_de_probalg(prob::BetaPlane{T,Stochastic{T}},eqs,u0,t,p) where T = SDEProblem(f!,g!,u0,t,p), SRIW1()
-
 get_de_kwargs(prob,eqs::AbstractEquations,tspan;kwargs...) = kwargs
 
 function get_de_kwargs(prob,eqs::GCE2,tspan;kwargs...)
@@ -101,6 +97,10 @@ function get_de_kwargs(prob,eqs::CE2,tspan;kwargs...)
         return merge((callback=eigmaxcb,tspan=tspan),kwargs)
     end
 end
+
+get_de_probalg(prob,eqs,u0,t,p) = ODEProblem(f!,u0,t,p), DP5()
+# get_de_probalg(prob::BetaPlane{T,Stochastic{T}},eqs::CE2,u0,t,p) where T = ODEProblem(f!,u0,t,p), RK4()
+get_de_probalg(prob::BetaPlane{T,Stochastic{T}},eqs,u0,t,p) where T = SDEProblem(f!,g!,u0,t,p), SRIW1()
 
 function integrate(prob,eqs::AbstractEquations,tspan;u0=nothing,kwargs...)
     Random.seed!(123)

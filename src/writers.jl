@@ -4,6 +4,7 @@ function Base.write(prob,eqs,sol;dn::String="",fn::String)
                                     dumpfields(prob,sol),
                                     dumpstats(prob,eqs,sol),
                                     dumpcoeffs(prob,eqs,sol),
+                                    # dumpnoise(prob,eqs,sol)
                                     ))
 end
 
@@ -25,15 +26,29 @@ function dumpcoeffs(prob,eqs,sol)
     Dict("t"=>sol.t,"F"=>F)
 end
 
+function dumpnoise(prob,eqs,sol)
+    (nx,ny) = size(prob.d)
+    x = zeros(eqs,prob.d)
+    x .= fcoeffs(prob,eqs)
+    for m1=1:nx-1
+        for n1 = -ny+1:ny-1
+            x[n1+ny,m1+1] = x[n1+ny,m1+1]*sol.W[end][n1+ny,m1+1]
+        end
+    end
+    W = resolvedfield(prob.d,x)
+    Dict("t"=>sol.t,"W"=>W)
+end
 
-function dumpscalars(prob,sol;t0=500.0)
+function dumpscalars(prob,sol;t0=18000.0)
+    t0 = min(sol.t[end]/2.0,t0)
     Et = energy.(Ref(prob.d),sol.u)
     Zt = enstrophy.(Ref(prob.d),sol.u)
     Emt = zonalenergy.(Ref(prob.d),sol.u) |> tonpz
     Emtav = zonalenergy.(Ref(prob.d),sol.u) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
-    Dict("t"=>sol.t,"Et"=>Et,"Emt"=>Emt,"Emtav"=>Emtav,"Zt"=>Zt)
+    Em0nt = modalenergy.(Ref(prob.d),sol.u,m=0) |> tonpz
+    Em0ntav = modalenergy.(Ref(prob.d),sol.u,m=0) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
+    Dict("t"=>sol.t,"Et"=>Et,"Emt"=>Emt,"Emtav"=>Emtav,"Em0t"=>Em0nt,"Em0tav"=>Em0ntav,"Zt"=>Zt)
     # ! study eigenvalue structures for each zonal mode in second cumulant
-    # Em0nt = modalenergy.(Ref(prob.d),sol.u,m=0) |> tonpz
     # Em1nt = modalenergy.(Ref(prob.d),sol.u,m=1) |> tonpz
     # Em2nt = modalenergy.(Ref(prob.d),sol.u,m=2) |> tonpz
     # Em0ntav = modalenergy.(Ref(prob.d),sol.u,m=0) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
@@ -43,7 +58,8 @@ function dumpscalars(prob,sol;t0=500.0)
     #     "Em0ntav"=>Em0ntav,"Em1ntav"=>Em1ntav,"Em2ntav"=>Em2ntav)
 end
 
-function dumpfields(prob,sol;t0=500.0)
+function dumpfields(prob,sol;t0=18000.0)
+    t0 = min(sol.t[end]/2.0,t0)
     Emn = energyspectrum.(Ref(prob.d),sol.u) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
     Fyym1 = secondcumulant.(Ref(prob.d),sol.u,m=1) |> tonpz
     Fyym2 = secondcumulant.(Ref(prob.d),sol.u,m=2) |> tonpz
@@ -60,7 +76,7 @@ dumpstats(prob,eqs,sol) = Dict("empty"=>0)
 dumpstats(prob,eqs::GQL,sol) = Dict("mEVs"=> convert.(Ref(CE2()),sol.u,Ref(prob.d)) |> x-> modaleigvals.(Ref(prob.d),x) |> tonpz)
 dumpstats(prob,eqs::CE2,sol) = Dict("mEVs"=> modaleigvals.(Ref(prob.d),sol.u) |> tonpz)
 # !!! time averaged second cumulants from QL/CE2
-# dumpstats(prob,eqs::GQL,sol) = Dict("mEVs"=> convert.(Ref(CE2()),sol.u,Ref(prob.d)) |> x-> timeaverage(sol.t,x,t0=500.0) |> x-> modaleigvals.(Ref(prob.d),x) |> tonpz)
+# dumpstats(prob,eqs::GQL,sol) = Dict("mEVs"=> convert.(Ref(CE2()),sol.u,Ref(prob.d)) |> x-> timeaverage(sol.t,x,t0=min(sol.t[end]/2.0,2000.0)) |> x-> modaleigvals.(Ref(prob.d),x) |> tonpz)
 # dumpstats(prob,eqs::CE2,sol) = Dict("mEVs"=> timeaverage(sol.t,sol.u,t0=500.0) |> x-> modaleigvals.(Ref(prob.d),x) |> tonpz)
 
 function dumpadjacency(prob,eqs::Union{NL,GQL};fn::String)
