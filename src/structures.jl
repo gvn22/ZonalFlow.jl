@@ -135,6 +135,9 @@ Base.similar(eqs::Union{NL,GQL},d::Domain{T}) where T = similar(DNSField{T},d)
 Base.similar(eqs::CE2,d::Domain{T}) where T = similar(DSSField{T},d)
 Base.similar(eqs::GCE2,d::Domain{T}) where T = similar(GSSField{T},d,Λ=eqs.Λ)
 
+Base.convert(::NL,x::DNSField{T},d::Domain{T}) where T = x
+Base.convert(::GQL,x::DNSField{T},d::Domain{T}) where T = x
+
 function Base.convert(::CE2,x::DNSField{T},d::Domain{T}) where T
     (nx,ny) = size(d) #
     c1 = x[:,1]

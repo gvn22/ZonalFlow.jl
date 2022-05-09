@@ -7,12 +7,17 @@
 Manifest.toml
 .DS_Store
 
+papers/*/figures/
+papers/*/data/
+papers/*/.ipynb_checkpoints
+
+validate/*/figures/
+validate/*/data/
+validate/*/.ipynb_checkpoints/
+
 validate/ranktests/repeat/
-validate/ranktests/figures/
 validate/stochastic/8x8/
 validate/kolmogorov/8x8/
 validate/pointjet/8x8/
 validate/pointjet/12x12/
 validate/old/
-validate/.ipynb_checkpoints
-validate/*/.ipynb_checkpoints
