@@ -94,3 +94,56 @@ write(prob,eqs[10],gce2_3,dn=dn,fn=labels[10])
 #
 # sol    = integrate(prob,GCE2(1),tspan;tsargs...);
 # write(prob,GQL(0),sol,dn="validate/kolmogorov/6x6/",fn="gce2_1")
+
+domain  = Domain(extent=(2π,2π),res=(8,8));
+coeffs  = Coefficients(Ω=0.0,θ=0.0,μ=0.0,ν=0.02,ν₄=0.0); # β=0
+forcing = Kolmogorov(A₁=-1.0,A₄=-2.0);
+prob    = BetaPlane(domain,coeffs,forcing);
+
+eqs     = [GQL(0),CE2(),GQL(1),GCE2(1),GQL(2),GCE2(2),GQL(3),GCE2(3)];
+labels  = ["ql","ce2","gql_1","gce2_1","gql_2","gce2_2","gql_3","gce2_3"];
+
+dn      = "data/8x8/nu02/"
+
+ql      = integrate(prob,eqs[1],tspan;tsargs...)
+write(prob,eqs[1],ql,dn=dn,fn=labels[1])
+
+ce2     = integrate(prob,eqs[2],tspan;tsargs...)
+write(prob,eqs[2],ce2,dn=dn,fn=labels[2])
+
+gql_1      = integrate(prob,eqs[3],tspan;tsargs...)
+write(prob,eqs[3],gql_1,dn=dn,fn=labels[3])
+
+gce2_1     = integrate(prob,eqs[4],tspan;tsargs...)
+write(prob,eqs[4],gce2_1,dn=dn,fn=labels[4])
+
+gql_2      = integrate(prob,eqs[5],tspan;tsargs...)
+write(prob,eqs[5],gql_2,dn=dn,fn=labels[5])
+
+gce2_2     = integrate(prob,eqs[6],tspan;tsargs...)
+write(prob,eqs[6],gce2_2,dn=dn,fn=labels[6])
+
+gql_3      = integrate(prob,eqs[7],tspan;tsargs...)
+write(prob,eqs[7],gql_3,dn=dn,fn=labels[7])
+
+gce2_3     = integrate(prob,eqs[8],tspan;tsargs...)
+write(prob,eqs[8],gce2_3,dn=dn,fn=labels[8])
+
+tspan = (0.0,1000.0)
+gql_4      = integrate(prob,GQL(4),tspan;tsargs...)
+write(prob,GQL(4),gql_4,dn=dn,fn="gql_4")
+
+gce2_4     = integrate(prob,GCE2(4),tspan;tsargs...)
+write(prob,GCE2(4),gce2_4,dn=dn,fn="gce2_4")
+
+gql_5      = integrate(prob,GQL(5),tspan;tsargs...)
+write(prob,GQL(5),gql_5,dn=dn,fn="gql_5")
+
+gce2_5     = integrate(prob,GCE2(5),tspan;tsargs...)
+write(prob,GCE2(5),gce2_5,dn=dn,fn="gce2_5")
+
+gql_6      = integrate(prob,GQL(6),tspan;tsargs...)
+write(prob,GQL(6),gql_6,dn=dn,fn="gql_6")
+
+gce2_6     = integrate(prob,GCE2(6),tspan;tsargs...)
+write(prob,GCE2(6),gce2_6,dn=dn,fn="gce2_6")
