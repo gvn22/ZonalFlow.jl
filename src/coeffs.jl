@@ -209,3 +209,14 @@ function fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs::CE2) where T
     end
     Γ .* prob.f.ε
 end
+
+function fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs::GCE2) where T
+    (nx,ny),Λ = size(prob.d),lambda(prob,eqs)
+    Γ = fcoeffs(prob,CE2())
+    F = ArrayPartition(zeros(T,2ny-1,Λ+1),zeros(T,2ny-1,nx-Λ,2ny-1,nx-Λ))
+    # assume Λ < k_f
+    for m=1:nx-Λ-1
+         F.x[2][:,m,:,m] = Γ[:,:,Λ+m]
+    end
+    F
+end
