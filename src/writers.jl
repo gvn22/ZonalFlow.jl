@@ -72,12 +72,7 @@ function dumpfields(prob,sol;t0=18000.0)
     Dict("t"=>sol.t,"Emn"=>Emn,"Vxy"=>Vxy,"Vxyav"=>Vxyav,"Uxy"=>Uxy,"Vyt"=>Vyt,"Vytav"=>Vytav,"Fyym1"=>Fyym1,"Fyym2"=>Fyym2,"Fyym3"=>Fyym3)
 end
 
-dumpstats(prob,eqs,sol) = Dict("empty"=>0)
-dumpstats(prob,eqs::GQL,sol) = Dict("mEVs"=> convert.(Ref(CE2()),sol.u,Ref(prob.d)) |> x-> modaleigvals.(Ref(prob.d),x) |> tonpz)
-dumpstats(prob,eqs::CE2,sol) = Dict("mEVs"=> modaleigvals.(Ref(prob.d),sol.u) |> tonpz)
-# !!! time averaged second cumulants from QL/CE2
-# dumpstats(prob,eqs::GQL,sol) = Dict("mEVs"=> convert.(Ref(CE2()),sol.u,Ref(prob.d)) |> x-> timeaverage(sol.t,x,t0=min(sol.t[end]/2.0,2000.0)) |> x-> modaleigvals.(Ref(prob.d),x) |> tonpz)
-# dumpstats(prob,eqs::CE2,sol) = Dict("mEVs"=> timeaverage(sol.t,sol.u,t0=500.0) |> x-> modaleigvals.(Ref(prob.d),x) |> tonpz)
+dumpstats(prob,eqs,sol) = Dict("mEVs"=> modaleigvals.(Ref(prob.d),sol.u) |> tonpz)
 
 function dumpadjacency(prob,eqs::Union{NL,GQL};fn::String)
     A,B,C = adjacency(prob,eqs)
