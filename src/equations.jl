@@ -1,5 +1,5 @@
 g!(du::DNSField{T},u,p,t) where T = du .= p.F
-g!(du::GSSField{T},u,p,t) where T = du.x[1] .= p.F.x[1]
+g!(du::GSSField{T},u,p,t) where T = du .= zero(T)
 g!(du::DSSField{T},u,p,t) where T = du .= zero(T)
 
 function f!(du::DNSField{T},u::DNSField{T},p::NLParams{T},t) where T<:AbstractFloat
@@ -267,7 +267,7 @@ function f!(du::DSSField{T},u::DSSField{T},p::CE2Params,t) where T<:AbstractFloa
         @inbounds for n3=-ny+1:ny-1
             @inbounds for n=-ny+1:ny-1
                 du.x[2][n+ny,n3+ny,m3] += B[n+ny,m3+1]*u.x[2][n+ny,n3+ny,m3]
-                du.x[2][n+ny,n3+ny,m3] += F[n+ny,n3+ny,m3]
+                du.x[2][n+ny,n3+ny,m3] += F.x[2][n+ny,n3+ny,m3]
 
                 accumulator = zero(Complex{T})
                 @inbounds for n1=max(-ny+1,n-(ny-1)):min(n-1,ny-1)

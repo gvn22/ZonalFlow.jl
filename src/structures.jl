@@ -30,10 +30,11 @@ struct Stochastic{T}  <: AbstractForcing{T}
     kf::Int
     dk::Int
     ε::T
+    Δ::T
     τ::T
     isotropic::Bool
 end
-Stochastic(;kf,dk,ε,τ=0.0,isotropic=true) = Stochastic(kf,dk,ε,τ,isotropic)
+Stochastic(;kf,dk,ε,Δ=0.2,τ=0.0,isotropic=false) = Stochastic(kf,dk,ε,Δ,τ,isotropic)
 
 struct Kolmogorov{T} <: AbstractForcing{T}
     A₁::T
@@ -169,13 +170,20 @@ function Base.convert(eqs::GCE2,x::DNSField{T},d::Domain{T}) where T
 end
 
 function Base.convert(::CE2,x::GSSField{T},d::Domain{T}) where T
-    (nx,ny) = size(d)
+    (nx,ny),Λ = size(d),length(x.x[1][1,:])-1
     c1 = x.x[1][:,1]
     c2 = zeros(Complex{T},2ny-1,2ny-1,nx-1)
-    @inbounds for m1=1:nx-1
+    @inbounds for m1=1:Λ
         @inbounds for n1=-ny+1:ny-1
             @inbounds for n2=-ny+1:ny-1
-                c2[n2+ny,n1+ny,m1] = x.x[2][n2+ny,m1,n1+ny,m1]
+                c2[n2+ny,n1+ny,m1] = conj(x.x[1][n2+ny,m1+1])*x.x[1][n1+ny,m1+1]
+            end
+        end
+    end
+    @inbounds for m1=Λ+1:nx-1
+        @inbounds for n1=-ny+1:ny-1
+            @inbounds for n2=-ny+1:ny-1
+                c2[n2+ny,n1+ny,m1] = x.x[2][n2+ny,m1-Λ,n1+ny,m1-Λ]
             end
         end
     end
@@ -218,11 +226,11 @@ struct CE2Params{T} <: AbstractParams{T}
     B::Array{Complex{T},2}
     C⁺::Array{T,4}
     C⁻::Array{T,4}
-    F::Array{T,3}
+    F::ArrayPartition{T,Tuple{Array{T,1},Array{T,3}}}
     dy::SecondCumulant{T}
     temp::SecondCumulant{T}
 end
-CE2Params(nx,ny,A::Array{Complex{T},1},B::Array{Complex{T},2},C⁺::Array{T,4},C⁻::Array{T,4},F::Array{T,3}) where T = CE2Params(nx,ny,A,B,C⁺,C⁻,F,zeros(Complex{T},2ny-1,2ny-1,nx-1),zeros(Complex{T},2ny-1,2ny-1,nx-1))
+CE2Params(nx,ny,A::Array{Complex{T},1},B::Array{Complex{T},2},C⁺::Array{T,4},C⁻::Array{T,4},F::ArrayPartition{T,Tuple{Array{T,1},Array{T,3}}}) where T = CE2Params(nx,ny,A,B,C⁺,C⁻,F,zeros(Complex{T},2ny-1,2ny-1,nx-1),zeros(Complex{T},2ny-1,2ny-1,nx-1))
 
 struct GCE2Params{T} <: AbstractParams{T}
     nx::Int
