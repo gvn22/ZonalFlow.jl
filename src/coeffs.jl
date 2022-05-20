@@ -82,6 +82,7 @@ function ccoeffs(prob,eqs::NL)
     Cp,Cm
 end
 
+# dispatch NL as Λ = M specialization
 function ccoeffs(prob,eqs::Union{GQL,CE2,GCE2})
     d,c = prob.d,prob.c
     (nx,ny) = size(d)
@@ -168,17 +169,13 @@ function ccoeffs(prob,eqs::Union{GQL,CE2,GCE2})
     Cp,Cm
 end
 
-fcoeffs(prob,eqs::Union{NL,GQL}) = zeros(eltype(prob),2prob.d.ny-1,prob.d.nx)
-fcoeffs(prob::BetaPlane{T,PointJet{T}},eqs::GCE2) where T = ArrayPartition(zeros(T,2prob.d.ny-1,eqs.Λ+1),zeros(T,2prob.d.ny-1,prob.d.nx-eqs.Λ,2prob.d.ny-1,prob.d.nx-eqs.Λ))
-fcoeffs(prob::BetaPlane{T,Kolmogorov{T}},eqs::GCE2) where T = ArrayPartition(zeros(T,2prob.d.ny-1,eqs.Λ+1),zeros(T,2prob.d.ny-1,prob.d.nx-eqs.Λ,2prob.d.ny-1,prob.d.nx-eqs.Λ))
-fcoeffs(prob::BetaPlane{T,PointJet{T}},eqs::CE2) where T = zeros(T,2prob.d.ny-1,2prob.d.ny-1,prob.d.nx-1)
-fcoeffs(prob::BetaPlane{T,Kolmogorov{T}},eqs::CE2) where T = zeros(T,2prob.d.ny-1,2prob.d.ny-1,prob.d.nx-1)
-# ^ possible to condense above to single statement using dispatch on zeros
+fcoeffs(prob,eqs) = zeros(eqs,prob.d)
+# fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs) = x = fcoeffs(prob,CE2()) |> convert(x,typeof(eqs))
 
 function fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs::Union{NL,GQL}) where T
     (nx,ny) = size(prob.d)
-    Γ = fcoeffs(prob,CE2())
-    F = zeros(T,2ny-1,nx)
+    Γ = fcoeffs(prob,CE2()).x[2]
+    F = zeros(eqs,prob.d)
     for m=1:nx-1
         for n=-ny+1:ny-1
             F[n+ny,m+1] = sqrt(2Γ[n+ny,n+ny,m])
@@ -188,24 +185,30 @@ function fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs::Union{NL,GQL}) where T
 end
 
 function fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs::CE2) where T
-    (nx,ny) = size(prob.d)
-    Γ = zeros(T,2ny-1,2ny-1,nx-1)
-    dm = prob.f.dk
-    m1 = prob.f.kf - dm
-    m2 = prob.f.kf + dm
-    Nk = zero(T)
-    c = 0.2 # c  = 0.01
-    for m=m1:m2
-        Ck = zero(T)
-        Nk += one(T)
-        # for n=-ny+1:ny-1
-        # for n=-3:3
-        for n = 2:2
-            kx,ky = 2π*m/prob.d.lx,2π*n/prob.d.ly
-            Γ[n+ny,n+ny,m] = c^2*exp(-ky^2*c^2) # c^2
-            Ck += Γ[n+ny,n+ny,m]/(kx^2+ky^2)
+    (nx,ny),(lx,ly) = size(prob.d),length(prob.d)
+    kf,dk = prob.f.kf,prob.f.dk,
+    ε,Δ = prob.f.ε,prob.f.Δ
+    Nₖ = dk*(2ny-1)
+    F = zeros(eqs,prob.d)
+    for m=kf:kf+dk-1
+        cₖ = zero(T)
+        for n=-ny+1:ny-1
+            kx,ky = 2π*m/lx,2π*n/ly
+            F.x[2][n+ny,n+ny,m] = Δ^2*exp(-Δ^2*ky^2)
+            cₖ += F.x[2][n+ny,n+ny,m]/(kx^2+ky^2)
         end
-        Γ[:,:,m] /= (2Ck*Nk)
+        F.x[2][:,:,m] *= ε/(2cₖ*Nₖ)
     end
-    Γ .* prob.f.ε
+    F
+end
+
+function fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs::GCE2) where T
+    (nx,ny),Λ = size(prob.d),lambda(prob,eqs)
+    Γ = fcoeffs(prob,CE2()).x[2]
+    F = zeros(eqs,prob.d)
+    # assume Λ < k_f
+    for m=1:nx-Λ-1
+         F.x[2][:,m,:,m] = Γ[:,:,Λ+m]
+    end
+    F
 end
