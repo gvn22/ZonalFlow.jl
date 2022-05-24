@@ -1,4 +1,4 @@
-g!(du::DNSField{T},u,p,t) where T = du .= p.F
+g!(du::DNSField{T},u,p,t) where T = du .= p.F*sqrt(2)
 g!(du::GSSField{T},u,p,t) where T = du .= zero(T)
 g!(du::DSSField{T},u,p,t) where T = du .= zero(T)
 
