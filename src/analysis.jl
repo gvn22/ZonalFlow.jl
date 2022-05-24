@@ -111,7 +111,7 @@ function scalarfield(d::AbstractDomain,u::DSSField{T};scalar='e') where {T<:Abst
         for n1 = -ny+1:ny-1
             kx,ky = 2π*(m1/lx),2π*(n1/ly)
             k = scalar == 'e' ? (kx^2+ky^2)^0.5 : one(T)
-            U[n1+ny,m1+1] =  abs(u.x[2][n1 + ny,n1 + ny,m1])/k^2
+            U[n1+ny,m1+1] =  abs(u.x[2][n1+ny,n1+ny,m1])/k^2
         end
     end
     U
@@ -178,9 +178,9 @@ enstrophy(d::AbstractDomain,u) = sum(zonalenstrophy(d,u))
     timeaverage(t,u)
     Time average anything given to it
 """
-function timeaverage(t,u;t0=500.0)
+function timeaverage(t,u;t0)
     U = deepcopy(u)
-    t0 = min(t0,t[end])
+    # t0 = min(t0,t[end]/2)
     i0 = max(findfirst(x -> x > t0,t),2)
     for i=i0:length(u)
         U[i] = mean(u[i0-1:i])

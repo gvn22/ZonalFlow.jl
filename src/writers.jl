@@ -12,13 +12,6 @@ Base.write(prob,eqs::Vector{AbstractEquations},sols;dn::String,labels::Vector{St
 
 tonpz(u) = reshape(cat(u...,dims=length(size(u[1]))),size(u[1])...,length(u))
 
-function dumpcoeffs(prob,eqs::CE2,sol)
-    x = zeros(eqs,prob.d)
-    x.x[2] .= fcoeffs(prob,eqs)
-    F = forcingspectrum(prob.d,x)
-    Dict("t"=>sol.t,"F"=>F)
-end
-
 function dumpcoeffs(prob,eqs,sol)
     x = zeros(eqs,prob.d)
     x .= fcoeffs(prob,eqs)
