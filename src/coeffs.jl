@@ -169,16 +169,20 @@ function ccoeffs(prob,eqs::Union{GQL,CE2,GCE2})
     Cp,Cm
 end
 
-fcoeffs(prob,eqs) = zeros(eqs,prob.d)
+# dispatch later on prob,eqs!
+# fcoeffs(prob,eqs) = zeros(eqs,prob.d)
 # fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs) = x = fcoeffs(prob,CE2()) |> convert(x,typeof(eqs))
+fcoeffs(prob,eqs::Union{NL,GQL}) = zeros(eltype(prob),2prob.d.ny-1,prob.d.nx)
+fcoeffs(prob,eqs::GCE2) = ArrayPartition(zeros(eltype(prob),2prob.d.ny-1,eqs.Λ+1),zeros(eltype(prob),2prob.d.ny-1,prob.d.nx-eqs.Λ,2prob.d.ny-1,prob.d.nx-eqs.Λ))
+fcoeffs(prob,eqs::CE2) = ArrayPartition(zeros(eltype(prob),2prob.d.ny-1),zeros(eltype(prob),2prob.d.ny-1,2prob.d.ny-1,prob.d.nx-1))
 
 function fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs::Union{NL,GQL}) where T
     (nx,ny) = size(prob.d)
     Γ = fcoeffs(prob,CE2()).x[2]
-    F = zeros(eqs,prob.d)
+    F = zeros(T,2ny-1,nx)
     for m=1:nx-1
         for n=-ny+1:ny-1
-            F[n+ny,m+1] = sqrt(2Γ[n+ny,n+ny,m])
+            F[n+ny,m+1] = sqrt(Γ[n+ny,n+ny,m])
         end
     end
     F
@@ -186,10 +190,9 @@ end
 
 function fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs::CE2) where T
     (nx,ny),(lx,ly) = size(prob.d),length(prob.d)
-    kf,dk = prob.f.kf,prob.f.dk,
+    kf,dk = prob.f.kf,prob.f.dk
     ε,Δ = prob.f.ε,prob.f.Δ
-    Nₖ = dk*(2ny-1)
-    F = zeros(eqs,prob.d)
+    F = ArrayPartition(zeros(T,2ny-1),zeros(T,2ny-1,2ny-1,nx-1))
     for m=kf:kf+dk-1
         cₖ = zero(T)
         for n=-ny+1:ny-1
@@ -197,7 +200,7 @@ function fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs::CE2) where T
             F.x[2][n+ny,n+ny,m] = Δ^2*exp(-Δ^2*ky^2)
             cₖ += F.x[2][n+ny,n+ny,m]/(kx^2+ky^2)
         end
-        F.x[2][:,:,m] *= ε/(2cₖ*Nₖ)
+        F.x[2][:,:,m] *= ε/(2*cₖ*dk)
     end
     F
 end
@@ -205,7 +208,7 @@ end
 function fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs::GCE2) where T
     (nx,ny),Λ = size(prob.d),lambda(prob,eqs)
     Γ = fcoeffs(prob,CE2()).x[2]
-    F = zeros(eqs,prob.d)
+    F = ArrayPartition(zeros(T,2ny-1,Λ+1),zeros(T,2ny-1,nx-Λ,2ny-1,nx-Λ))
     # assume Λ < k_f
     for m=1:nx-Λ-1
          F.x[2][:,m,:,m] = Γ[:,:,Λ+m]
