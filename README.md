@@ -1,5 +1,5 @@
 # ZonalFlow
-<!-- ![build](https://github.com/gvn22/ZonalFlow.jl/actions/workflows/ci.yml/badge.svg?event=push) -->
+![build](https://github.com/gvn22/ZonalFlow.jl/actions/workflows/ci.yml/badge.svg?event=push)
 [![codecov](https://codecov.io/gh/gvn22/ZonalFlow.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/gvn22/ZonalFlow.jl)
 
 ZonalFlow is a spectral solver for barotropic vorticity equation on the beta-plane, which can solve tendencies for the following dynamical equation systems:

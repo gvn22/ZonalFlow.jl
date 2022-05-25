@@ -19,17 +19,16 @@ f2 = Kolmogorov(A₁=0.0,A₄=0.0);
 f3 = Stochastic(kf=3,dk=1,ε=0.0);
 fls = ["Point Jet", "Kolmogorov", "Stochastic"]
 
-eqs = [NL(),CE2(),GQL(0)];
-# eqs     = append!(eqs,[GQL(Λ=l) for l=0:prob.d.nx-1])
-# eqs     = append!(eqs,[GCE2(Λ=l) for l=0:prob.d.nx-1])
+eqs = [NL(),CE2(),GQL(0),GCE2(1),GQL(1)];
 
 for (label,forcing) in zip(fls,[f1,f2,f3])
         prob = BetaPlane(domain,coeffs,forcing);
+        @info "Testing for zero $label forcing"
         for eq in eqs
                 sol = integrate(prob,eq,tspan;tsargs...);
-                E = energy.(prob.d,sol.u)
-                Z = enstrophy.(prob.d,sol.u)
-                @test E[1] == E[end]
-                @test Z[1] == Z[end]
+                E = energy.(Ref(prob.d),sol.u)
+                Z = enstrophy.(Ref(prob.d),sol.u)
+                @test E[1] ≈ E[end] atol=1e-3
+                @test Z[1] ≈ Z[end] atol=1e-3
         end
 end
