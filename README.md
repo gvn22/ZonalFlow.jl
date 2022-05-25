@@ -1,8 +1,8 @@
 # ZonalFlow
-[![Build Status](https://travis-ci.com/gvn22/ZonalFlow.jl.svg?branch=master)](https://travis-ci.com/gvn22/ZonalFlow.jl)
-[![Coverage](https://codecov.io/gh/gvn22/ZonalFlow.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/gvn22/ZonalFlow.jl)
+![build](https://github.com/gvn22/ZonalFlow.jl/actions/workflows/ci.yml/badge.svg?event=push)
+[![codecov](https://codecov.io/gh/gvn22/ZonalFlow.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/gvn22/ZonalFlow.jl)
 
-This is a numerical solver for barotropic vorticity equation on the beta-plane, which can solve tendencies for the following dynamical equation systems:
+ZonalFlow is a spectral solver for barotropic vorticity equation on the beta-plane, which can solve tendencies for the following dynamical equation systems:
 
 - NL: original (fully non-linear) governing equations with no mode-reduction
 - QL: quasilinear equations
@@ -31,6 +31,8 @@ julia>]
 
 ### Example simulation script
 
+A number of example scripts are located in the examples directory. For instance, here is the code for a fully-nonlinear stochastically driven jet:
+
 ```
 using ZonalFlow
 
@@ -48,20 +50,16 @@ tsargs  = (
            );
 
 domain  = Domain(extent=(2π,2π),res=(16,16));
-coeffs  = Coefficients(Ω=2π,θ=0.0,μ=0.05,ν=0.0,ν₄=0.0);
-forcing = PointJet(Ξ=1.0,Δθ=0.1,τ=20.0);
+coeffs  = Coefficients(Ω=2π,θ=0.0,μ=0.01,ν=0.0,ν₄=0.0);
+forcing = Stochastic(kf=5,dk=1,ε=0.01);
 prob    = BetaPlane(domain,coeffs,forcing);
 
-dn      = "pointjet/"
-
 sol     = integrate(prob,NL(),tspan;tsargs...)
-write(prob,NL(),sol,dn=dn,fn="nl")
-
+write(prob,NL(),sol,fn="nl")
 
 ```
 
-### Citing us
-We will soon upload citation instructions, as the relevant articles are due for submission soon. Please feel free to contact me if you are using the code!
+and here is the output H\"ovm\"oller diagram and energy spectrum.
 
 ### License
 MIT
