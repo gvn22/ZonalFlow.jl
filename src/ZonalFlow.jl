@@ -2,7 +2,6 @@ module ZonalFlow
 
 using OrdinaryDiffEq
 using StochasticDiffEq
-using DiffEqNoiseProcess
 using DiffEqCallbacks
 using RecursiveArrayTools
 using FFTW
@@ -10,13 +9,13 @@ using LinearAlgebra
 using Random
 using Distributions
 using NPZ
+using JLD2
 
 include("structures.jl")
 include("ic.jl")
 include("coeffs.jl")
 include("solve.jl")
 include("equations.jl")
-# include("noise.jl")
 include("tools.jl")
 include("analysis.jl")
 include("writers.jl")
@@ -35,6 +34,6 @@ export  NL,
         GCE2,
         CE2
 
-export  integrate,dumpadjacency
+export  integrate
 
 end
