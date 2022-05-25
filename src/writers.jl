@@ -38,31 +38,18 @@ function dumpscalars(prob,sol;t0=18000.0)
     Zt = enstrophy.(Ref(prob.d),sol.u)
     Emt = zonalenergy.(Ref(prob.d),sol.u) |> tonpz
     Emtav = zonalenergy.(Ref(prob.d),sol.u) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
-    Em0nt = modalenergy.(Ref(prob.d),sol.u,m=0) |> tonpz
-    Em0ntav = modalenergy.(Ref(prob.d),sol.u,m=0) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
-    Dict("t"=>sol.t,"Et"=>Et,"Emt"=>Emt,"Emtav"=>Emtav,"Em0t"=>Em0nt,"Em0tav"=>Em0ntav,"Zt"=>Zt)
-    # ! study eigenvalue structures for each zonal mode in second cumulant
-    # Em1nt = modalenergy.(Ref(prob.d),sol.u,m=1) |> tonpz
-    # Em2nt = modalenergy.(Ref(prob.d),sol.u,m=2) |> tonpz
-    # Em0ntav = modalenergy.(Ref(prob.d),sol.u,m=0) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
-    # Em1ntav = modalenergy.(Ref(prob.d),sol.u,m=1) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
-    # Em2ntav = modalenergy.(Ref(prob.d),sol.u,m=2) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
-    # Dict("t"=>sol.t,"Et"=>Et,"Emt"=>Emt,"Zt"=>Zt,"Emtav"=>Emtav,"Em0nt"=>Em0nt,"Em1nt"=>Em1nt,"Em2nt"=>Em2nt,
-    #     "Em0ntav"=>Em0ntav,"Em1ntav"=>Em1ntav,"Em2ntav"=>Em2ntav)
+    Dict("t"=>sol.t,"Et"=>Et,"Emt"=>Emt,"Emtav"=>Emtav)
 end
 
 function dumpfields(prob,sol;t0=18000.0)
     t0 = min(sol.t[end]/2.0,t0)
     Emn = energyspectrum.(Ref(prob.d),sol.u) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
-    Fyym1 = secondcumulant.(Ref(prob.d),sol.u,m=1) |> tonpz
-    Fyym2 = secondcumulant.(Ref(prob.d),sol.u,m=2) |> tonpz
-    Fyym3 = secondcumulant.(Ref(prob.d),sol.u,m=3) |> tonpz
     Vxyav = vorticity.(Ref(prob.d),sol.u) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
     Vxy = vorticity.(Ref(prob.d),sol.u) |> tonpz
     Uxy = xvelocity.(Ref(prob.d),sol.u) |> tonpz
     Vyt = zonalvorticity.(Ref(prob.d),sol.u) |> tonpz
     Vytav = zonalvorticity.(Ref(prob.d),sol.u) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
-    Dict("t"=>sol.t,"Emn"=>Emn,"Vxy"=>Vxy,"Vxyav"=>Vxyav,"Uxy"=>Uxy,"Vyt"=>Vyt,"Vytav"=>Vytav,"Fyym1"=>Fyym1,"Fyym2"=>Fyym2,"Fyym3"=>Fyym3)
+    Dict("t"=>sol.t,"Emn"=>Emn,"Vxy"=>Vxy,"Vxyav"=>Vxyav,"Uxy"=>Uxy,"Vyt"=>Vyt,"Vytav"=>Vytav)
 end
 
 dumpstats(prob,eqs,sol) = Dict("mEVs"=> modaleigvals.(Ref(prob.d),sol.u) |> tonpz)
