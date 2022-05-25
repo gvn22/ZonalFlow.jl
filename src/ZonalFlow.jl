@@ -9,7 +9,8 @@ using LinearAlgebra
 using Random
 using Distributions
 using NPZ
-using JLD2
+using Reexport
+@reexport using JLD2
 
 include("structures.jl")
 include("ic.jl")
