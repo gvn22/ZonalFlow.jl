@@ -56,15 +56,10 @@ function get_de_params(prob,eqs)::AbstractParams
     B = bcoeffs(prob)
     C⁺,C⁻ = ccoeffs(prob,eqs)
     F = fcoeffs(prob,eqs)
-    get_de_p(prob.d,eqs,[A,B,C⁺,C⁻,F])
+    params(prob.d,eqs,[A,B,C⁺,C⁻,F])
 end
 
-get_de_p(d,eqs::NL,p) = NLParams(d.nx,d.ny,p...)
-get_de_p(d,eqs::GQL,p) = GQLParams(d.nx,d.ny,eqs.Λ,p...)
-get_de_p(d,eqs::CE2,p) = CE2Params(d.nx,d.ny,p...)
-get_de_p(d,eqs::GCE2,p) = GCE2Params(d.nx,d.ny,eqs.Λ,p...)
-
-get_de_kwargs(prob,eqs::AbstractEquations,tspan;kwargs...) = kwargs
+get_de_kwargs(prob,eqs,tspan;kwargs...) = kwargs
 
 function get_de_kwargs(prob,eqs::GCE2,tspan;kwargs...)
     if(!eqs.poscheck) return kwargs end
@@ -99,11 +94,13 @@ function get_de_kwargs(prob,eqs::CE2,tspan;kwargs...)
 end
 
 get_de_probalg(prob,eqs,u0,t,p) = ODEProblem(f!,u0,t,p), DP5()
-# get_de_probalg(prob::BetaPlane{T,Stochastic{T}},eqs::CE2,u0,t,p) where T = ODEProblem(f!,u0,t,p), RK4()
 get_de_probalg(prob::BetaPlane{T,Stochastic{T}},eqs,u0,t,p) where T = SDEProblem(f!,g!,u0,t,p), SRIW1()
+# In principle, stochastically-driven CE2/GCE2 can be solved as ODEs
+# get_de_probalg(prob::BetaPlane{T,Stochastic{T}},eqs::Union{CE2,GCE2},u0,t,p) where T = ODEProblem(f!,u0,t,p), DP5()
 
 function integrate(prob,eqs::AbstractEquations,tspan;u0=nothing,kwargs...)
     Random.seed!(123)
+    @info "Constructing a problem for " label(eqs)
     _u0 = get_de_ic(prob,eqs,u0)
     _p  = get_de_params(prob,eqs)
     _prob,_alg = get_de_probalg(prob,eqs,_u0,tspan,_p)
