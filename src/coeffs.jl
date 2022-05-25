@@ -34,7 +34,7 @@ function bcoeffs(prob)
         @inbounds for n=nmin:ny-1
             kx,ky = wavenumber(m,n,d)
             k = (kx^2+ky^2)^0.5
-            B[n+d.ny,m+1] += im*β*kx/k^2 - c.μ - c.ν*k^2 - c.ν₄*(k^2/k₄^2)^α₄
+            B[n+d.ny,m+1] += im*β*kx/k^2 - c.μ - c.ν*k^2 - c.ν₄*(k/k₄)^(2α₄)
         end
     end
     B
@@ -82,6 +82,7 @@ function ccoeffs(prob,eqs::NL)
     Cp,Cm
 end
 
+# dispatch NL as Λ = M specialization
 function ccoeffs(prob,eqs::Union{GQL,CE2,GCE2})
     d,c = prob.d,prob.c
     (nx,ny) = size(d)
@@ -168,112 +169,49 @@ function ccoeffs(prob,eqs::Union{GQL,CE2,GCE2})
     Cp,Cm
 end
 
+# dispatch later on prob,eqs!
+# fcoeffs(prob,eqs) = zeros(eqs,prob.d)
+# fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs) = x = fcoeffs(prob,CE2()) |> convert(x,typeof(eqs))
 fcoeffs(prob,eqs::Union{NL,GQL}) = zeros(eltype(prob),2prob.d.ny-1,prob.d.nx)
-fcoeffs(prob::BetaPlane{T,PointJet{T}},eqs::GCE2) where T = ArrayPartition(zeros(T,2prob.d.ny-1,eqs.Λ+1),zeros(T,2prob.d.ny-1,prob.d.nx-eqs.Λ,2prob.d.ny-1,prob.d.nx-eqs.Λ))
-fcoeffs(prob::BetaPlane{T,Kolmogorov{T}},eqs::GCE2) where T = ArrayPartition(zeros(T,2prob.d.ny-1,eqs.Λ+1),zeros(T,2prob.d.ny-1,prob.d.nx-eqs.Λ,2prob.d.ny-1,prob.d.nx-eqs.Λ))
-fcoeffs(prob::BetaPlane{T,PointJet{T}},eqs::CE2) where T = zeros(T,2prob.d.ny-1,2prob.d.ny-1,prob.d.nx-1)
-fcoeffs(prob::BetaPlane{T,Kolmogorov{T}},eqs::CE2) where T = zeros(T,2prob.d.ny-1,2prob.d.ny-1,prob.d.nx-1)
-
-stochamp(ε::T,kf::Int,N::T) where T<:AbstractFloat = convert(T,sqrt(2ε*kf^2)/sqrt(N))
-stochcorr(ε::T,kf::Int,dk::Int) where T<:AbstractFloat = convert(T,2π*ε*kf/(32.0dk))
-stochcorr(ε::T,kf::Int,N::T) where T<:AbstractFloat = convert(T,4*π*π*ε*kf/N/8.0)
-
-stochamp2(ε::T,kf::Int,N::T) where T<:AbstractFloat = convert(T,sqrt(ε/N)*kf)
-stochcorr2(ε::T,kf::Int,N::T) where T<:AbstractFloat = convert(T,4ε*kf/N)
+fcoeffs(prob,eqs::GCE2) = ArrayPartition(zeros(eltype(prob),2prob.d.ny-1,eqs.Λ+1),zeros(eltype(prob),2prob.d.ny-1,prob.d.nx-eqs.Λ,2prob.d.ny-1,prob.d.nx-eqs.Λ))
+fcoeffs(prob,eqs::CE2) = ArrayPartition(zeros(eltype(prob),2prob.d.ny-1),zeros(eltype(prob),2prob.d.ny-1,2prob.d.ny-1,prob.d.nx-1))
 
 function fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs::Union{NL,GQL}) where T
-    d,f = prob.d,prob.f
-    (nx,ny),Λ = size(d),lambda(prob,eqs)
-    F = zeros(T,2ny-1,nx)
-    for m=1:nx-1 # should 0 be included?
-        for n=-ny+1:ny-1
-            k = f.isotropic == true ? (m^2 + n^2)^0.5 : m
-            if (f.kf - f.dk < k < f.kf + f.dk) F[n+ny,m+1] = one(T) end
-        end
-    end
-    Nf = sum(F)
-    # if (sum(F) ≥ 1.0) F .= F * stochamp2(f.ε,f.kf,Nf) end # this is dt unaware - dist contains dt
-    if (Nf ≥ 1.0) F .= F * stochamp(f.ε,f.kf,Nf) end # this is dt unaware - dist contains dt
-    return F
-end
-
-function fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs::CE2) where T
-    d,f = prob.d,prob.f
-    (nx,ny) = size(d)
-    F = zeros(T,2ny-1,2ny-1,nx-1)
-    for m=1:nx-1 # should 0 be included?
-        for n=-ny+1:ny-1
-            k = f.isotropic == true ? (m^2 + n^2)^0.5 : m
-            if(f.kf - f.dk < k < f.kf + f.dk)
-                F[n+ny,n+ny,m] = one(T)
-            end
-        end
-    end
-    Nf = sum(F)
-    # F .= F * stochcorr2(f.ε,f.kf,Nf) # this is dt unaware - dist contains dt
-    F .= F * stochcorr(f.ε,f.kf,Nf) # this is dt unaware - dist contains dt
-    # F .= F * stochcorr(f.ε,f.kf,f.dk)
-    return F
-end
-
-function fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs::GCE2) where T
-    d,f = prob.d,prob.f
-    (nx,ny),Λ = size(d),lambda(prob,eqs)
-    F = ArrayPartition(zeros(T,2ny-1,Λ+1),zeros(T,2ny-1,nx-Λ,2ny-1,nx-Λ))
-    for m=1:nx-1 # should 0 be included?
-        for n=-ny+1:ny-1
-            k = f.isotropic == true ? (m^2 + n^2)^0.5 : m
-            if(f.kf - f.dk < k < f.kf + f.dk)
-                m ≤ Λ ? F.x[1][n+ny,m+1] = one(T) : F.x[2][n+ny,m-Λ,n+ny,m-Λ] = one(T)
-            end
-        end
-    end
-    if (sum(F.x[1]) ≥ 1.0) F.x[1] .= F.x[1] * stochamp(f.ε,f.kf,sum(F.x[1])) end
-    Nf = sum(F.x[2])
-    F.x[2] .= F.x[2] * stochcorr(f.ε,f.kf,Nf) # this is dt unaware - dist contains dt
-    return F
-end
-
-function fcoeffs2(prob::BetaPlane{T,Stochastic{T}},eqs::Union{NL,GQL}) where T
     (nx,ny) = size(prob.d)
-    F0 = fcoeffs2(prob,CE2())
+    Γ = fcoeffs(prob,CE2()).x[2]
     F = zeros(T,2ny-1,nx)
     for m=1:nx-1
         for n=-ny+1:ny-1
-            F[n+ny,m+1] = sqrt(2*F0[n+ny,n+ny,m])
+            F[n+ny,m+1] = sqrt(Γ[n+ny,n+ny,m])
         end
     end
     F
 end
 
-function fcoeffs2(prob::BetaPlane{T,Stochastic{T}},eqs::CE2) where T
-    d,f = prob.d,prob.f
-    (nx,ny) = size(d)
-    F = zeros(T,2ny-1,2ny-1,nx-1)
-    m1 = f.kf - f.dk
-    m2 = f.kf + f.dk
-    Nk = m2 - m1 + 1
-    c  = 0.2
-    for m=m1:m2
-        Ck = zero(T)
+function fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs::CE2) where T
+    (nx,ny),(lx,ly) = size(prob.d),length(prob.d)
+    kf,dk = prob.f.kf,prob.f.dk
+    ε,Δ = prob.f.ε,prob.f.Δ
+    F = ArrayPartition(zeros(T,2ny-1),zeros(T,2ny-1,2ny-1,nx-1))
+    for m=kf:kf+dk-1
+        cₖ = zero(T)
         for n=-ny+1:ny-1
-            kx,ky = 2π*m/d.lx,2π*n/d.ly
-            F[n+ny,n+ny,m] = c^2*exp(-ky^2*c^2)
-            Ck += F[n+ny,n+ny,m]/(kx^2+ky^2)
+            kx,ky = 2π*m/lx,2π*n/ly
+            F.x[2][n+ny,n+ny,m] = Δ^2*exp(-Δ^2*ky^2)
+            cₖ += F.x[2][n+ny,n+ny,m]/(kx^2+ky^2)
         end
-        F[:,:,m] /= (2Ck*Nk)
+        F.x[2][:,:,m] *= ε/(2*cₖ*dk)
     end
-    F .* f.ε
+    F
 end
 
-function fcoeffs2(prob::BetaPlane{T,Stochastic{T}},eqs::GCE2) where T
+function fcoeffs(prob::BetaPlane{T,Stochastic{T}},eqs::GCE2) where T
     (nx,ny),Λ = size(prob.d),lambda(prob,eqs)
-    F0 = fcoeffs2(prob,CE2())
+    Γ = fcoeffs(prob,CE2()).x[2]
     F = ArrayPartition(zeros(T,2ny-1,Λ+1),zeros(T,2ny-1,nx-Λ,2ny-1,nx-Λ))
-    for m=1:nx-1
-        for n=-ny+1:ny-1
-            F.x[2][n+ny,m-Λ,n+ny,m-Λ] = F0[n+ny,n+ny,m]
-        end
+    # assume Λ < k_f
+    for m=1:nx-Λ-1
+         F.x[2][:,m,:,m] = Γ[:,:,Λ+m]
     end
     F
 end

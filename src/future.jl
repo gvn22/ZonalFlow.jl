@@ -1,5 +1,5 @@
 """
-    Multi-loop iterators
+    Ideas for future: multi-loop iterators
 """
 struct Range
     cols::Array{Int}

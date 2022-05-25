@@ -1,63 +1,66 @@
-function Base.write(prob,eqs,sol;dn::String="",fn::String)
+function Base.write(prob,eqs,sol;dn::String="./",fn::String)
     mkpath(dn)
+    @info "saving to" dn*fn*".jld2" 
+    @save dn*fn*".jld2" sol
     NPZ.npzwrite(dn*fn*".npz",merge(dumpscalars(prob,sol),
                                     dumpfields(prob,sol),
-                                    dumpstats(prob,eqs,sol)))
-                                    # dumpcoeffs(prob,eqs,sol)))
+                                    dumpstats(prob,eqs,sol),
+                                    dumpcoeffs(prob,eqs,sol)
+                                    ))
 end
 
-Base.write(prob,eqs::Vector{AbstractEquations},sols;dn::String,labels::Vector{String}=label(eqs)) = foreach(x->write(prob,x[1],x[2],dn=dn,fn=x[3]),zip(eqs,sols,labels))
+Base.write(prob,eqs::Vector{AbstractEquations},sols;dn::String="./",labels::Vector{String}=label(eqs)) = foreach(x->write(prob,x[1],x[2],dn=dn,fn=x[3]),zip(eqs,sols,labels))
 
 tonpz(u) = reshape(cat(u...,dims=length(size(u[1]))),size(u[1])...,length(u))
 
-function dumpcoeffs(prob,eqs::CE2,sol)
-    x = zeros(eqs,prob.d)
-    x.x[2] .= fcoeffs2(prob,eqs)
-    F = forcingspectrum(prob.d,x)
-    Dict("t"=>sol.t,"F"=>F)
-end
-
 function dumpcoeffs(prob,eqs,sol)
     x = zeros(eqs,prob.d)
-    x .= fcoeffs2(prob,eqs)
+    x .= fcoeffs(prob,eqs)
     F = forcingspectrum(prob.d,x)
     Dict("t"=>sol.t,"F"=>F)
 end
 
+function dumpnoise(prob,eqs,sol)
+    (nx,ny) = size(prob.d)
+    x = zeros(eqs,prob.d)
+    x .= fcoeffs(prob,eqs)
+    for m1=1:nx-1
+        for n1 = -ny+1:ny-1
+            x[n1+ny,m1+1] = x[n1+ny,m1+1]*sol.W[end][n1+ny,m1+1]
+        end
+    end
+    W = resolvedfield(prob.d,x)
+    Dict("t"=>sol.t,"W"=>W)
+end
 
-function dumpscalars(prob,sol;t0=50.0)
+function dumpscalars(prob,sol;t0=18000.0)
+    t0 = min(sol.t[end]/2.0,t0)
     Et = energy.(Ref(prob.d),sol.u)
     Zt = enstrophy.(Ref(prob.d),sol.u)
     Emt = zonalenergy.(Ref(prob.d),sol.u) |> tonpz
-    Em0nt = modalenergy.(Ref(prob.d),sol.u,m=0) |> tonpz
-    Em1nt = modalenergy.(Ref(prob.d),sol.u,m=1) |> tonpz
-    Em2nt = modalenergy.(Ref(prob.d),sol.u,m=2) |> tonpz
-    Em0ntav = modalenergy.(Ref(prob.d),sol.u,m=0) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
-    Em1ntav = modalenergy.(Ref(prob.d),sol.u,m=1) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
-    Em2ntav = modalenergy.(Ref(prob.d),sol.u,m=2) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
     Emtav = zonalenergy.(Ref(prob.d),sol.u) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
-    Dict("t"=>sol.t,"Et"=>Et,"Emt"=>Emt,"Zt"=>Zt,"Emtav"=>Emtav,"Em0nt"=>Em0nt,"Em1nt"=>Em1nt,"Em2nt"=>Em2nt,
-        "Em0ntav"=>Em0ntav,"Em1ntav"=>Em1ntav,"Em2ntav"=>Em2ntav)
+    Dict("t"=>sol.t,"Et"=>Et,"Emt"=>Emt,"Emtav"=>Emtav)
 end
 
-function dumpfields(prob,sol;t0=50.0)
+function dumpfields(prob,sol;t0=18000.0)
+    t0 = min(sol.t[end]/2.0,t0)
     Emn = energyspectrum.(Ref(prob.d),sol.u) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
-    Fyym1 = secondcumulant.(Ref(prob.d),sol.u,m=1) |> tonpz
-    Fyym2 = secondcumulant.(Ref(prob.d),sol.u,m=2) |> tonpz
-    Fyym3 = secondcumulant.(Ref(prob.d),sol.u,m=3) |> tonpz
     Vxyav = vorticity.(Ref(prob.d),sol.u) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
     Vxy = vorticity.(Ref(prob.d),sol.u) |> tonpz
     Uxy = xvelocity.(Ref(prob.d),sol.u) |> tonpz
     Vyt = zonalvorticity.(Ref(prob.d),sol.u) |> tonpz
     Vytav = zonalvorticity.(Ref(prob.d),sol.u) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
-    Dict("t"=>sol.t,"Emn"=>Emn,"Vxy"=>Vxy,"Vxyav"=>Vxyav,"Uxy"=>Uxy,"Vyt"=>Vyt,"Vytav"=>Vytav,"Fyym1"=>Fyym1,"Fyym2"=>Fyym2,"Fyym3"=>Fyym3)
+    Dict("t"=>sol.t,"Emn"=>Emn,"Vxy"=>Vxy,"Vxyav"=>Vxyav,"Uxy"=>Uxy,"Vyt"=>Vyt,"Vytav"=>Vytav)
 end
 
-dumpstats(prob,eqs,sol) = Dict("empty"=>0)
-dumpstats(prob,eqs::CE2,sol) = Dict("mEVs"=> modaleigvals.(Ref(prob.d),sol.u) |> tonpz)
+dumpstats(prob,eqs,sol) = Dict("mEVs"=> modaleigvals.(Ref(prob.d),sol.u) |> tonpz)
 
-function dumpadjacency(lx::T,ly::T,nx::Int,ny::Int;fs::String,Λ::Int=nx-1) where {T <: AbstractFloat}
-    A,C = adjacency(lx,ly,nx,ny,Λ=Λ)
-    d = Dict("A"=>A,"C"=>C)
-    NPZ.npzwrite(fs*".npz",d)
+function dumpadjacency(prob,eqs::Union{NL,GQL};fn::String)
+    A,B,C = adjacency(prob,eqs)
+    NPZ.npzwrite(fn*".npz",Dict("A"=>A,"B"=>B,"C"=>C))
+end
+
+function dumpadjacency(prob,eqs::Union{NL,GQL},u;fn::String)
+    A,B,C,Cl,Ch = adjacency(prob,eqs,u)
+    NPZ.npzwrite(fn*".npz",Dict("A"=>A,"B"=>B,"C"=>C,"Cl"=>Cl,"Ch"=>Ch))
 end

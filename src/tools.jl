@@ -46,14 +46,23 @@ function positivity!(cumulant::Array{ComplexF64,3},temp::Array{ComplexF64,4},nx:
 
 end
 
-function truncatecumulant!(d::AbstractDomain,cc::SecondCumulant{T},temp::SecondCumulant{T}) where T
-    for m=1:d.nx-1
+function positivity!(d,u::DSSField{T}) where {T<:AbstractFloat}
+    @inbounds for m1=1:d.nx-1
+        D,V = eigen(u.x[2][:,:,m1])
+        # @info "Largest (abs) eigenvalue removed from second cumulant = ", maximum(abs.(D[isless.(D,0)]))
+        D⁺ = max.(D,0.0)
+        u.x[2][:,:,m1] = V*diagm(D⁺)*inv(V)
+    end
+end
+
+function truncatecumulant!(d,cc::SecondCumulant{T},temp::SecondCumulant{T}) where T
+    @inbounds for m=1:d.nx-1
         D,V = eigen(cc[:,:,m])
-        D[1:2d.nx-2] .= zero(T)
-        # @show D
-        # Dmax = [real(e) >= maximum(real.(D)) ? e : 0.0 for e in D]
-        temp[:,:,m] = V*diagm(D)*inv(V)
-        # @show Dmax
+        @inbounds for n=1:2d.nx-2
+            D[n] = zero(T)
+        end
+        # test directly using cc here
+        @views temp[:,:,m] = V*diagm(D)*inv(V)
     end
     cc .= temp
     nothing
