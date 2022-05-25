@@ -55,7 +55,7 @@ function positivity!(d,u::DSSField{T}) where {T<:AbstractFloat}
     end
 end
 
-function truncatecumulant!(d::AbstractDomain,cc::SecondCumulant{T},temp::SecondCumulant{T}) where T
+function truncatecumulant!(d,cc::SecondCumulant{T},temp::SecondCumulant{T}) where T
     @inbounds for m=1:d.nx-1
         D,V = eigen(cc[:,:,m])
         @inbounds for n=1:2d.nx-2
