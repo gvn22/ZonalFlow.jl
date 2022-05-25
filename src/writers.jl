@@ -1,14 +1,15 @@
-function Base.write(prob,eqs,sol;dn::String="",fn::String)
+function Base.write(prob,eqs,sol;dn::String="./",fn::String)
     mkpath(dn)
+    @info "saving to" dn*fn*".jld2" 
+    @save dn*fn*".jld2" sol
     NPZ.npzwrite(dn*fn*".npz",merge(dumpscalars(prob,sol),
                                     dumpfields(prob,sol),
                                     dumpstats(prob,eqs,sol),
-                                    dumpcoeffs(prob,eqs,sol),
-                                    # dumpnoise(prob,eqs,sol)
+                                    dumpcoeffs(prob,eqs,sol)
                                     ))
 end
 
-Base.write(prob,eqs::Vector{AbstractEquations},sols;dn::String,labels::Vector{String}=label(eqs)) = foreach(x->write(prob,x[1],x[2],dn=dn,fn=x[3]),zip(eqs,sols,labels))
+Base.write(prob,eqs::Vector{AbstractEquations},sols;dn::String="./",labels::Vector{String}=label(eqs)) = foreach(x->write(prob,x[1],x[2],dn=dn,fn=x[3]),zip(eqs,sols,labels))
 
 tonpz(u) = reshape(cat(u...,dims=length(size(u[1]))),size(u[1])...,length(u))
 
