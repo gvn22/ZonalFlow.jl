@@ -34,7 +34,7 @@ function bcoeffs(prob)
         @inbounds for n=nmin:ny-1
             kx,ky = wavenumber(m,n,d)
             k = (kx^2+ky^2)^0.5
-            B[n+d.ny,m+1] += im*β*kx/k^2 - c.μ - c.ν*k^2 - c.ν₄*(k^2/k₄^2)^α₄
+            B[n+d.ny,m+1] += im*β*kx/k^2 - c.μ - c.ν*k^2 - c.ν₄*(k/k₄)^(2α₄)
         end
     end
     B
