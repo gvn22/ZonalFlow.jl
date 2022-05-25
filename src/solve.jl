@@ -105,7 +105,7 @@ function integrate(prob,eqs::AbstractEquations,tspan;u0=nothing,kwargs...)
     _p  = get_de_params(prob,eqs)
     _prob,_alg = get_de_probalg(prob,eqs,_u0,tspan,_p)
     _kwargs = get_de_kwargs(prob,eqs,tspan;kwargs...)
-    @time @progress solve(_prob,_alg;_kwargs...)
+    @time solve(_prob,_alg;_kwargs...)
 end
 
 integrate(prob,eqs::Vector{AbstractEquations},tspan;kwargs...) = [integrate(prob,eq,tspan;kwargs...) for eq in eqs]
