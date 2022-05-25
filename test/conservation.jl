@@ -22,7 +22,7 @@ eqs = [NL(),CE2(),GQL(0)];
 # eqs     = append!(eqs,[GQL(Λ=l) for l=0:prob.d.nx-1])
 # eqs     = append!(eqs,[GCE2(Λ=l) for l=0:prob.d.nx-1])
 
-for f in [f1,f2,f3]
+for forcing in [f1,f2,f3]
         prob = BetaPlane(domain,coeffs,forcing);
         @testset "Forcing type: F1" begin
                 for eq in eqs
