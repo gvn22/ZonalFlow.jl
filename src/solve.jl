@@ -56,15 +56,10 @@ function get_de_params(prob,eqs)::AbstractParams
     B = bcoeffs(prob)
     C⁺,C⁻ = ccoeffs(prob,eqs)
     F = fcoeffs(prob,eqs)
-    get_de_p(prob.d,eqs,[A,B,C⁺,C⁻,F])
+    params(prob.d,eqs,[A,B,C⁺,C⁻,F])
 end
 
-get_de_p(d,eqs::NL,p) = NLParams(d.nx,d.ny,p...)
-get_de_p(d,eqs::GQL,p) = GQLParams(d.nx,d.ny,eqs.Λ,p...)
-get_de_p(d,eqs::CE2,p) = CE2Params(d.nx,d.ny,p...)
-get_de_p(d,eqs::GCE2,p) = GCE2Params(d.nx,d.ny,eqs.Λ,p...)
-
-get_de_kwargs(prob,eqs::AbstractEquations,tspan;kwargs...) = kwargs
+get_de_kwargs(prob,eqs,tspan;kwargs...) = kwargs
 
 function get_de_kwargs(prob,eqs::GCE2,tspan;kwargs...)
     if(!eqs.poscheck) return kwargs end

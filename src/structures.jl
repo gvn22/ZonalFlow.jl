@@ -246,3 +246,8 @@ struct GCE2Params{T} <: AbstractParams{T}
     temp::FieldBilinear{T}
 end
 GCE2Params(nx,ny,Λ,A::Array{Complex{T},1},B::Array{Complex{T},2},C⁺::Array{T,4},C⁻::Array{T,4},F::ArrayPartition{T,Tuple{Array{T,2},Array{T,4}}}) where T = GCE2Params(nx,ny,Λ,A,B,C⁺,C⁻,F,zeros(Complex{T},2ny-1,Λ+1),zeros(Complex{T},2ny-1,nx-Λ,2ny-1,nx-Λ),zeros(Complex{T},2ny-1,nx-Λ,2ny-1,nx-Λ))
+
+params(d,eqs::NL,p) = NLParams(d.nx,d.ny,p...)
+params(d,eqs::GQL,p) = GQLParams(d.nx,d.ny,eqs.Λ,p...)
+params(d,eqs::CE2,p) = CE2Params(d.nx,d.ny,p...)
+params(d,eqs::GCE2,p) = GCE2Params(d.nx,d.ny,eqs.Λ,p...)
