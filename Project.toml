@@ -13,7 +13,6 @@ NPZ = "15e1cf62-19b3-5cfa-8e77-841668bca605"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
-Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 StochasticDiffEq = "789caeaf-c7a9-5a7d-9973-96adeb23e2a0"
 
 [compat]

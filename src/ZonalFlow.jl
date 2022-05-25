@@ -9,8 +9,7 @@ using LinearAlgebra
 using Random
 using Distributions
 using NPZ
-using Reexport
-@reexport using JLD2
+using JLD2
 
 include("structures.jl")
 include("ic.jl")
@@ -20,8 +19,7 @@ include("equations.jl")
 include("tools.jl")
 include("analysis.jl")
 include("writers.jl")
-# include("deprecated.jl")
-# include("future.jl")
+include("deprecated.jl")
 
 export  Domain,
         Coefficients,
