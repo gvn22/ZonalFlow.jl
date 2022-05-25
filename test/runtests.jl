@@ -1,3 +1,7 @@
 using SafeTestsets
 
-@safetestset "Testing conservation of energy and enstrophy." begin include("conservation.jl") end
+@safetestset "Running energy and enstrophy conservation tests." begin
+    include("pointjet.jl")
+    include("kolmogorov.jl")
+    include("stochastic.jl") 
+end
