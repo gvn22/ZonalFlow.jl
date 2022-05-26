@@ -17,10 +17,13 @@ StochasticDiffEq = "789caeaf-c7a9-5a7d-9973-96adeb23e2a0"
 
 [compat]
 DiffEqCallbacks = "2.14"
-Distributions = "0.23"
+Distributions = "0.23, 0.25"
 FFTW = "1.2"
-OrdinaryDiffEq = "5.43"
+JLD2 = "0.4"
+OrdinaryDiffEq = "5.43, 6"
+NPZ = "0.4"
 RecursiveArrayTools = "2.7"
+StochasticDiffEq = "6"
 julia = "1.5"
 
 [extras]
