@@ -23,6 +23,7 @@ JLD2 = "0.4"
 OrdinaryDiffEq = "5.43, 6"
 NPZ = "0.4"
 RecursiveArrayTools = "2.7"
+StochasticDiffEq = "6"
 julia = "1.5"
 
 [extras]
