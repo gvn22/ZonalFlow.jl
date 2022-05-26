@@ -16,8 +16,7 @@ coeffs  = Coefficients(Ω=2π,θ=0.0,μ=0.0,ν=0.0,ν₄=0.0);
 forcing = Stochastic(kf=3,dk=1,ε=0.0);
 prob    = BetaPlane(domain,coeffs,forcing);
 
-eqs = [NL(),CE2(),GQL(0),GCE2(1),GQL(1)];
-
+eqs = [NL(),GQL(0),GQL(1)];
 @testset "Testing Stochastic forcing structure with zero driving..."
         for eq in eqs
                 sol = integrate(prob,eq,tspan;tsargs...);
