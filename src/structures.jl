@@ -249,5 +249,5 @@ GCE2Params(nx,ny,Λ,A::Array{Complex{T},1},B::Array{Complex{T},2},C⁺::Array{T,
 
 params(d,eqs::NL,p) = NLParams(d.nx,d.ny,p...)
 params(d,eqs::GQL,p) = GQLParams(d.nx,d.ny,eqs.Λ,p...)
-params(d,eqs::CE2,p) = CE2Params(d.nx,d.ny,p...)
+params(d,eqs::CE2,p) = CE2Params(d.nx,d.ny,p[1],p[2],p[3],p[4],p[5])
 params(d,eqs::GCE2,p) = GCE2Params(d.nx,d.ny,eqs.Λ,p...)
