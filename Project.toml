@@ -21,6 +21,7 @@ Distributions = "0.23"
 FFTW = "1.2"
 OrdinaryDiffEq = "5.43"
 RecursiveArrayTools = "2.7"
+StochasticDiffEq = "6"
 julia = "1.5"
 
 [extras]
