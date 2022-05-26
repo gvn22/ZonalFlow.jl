@@ -21,19 +21,23 @@ The package interfaces with the DifferentialEquations package in order to utilis
 * [Citing us](#citing-us)
 * [License](#license)
 
-### Installation instructions
-Simply add the package using the Julia package manager as:
+### Installation
+Add ZonalFlow using the Julia package manager as:
 
 ```julia
-julia>]
-(v1.5) pkg> add ZonalFlow
+julia> using Pkg
+julia> Pkg.add("ZonalFlow")
 ```
 
-### Example simulation script
+### Examples
 
-A number of example scripts are located in the examples directory. For instance, here is the code for a fully-nonlinear stochastically driven jet:
+Example scripts are located in the examples directory. A fully-nonlinear solution of stochastically-driven jets can be obtained by the following code:
 
 ```
+using Logging: global_logger
+using TerminalLoggers: TerminalLogger
+global_logger(TerminalLogger())
+
 using ZonalFlow
 
 tspan   = (0.0,1000.0);
@@ -41,25 +45,21 @@ tsargs  = (
             dt=0.001,
             adaptive=false,
             progress=true,
-            progress_steps=10000,
+            progress_steps=100000,
             save_everystep=false,
-            save_start=true,
-            dense=false,
-            save_noise=false,
-            saveat=5
+            saveat=100,
+            save_noise=false
            );
 
 domain  = Domain(extent=(2π,2π),res=(16,16));
-coeffs  = Coefficients(Ω=2π,θ=0.0,μ=0.01,ν=0.0,ν₄=0.0);
-forcing = Stochastic(kf=5,dk=1,ε=0.01);
+coeffs  = Coefficients(Ω=5.0,θ=0.0,μ=0.01,ν=0.0,ν₄=1.0);
+forcing = Stochastic(kf=10,dk=4,ε=0.01);
 prob    = BetaPlane(domain,coeffs,forcing);
+eq      = NL()
 
-sol     = integrate(prob,NL(),tspan;tsargs...)
-write(prob,NL(),sol,fn="nl")
-
+sol = integrate(prob,eq,tspan;tsargs...);
+write(prob,eq,sol,dn="data/",fn="jets_nl")
 ```
-
-and here is the output H\"ovm\"oller diagram and energy spectrum.
 
 ### License
 MIT
