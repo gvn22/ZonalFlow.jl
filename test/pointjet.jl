@@ -16,7 +16,7 @@ coeffs  = Coefficients(Ω=2π,θ=0.0,μ=0.0,ν=0.0,ν₄=0.0);
 forcing = PointJet(Ξ=0.0,Δθ=0.1,τ=10.0);
 prob    = BetaPlane(domain,coeffs,forcing);
 
-eqs = [NL(),GQL(0),GQL(2),GCE2(1)];
+eqs = [NL(),GQL(0),GQL(2)];
 @testset "Testing Point Jet structure with zero driving..." begin
         for eq in eqs
                 sol = integrate(prob,eq,tspan;tsargs...);
