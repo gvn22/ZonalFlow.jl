@@ -35,4 +35,6 @@ export  NL,
 
 export  integrate
 
+export  energy,enstrophy
+
 end

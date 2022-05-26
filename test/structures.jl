@@ -1,6 +1,5 @@
-using Test
 using ZonalFlow
-using BenchmarkTools
+using Test
 
 lx = 2.0π
 ly = 2.0π
@@ -43,7 +42,8 @@ forcing = Kolmogorov(A₁=A₁,A₄=A₄)
 kf = 6
 dk = 1
 ε = 1.0e-3
-forcing = Stochastic(kf=kf,dk=dk,ε=ε)
+Δ = 0.1
+forcing = Stochastic(kf=kf,dk=dk,ε=ε,Δ = 0.1)
 @test forcing.kf == kf
 @test forcing.dk == dk
 @test forcing.ε == ε
@@ -55,19 +55,14 @@ prob2 = BetaPlane(coeffs,forcing,extent=(lx,ly),res=(nx,ny))
 @test prob1.c == coeffs
 @test prob2 == prob1
 
-@benchmark zeros(NL(),dom)
-zeros(NL(),dom)
 @test zeros(GQL(rand(0:dom.nx-1)),dom) == zeros(NL(),dom)
 
-@benchmark zeros(CE2(),dom)
-A = zeros(GCE2(2),dom)
+Λ = 2
+
+A = zeros(GCE2(Λ),dom)
 @test isequal(A.l,A.x[1])
 @test isequal(A.h,A.x[2])
 
 B = zeros(CE2(),dom)
 @test isequal(B.l,B.x[1])
 @test isequal(B.h,B.x[2])
-
-C = zeros(GCE2(2),dom)
-@test isequal(C.l,C.x[1])
-@test isequal(C.h,C.x[2])
