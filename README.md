@@ -6,6 +6,8 @@
 
 DNS can be performed for the following equations:
 
+DNS can be performed for the following equations:
+
 - NL: original (fully non-linear) master equations
 - QL: quasilinear equations
 - GQL: generalised quasilinear equations
