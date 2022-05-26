@@ -17,7 +17,7 @@ StochasticDiffEq = "789caeaf-c7a9-5a7d-9973-96adeb23e2a0"
 
 [compat]
 DiffEqCallbacks = "2.14"
-Distributions = "0.23"
+Distributions = "0.23, 0.25"
 FFTW = "1.2"
 OrdinaryDiffEq = "5.43"
 RecursiveArrayTools = "2.7"
