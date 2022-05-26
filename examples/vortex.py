@@ -8,7 +8,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 dn = "./data/"
 nl = np.load(dn+"vortex_nl.npz",allow_pickle=True)
 
-M,N = 16,16
+M,N = 24,24
 
 fig,ax = plt.subplots(figsize=(6,3))
 

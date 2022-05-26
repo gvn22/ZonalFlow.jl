@@ -11,7 +11,7 @@ tsargs  = (
             save_noise=false
            );
 
-domain  = Domain(extent=(4π,2π),res=(16,16));
+domain  = Domain(extent=(4π,2π),res=(24,24));
 coeffs  = Coefficients(Ω=0.0,θ=0.0,μ=0.0,ν=0.02,ν₄=1.0);
 forcing = Kolmogorov(A₁=-1.0,A₄=-2.0);
 prob    = BetaPlane(domain,coeffs,forcing);
