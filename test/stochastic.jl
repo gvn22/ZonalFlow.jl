@@ -16,7 +16,7 @@ coeffs  = Coefficients(Ω=2π,θ=0.0,μ=0.0,ν=0.0,ν₄=0.0);
 forcing = Stochastic(kf=3,dk=1,ε=0.0);
 prob    = BetaPlane(domain,coeffs,forcing);
 
-eqs = [NL(),GQL(0),GQL(1)];
+eqs = [NL(),GQL(0),GQL(1),CE2(),GCE2(1)];
 for eq in eqs
         sol = integrate(prob,eq,tspan;tsargs...);
         E = energy.(Ref(prob.d),sol.u)

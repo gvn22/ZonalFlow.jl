@@ -11,12 +11,12 @@ tsargs  = (
             saveat=50
            );
 
-domain  = Domain(extent=(2π,2π),res=(5,5));
+domain  = Domain(extent=(2π,2π),res=(6,6));
 coeffs  = Coefficients(Ω=2π,θ=0.0,μ=0.0,ν=0.0,ν₄=0.0);
 forcing = PointJet(Ξ=0.0,Δθ=0.1,τ=10.0);
 prob    = BetaPlane(domain,coeffs,forcing);
 
-eqs = [NL(),GQL(0),GQL(2)];
+eqs = [NL(),GQL(0),GQL(2),CE2(),GCE2(2)];
 for eq in eqs
         sol = integrate(prob,eq,tspan;tsargs...);
         E = energy.(Ref(prob.d),sol.u)

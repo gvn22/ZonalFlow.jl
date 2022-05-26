@@ -120,6 +120,12 @@ const DNSField{T} = Field{T} where {T <: AbstractFloat}
 const DSSField{T} = ArrayPartition{Complex{T},Tuple{FirstCumulant{T},SecondCumulant{T}}} where {T <: AbstractFloat}
 const GSSField{T} = ArrayPartition{Complex{T},Tuple{Field{T},FieldBilinear{T}}} where {T <: AbstractFloat}
 
+function Base.getproperty(f::Union{DSSField{T},GSSField{T}},v::Symbol) where {T<:AbstractFloat}
+    v == :l && return getfield(f,:x)[1]
+    v == :h && return getfield(f,:x)[2]
+    return getfield(f,v)
+end
+
 """
     Utilities for setting up ICs
 """
@@ -136,8 +142,7 @@ Base.similar(eqs::Union{NL,GQL},d::Domain{T}) where T = similar(DNSField{T},d)
 Base.similar(eqs::CE2,d::Domain{T}) where T = similar(DSSField{T},d)
 Base.similar(eqs::GCE2,d::Domain{T}) where T = similar(GSSField{T},d,Λ=eqs.Λ)
 
-Base.convert(::NL,x::DNSField{T},d::Domain{T}) where T = x
-Base.convert(::GQL,x::DNSField{T},d::Domain{T}) where T = x
+Base.convert(::Union{NL,GQL},x::DNSField{T},d::Domain{T}) where T = x
 
 function Base.convert(::CE2,x::DNSField{T},d::Domain{T}) where T
     (nx,ny) = size(d) #
@@ -146,7 +151,7 @@ function Base.convert(::CE2,x::DNSField{T},d::Domain{T}) where T
     @inbounds for m1=1:nx-1
         @inbounds for n1=-ny+1:ny-1
             @inbounds for n2=-ny+1:ny-1
-                c2[n2+ny,n1+ny,m1] = x[n2+ny,m1+1]*conj(x[n1+ny,m1+1])
+                c2[n2+ny,n1+ny,m1] = conj(x[n2+ny,m1+1])*x[n1+ny,m1+1] # conj(2)*1
             end
         end
     end
@@ -161,7 +166,7 @@ function Base.convert(eqs::GCE2,x::DNSField{T},d::Domain{T}) where T
         @inbounds for n1=-ny+1:ny-1
             @inbounds for m2=Λ+1:nx-1
                 @inbounds for n2=-ny+1:ny-1
-                    c2[n2+ny,m2-Λ,n1+ny,m1-Λ] = x[n2+ny,m2+1]*conj(x[n1+ny,m1+1])
+                    c2[n2+ny,m2-Λ,n1+ny,m1-Λ] = conj(x[n2+ny,m2+1])*x[n1+ny,m1+1] # conj(2)*1
                 end
             end
         end
@@ -173,27 +178,17 @@ function Base.convert(::CE2,x::GSSField{T},d::Domain{T}) where T
     (nx,ny),Λ = size(d),length(x.x[1][1,:])-1
     c1 = x.x[1][:,1]
     c2 = zeros(Complex{T},2ny-1,2ny-1,nx-1)
-    @inbounds for m1=1:Λ
-        @inbounds for n1=-ny+1:ny-1
-            @inbounds for n2=-ny+1:ny-1
+    @inbounds for n1=-ny+1:ny-1
+        @inbounds for n2=-ny+1:ny-1
+            @inbounds for m1=1:Λ
                 c2[n2+ny,n1+ny,m1] = conj(x.x[1][n2+ny,m1+1])*x.x[1][n1+ny,m1+1]
             end
-        end
-    end
-    @inbounds for m1=Λ+1:nx-1
-        @inbounds for n1=-ny+1:ny-1
-            @inbounds for n2=-ny+1:ny-1
+            @inbounds for m1=Λ+1:nx-1
                 c2[n2+ny,n1+ny,m1] = x.x[2][n2+ny,m1-Λ,n1+ny,m1-Λ]
             end
         end
     end
     ArrayPartition(c1,c2)
-end
-
-function Base.getproperty(f::Union{DSSField{T},GSSField{T}},v::Symbol) where {T<:AbstractFloat}
-    v == :l && return getfield(f,:x)[1]
-    v == :h && return getfield(f,:x)[2]
-    return getfield(f,v)
 end
 
 abstract type AbstractParams{T <: AbstractFloat} end
@@ -249,5 +244,5 @@ GCE2Params(nx,ny,Λ,A::Array{Complex{T},1},B::Array{Complex{T},2},C⁺::Array{T,
 
 params(d,eqs::NL,p) = NLParams(d.nx,d.ny,p...)
 params(d,eqs::GQL,p) = GQLParams(d.nx,d.ny,eqs.Λ,p...)
-params(d,eqs::CE2,p) = CE2Params(d.nx,d.ny,p...)
-params(d,eqs::GCE2,p) = GCE2Params(d.nx,d.ny,eqs.Λ,p...)
+params(d,eqs::CE2,p) = CE2Params(d.nx,d.ny,p[1],p[2],p[3],p[4],p[5])
+params(d,eqs::GCE2,p) = GCE2Params(d.nx,d.ny,eqs.Λ,p[1],p[2],p[3],p[4],p[5])
