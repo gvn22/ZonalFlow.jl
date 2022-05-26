@@ -17,12 +17,10 @@ forcing = Stochastic(kf=3,dk=1,ε=0.0);
 prob    = BetaPlane(domain,coeffs,forcing);
 
 eqs = [NL(),GQL(0),GQL(1)];
-@testset "Testing Stochastic forcing structure with zero driving..."
-        for eq in eqs
-                sol = integrate(prob,eq,tspan;tsargs...);
-                E = energy.(Ref(prob.d),sol.u)
-                Z = enstrophy.(Ref(prob.d),sol.u)
-                @test E[1] ≈ E[end] atol=1e-3
-                @test Z[1] ≈ Z[end] atol=1e-3
-        end
+for eq in eqs
+        sol = integrate(prob,eq,tspan;tsargs...);
+        E = energy.(Ref(prob.d),sol.u)
+        Z = enstrophy.(Ref(prob.d),sol.u)
+        @test E[1] ≈ E[end] atol=1e-3
+        @test Z[1] ≈ Z[end] atol=1e-3
 end

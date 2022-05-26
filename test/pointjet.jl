@@ -17,12 +17,10 @@ forcing = PointJet(Ξ=0.0,Δθ=0.1,τ=10.0);
 prob    = BetaPlane(domain,coeffs,forcing);
 
 eqs = [NL(),GQL(0),GQL(2)];
-@testset "Testing Point Jet structure with zero driving..." begin
-        for eq in eqs
-                sol = integrate(prob,eq,tspan;tsargs...);
-                E = energy.(Ref(prob.d),sol.u)
-                Z = enstrophy.(Ref(prob.d),sol.u)
-                @test E[1] ≈ E[end]
-                @test Z[1] ≈ Z[end]
-        end
+for eq in eqs
+        sol = integrate(prob,eq,tspan;tsargs...);
+        E = energy.(Ref(prob.d),sol.u)
+        Z = enstrophy.(Ref(prob.d),sol.u)
+        @test E[1] ≈ E[end]
+        @test Z[1] ≈ Z[end]
 end
