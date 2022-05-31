@@ -1,6 +1,6 @@
 function Base.write(prob,eqs,sol;dn::String="./",fn::String)
     mkpath(dn)
-    @info "saving to" dn*fn*".jld2" 
+    @info "saving to" dn*fn*".jld2"
     @save dn*fn*".jld2" sol
     NPZ.npzwrite(dn*fn*".npz",merge(dumpscalars(prob,sol),
                                     dumpfields(prob,sol),
@@ -39,7 +39,7 @@ function dumpscalars(prob,sol;t0=18000.0)
     Zt = enstrophy.(Ref(prob.d),sol.u)
     Emt = zonalenergy.(Ref(prob.d),sol.u) |> tonpz
     Emtav = zonalenergy.(Ref(prob.d),sol.u) |> x->timeaverage(sol.t,x,t0=t0) |> tonpz
-    Dict("t"=>sol.t,"Et"=>Et,"Emt"=>Emt,"Emtav"=>Emtav)
+    Dict("t"=>sol.t,"Et"=>Et,"Zt"=>Zt,"Emt"=>Emt,"Emtav"=>Emtav)
 end
 
 function dumpfields(prob,sol;t0=18000.0)
